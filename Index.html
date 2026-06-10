@@ -141,6 +141,49 @@
   .section-title { font-size: 12px; font-weight: 700; color: var(--label); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
   .mt16 { margin-top: 16px; }
 
+  /* TOOLTIPS */
+  .tip { position: relative; cursor: help; }
+  .tip::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1e2235;
+    color: #e2e8f0;
+    font-size: 11px;
+    font-weight: 400;
+    line-height: 1.5;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid #2e3350;
+    white-space: pre-line;
+    width: max-content;
+    max-width: 220px;
+    z-index: 100;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+  .tip::before {
+    content: '';
+    position: absolute;
+    bottom: calc(100% + 1px);
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: #2e3350;
+    z-index: 101;
+    opacity: 0;
+    transition: opacity 0.15s;
+    pointer-events: none;
+  }
+  .tip:hover::after, .tip:hover::before,
+  .tip.active::after, .tip.active::before { opacity: 1; }
+  .tip-left::after { left: 0; transform: none; }
+  .tip-right::after { left: auto; right: 0; transform: none; }
+
   @media (max-width: 640px) {
     header, .tabs, .page { padding-left: 16px; padding-right: 16px; }
     .meter-grid { grid-template-columns: repeat(2, 1fr); }
@@ -250,19 +293,27 @@
     <div class="source-block" style="border-left:3px solid #5b8cff">
       <div class="source-header">
         <span class="source-icon">🏦</span>
-        <h3>МосОблЕИРЦ</h3>
+        <h3 class="tip" data-tip="Московский областной
+единый информационно-
+расчётный центр">МосОблЕИРЦ</h3>
         <span class="source-total" id="total-mosob">—</span>
       </div>
       <table class="bl-table">
         <colgroup><col class="c-name"><col class="c-tar"><col class="c-vol"><col class="c-sum"><col class="c-badge"></colgroup>
         <thead><tr><th>Услуга</th><th>Тариф</th><th>Объём</th><th>Сумма</th><th></th></tr></thead>
         <tbody>
-          <tr><td class="td-name">Капремонт</td><td><input type="number" id="t-kaprem" step="0.01" oninput="onInput()"></td><td class="td-dash">фикс.</td><td class="td-sum" id="s-kaprem">—</td><td><span class="badge badge-i">Я</span></td></tr>
-          <tr><td class="td-name">ГВС (вода)</td><td><input type="number" id="t-gvs-voda" step="0.0001" oninput="onInput()"></td><td class="td-auto" id="disp-gvs-voda">—</td><td class="td-sum" id="s-gvs-voda">—</td><td><span class="badge badge-v">В</span></td></tr>
-          <tr><td class="td-name">ГВС (подогрев)</td><td><input type="number" id="t-gvs-pod" step="0.000001" oninput="onInput()"></td><td><input type="number" id="v-gvs-pod" step="0.01" oninput="onInput()"></td><td class="td-sum" id="s-gvs-pod">—</td><td><span class="badge badge-v">В</span></td></tr>
-          <tr><td class="td-name">Отопление</td><td><input type="number" id="t-otop" step="0.0001" oninput="onInput()"></td><td><input type="number" id="v-otop" step="0.01" oninput="onInput()"></td><td class="td-sum" id="s-otop">—</td><td><span class="badge badge-v">В</span></td></tr>
-          <tr><td class="td-name">ХВС</td><td><input type="number" id="t-hvs" step="0.0001" oninput="onInput()"></td><td class="td-auto" id="disp-hvs">—</td><td class="td-sum" id="s-hvs">—</td><td><span class="badge badge-v">В</span></td></tr>
-          <tr><td class="td-name">Водоотведение</td><td><input type="number" id="t-vodo" step="0.0001" oninput="onInput()"></td><td class="td-auto" id="disp-vodo">—</td><td class="td-sum" id="s-vodo">—</td><td><span class="badge badge-v">В</span></td></tr>
+          <tr><td class="td-name tip tip-left" data-tip="Капитальный ремонт
+Фиксированная сумма">Капремонт</td><td><input type="number" id="t-kaprem" step="0.01" oninput="onInput()"></td><td class="td-dash">фикс.</td><td class="td-sum" id="s-kaprem">—</td><td><span class="badge badge-i tip" data-tip="Платишь ты">Я</span></td></tr>
+          <tr><td class="td-name tip tip-left" data-tip="Горячее водоснабжение (вода)
+Тариф × объём из счётчика">ГВС (вода)</td><td><input type="number" id="t-gvs-voda" step="0.0001" oninput="onInput()"></td><td class="td-auto" id="disp-gvs-voda">—</td><td class="td-sum" id="s-gvs-voda">—</td><td><span class="badge badge-v tip" data-tip="Платит Вадимовна">В</span></td></tr>
+          <tr><td class="td-name tip tip-left" data-tip="Горячее водоснабжение (подогрев)
+Тариф × объём в Гкал">ГВС (подогрев)</td><td><input type="number" id="t-gvs-pod" step="0.000001" oninput="onInput()"></td><td><input type="number" id="v-gvs-pod" step="0.01" oninput="onInput()"></td><td class="td-sum" id="s-gvs-pod">—</td><td><span class="badge badge-v tip" data-tip="Платит Вадимовна">В</span></td></tr>
+          <tr><td class="td-name tip tip-left" data-tip="Отопление
+Тариф × объём в Гкал">Отопление</td><td><input type="number" id="t-otop" step="0.0001" oninput="onInput()"></td><td><input type="number" id="v-otop" step="0.01" oninput="onInput()"></td><td class="td-sum" id="s-otop">—</td><td><span class="badge badge-v tip" data-tip="Платит Вадимовна">В</span></td></tr>
+          <tr><td class="td-name tip tip-left" data-tip="Холодное водоснабжение
+Тариф × объём из счётчика">ХВС</td><td><input type="number" id="t-hvs" step="0.0001" oninput="onInput()"></td><td class="td-auto" id="disp-hvs">—</td><td class="td-sum" id="s-hvs">—</td><td><span class="badge badge-v tip" data-tip="Платит Вадимовна">В</span></td></tr>
+          <tr><td class="td-name tip tip-left" data-tip="Водоотведение (канализация)
+Тариф × (ГВС + ХВС)">Водоотведение</td><td><input type="number" id="t-vodo" step="0.0001" oninput="onInput()"></td><td class="td-auto" id="disp-vodo">—</td><td class="td-sum" id="s-vodo">—</td><td><span class="badge badge-v tip" data-tip="Платит Вадимовна">В</span></td></tr>
         </tbody>
       </table>
     </div>
@@ -278,15 +329,30 @@
         <colgroup><col class="c-name"><col class="c-tar"><col class="c-vol"><col class="c-sum"><col class="c-badge"></colgroup>
         <thead><tr><th>Услуга</th><th>Сумма</th><th></th><th></th><th></th></tr></thead>
         <tbody>
-          <tr><td class="td-name">Содержание помещения</td><td><input type="number" id="t-soderzh" step="0.01" oninput="onInput()"></td><td class="td-dash">фикс.</td><td class="td-sum" id="s-soderzh">—</td><td><span class="badge badge-i">Я</span></td></tr>
-          <tr><td class="td-name">Обслуж. систем безопасности</td><td><input type="number" id="t-bezop" step="0.01" oninput="onInput()"></td><td class="td-dash">фикс.</td><td class="td-sum" id="s-bezop">—</td><td><span class="badge badge-i">Я</span></td></tr>
-          <tr><td class="td-name">Обращение с ТКО</td><td><input type="number" id="t-tko" step="0.01" oninput="onInput()"></td><td class="td-dash">фикс.</td><td class="td-sum" id="s-tko">—</td><td><span class="badge badge-i">Я</span></td></tr>
-          <tr><td class="td-name">ТВ (кабельное)</td><td><input type="number" id="t-tv" step="0.01" oninput="onInput()"></td><td class="td-dash">фикс.</td><td class="td-sum" id="s-tv">—</td><td><span class="badge badge-i">Я</span></td></tr>
-          <tr><td class="td-name dim">ЭЭ на сод. общ. имущ.</td><td><input type="number" id="t-oi-ee" step="0.01" oninput="onInput()"></td><td class="td-dash">фикс.</td><td class="td-sum" id="s-oi-ee">—</td><td><span class="badge badge-i">Я</span></td></tr>
-          <tr><td class="td-name dim">ВО на сод. общ. имущ.</td><td><input type="number" id="t-oi-vo" step="0.01" oninput="onInput()"></td><td class="td-dash">фикс.</td><td class="td-sum" id="s-oi-vo">—</td><td><span class="badge badge-i">Я</span></td></tr>
-          <tr><td class="td-name dim">ГВС (вода) на сод. общ. имущ.</td><td><input type="number" id="t-oi-gvs" step="0.01" oninput="onInput()"></td><td class="td-dash">фикс.</td><td class="td-sum" id="s-oi-gvs">—</td><td><span class="badge badge-i">Я</span></td></tr>
-          <tr><td class="td-name dim">ГВС (подогрев) на сод. общ. имущ.</td><td><input type="number" id="t-oi-gvsp" step="0.01" oninput="onInput()"></td><td class="td-dash">фикс.</td><td class="td-sum" id="s-oi-gvsp">—</td><td><span class="badge badge-i">Я</span></td></tr>
-          <tr><td class="td-name dim">ХВС на сод. общ. имущ.</td><td><input type="number" id="t-oi-hvs" step="0.01" oninput="onInput()"></td><td class="td-dash">фикс.</td><td class="td-sum" id="s-oi-hvs">—</td><td><span class="badge badge-i">Я</span></td></tr>
+          <tr><td class="td-name tip tip-left" data-tip="Содержание и обслуживание
+общего имущества дома
+Фиксированная сумма">Содержание помещения</td><td><input type="number" id="t-soderzh" step="0.01" oninput="onInput()"></td><td class="td-dash">фикс.</td><td class="td-sum" id="s-soderzh">—</td><td><span class="badge badge-i tip" data-tip="Платишь ты">Я</span></td></tr>
+          <tr><td class="td-name tip tip-left" data-tip="Обслуживание систем
+безопасности (домофон,
+видеонаблюдение и др.)
+Фиксированная сумма">Обслуж. систем безопасности</td><td><input type="number" id="t-bezop" step="0.01" oninput="onInput()"></td><td class="td-dash">фикс.</td><td class="td-sum" id="s-bezop">—</td><td><span class="badge badge-i tip" data-tip="Платишь ты">Я</span></td></tr>
+          <tr><td class="td-name tip tip-left" data-tip="Твёрдые коммунальные отходы
+(вывоз мусора)
+Фиксированная сумма">Обращение с ТКО</td><td><input type="number" id="t-tko" step="0.01" oninput="onInput()"></td><td class="td-dash">фикс.</td><td class="td-sum" id="s-tko">—</td><td><span class="badge badge-i tip" data-tip="Платишь ты">Я</span></td></tr>
+          <tr><td class="td-name tip tip-left" data-tip="Услуги связи для целей
+кабельного вещания
+Фиксированная сумма">ТВ (кабельное)</td><td><input type="number" id="t-tv" step="0.01" oninput="onInput()"></td><td class="td-dash">фикс.</td><td class="td-sum" id="s-tv">—</td><td><span class="badge badge-i tip" data-tip="Платишь ты">Я</span></td></tr>
+          <tr><td class="td-name dim tip tip-left" data-tip="Электроэнергия на содержание
+общего имущества
+(освещение подъездов и т.д.)">ЭЭ на сод. общ. имущ.</td><td><input type="number" id="t-oi-ee" step="0.01" oninput="onInput()"></td><td class="td-dash">фикс.</td><td class="td-sum" id="s-oi-ee">—</td><td><span class="badge badge-i tip" data-tip="Платишь ты">Я</span></td></tr>
+          <tr><td class="td-name dim tip tip-left" data-tip="Водоотведение на содержание
+общего имущества">ВО на сод. общ. имущ.</td><td><input type="number" id="t-oi-vo" step="0.01" oninput="onInput()"></td><td class="td-dash">фикс.</td><td class="td-sum" id="s-oi-vo">—</td><td><span class="badge badge-i tip" data-tip="Платишь ты">Я</span></td></tr>
+          <tr><td class="td-name dim tip tip-left" data-tip="Горячая вода на содержание
+общего имущества">ГВС (вода) на сод. общ. имущ.</td><td><input type="number" id="t-oi-gvs" step="0.01" oninput="onInput()"></td><td class="td-dash">фикс.</td><td class="td-sum" id="s-oi-gvs">—</td><td><span class="badge badge-i tip" data-tip="Платишь ты">Я</span></td></tr>
+          <tr><td class="td-name dim tip tip-left" data-tip="Подогрев воды на содержание
+общего имущества">ГВС (подогрев) на сод. общ. имущ.</td><td><input type="number" id="t-oi-gvsp" step="0.01" oninput="onInput()"></td><td class="td-dash">фикс.</td><td class="td-sum" id="s-oi-gvsp">—</td><td><span class="badge badge-i tip" data-tip="Платишь ты">Я</span></td></tr>
+          <tr><td class="td-name dim tip tip-left" data-tip="Холодная вода на содержание
+общего имущества">ХВС на сод. общ. имущ.</td><td><input type="number" id="t-oi-hvs" step="0.01" oninput="onInput()"></td><td class="td-dash">фикс.</td><td class="td-sum" id="s-oi-hvs">—</td><td><span class="badge badge-i tip" data-tip="Платишь ты">Я</span></td></tr>
         </tbody>
       </table>
     </div>
@@ -295,15 +361,22 @@
     <div class="source-block" style="border-left:3px solid #a78bfa">
       <div class="source-header">
         <span class="source-icon">⚡</span>
-        <h3>Мосэнергосбыт</h3>
+        <h3 class="tip" data-tip="Поставщик электроэнергии
+в Московском регионе">Мосэнергосбыт</h3>
         <span class="source-total" id="total-mosen">—</span>
       </div>
       <table class="bl-table">
         <colgroup><col class="c-name"><col class="c-tar"><col class="c-vol"><col class="c-sum"><col class="c-badge"></colgroup>
         <thead><tr><th>Тариф</th><th>₽/кВт·ч</th><th>Объём</th><th>Сумма</th><th></th></tr></thead>
         <tbody>
-          <tr><td class="td-name">Т1 (пик)</td><td><input type="number" id="t-t1" step="0.01" oninput="onInput()"></td><td class="td-auto" id="disp-t1">—</td><td class="td-sum" id="s-t1">—</td><td><span class="badge badge-v">В</span></td></tr>
-          <tr><td class="td-name">Т2 (ночь)</td><td><input type="number" id="t-t2" step="0.01" oninput="onInput()"></td><td class="td-auto" id="disp-t2">—</td><td class="td-sum" id="s-t2">—</td><td><span class="badge badge-v">В</span></td></tr>
+          <tr><td class="td-name tip tip-left" data-tip="Электроэнергия тариф Т1
+(дневной, пиковый)
+c 7:00 до 23:00
+Тариф × объём из счётчика">Т1 (пик)</td><td><input type="number" id="t-t1" step="0.01" oninput="onInput()"></td><td class="td-auto" id="disp-t1">—</td><td class="td-sum" id="s-t1">—</td><td><span class="badge badge-v tip" data-tip="Платит Вадимовна">В</span></td></tr>
+          <tr><td class="td-name tip tip-left" data-tip="Электроэнергия тариф Т2
+(ночной)
+с 23:00 до 7:00
+Тариф × объём из счётчика">Т2 (ночь)</td><td><input type="number" id="t-t2" step="0.01" oninput="onInput()"></td><td class="td-auto" id="disp-t2">—</td><td class="td-sum" id="s-t2">—</td><td><span class="badge badge-v tip" data-tip="Платит Вадимовна">В</span></td></tr>
         </tbody>
       </table>
     </div>
@@ -319,7 +392,8 @@
         <colgroup><col class="c-name"><col class="c-tar"><col class="c-vol"><col class="c-sum"><col class="c-badge"></colgroup>
         <thead><tr><th>Услуга</th><th>Сумма</th><th></th><th></th><th></th></tr></thead>
         <tbody>
-          <tr><td class="td-name">Абонентская плата</td><td><input type="number" id="t-inet" step="0.01" oninput="onInput()"></td><td class="td-dash">фикс.</td><td class="td-sum" id="s-inet">—</td><td><span class="badge badge-v">В</span></td></tr>
+          <tr><td class="td-name tip tip-left" data-tip="Ежемесячная фиксированная
+плата за интернет">Абонентская плата</td><td><input type="number" id="t-inet" step="0.01" oninput="onInput()"></td><td class="td-dash">фикс.</td><td class="td-sum" id="s-inet">—</td><td><span class="badge badge-v tip" data-tip="Платит Вадимовна">В</span></td></tr>
         </tbody>
       </table>
     </div>
@@ -328,21 +402,25 @@
   <!-- ИТОГО -->
   <div class="totals-bar">
     <div class="total-card">
-      <div class="tc-label">💰 Всего</div>
+      <div class="tc-label tip" data-tip="МосОблЕИРЦ + Пик-Комфорт
++ Мосэнергосбыт + Интернет">💰 Всего</div>
       <div class="tc-value" id="grand-total">—</div>
       <div class="tc-delta flat" id="delta-grand">—</div>
       <div class="tc-sub">за месяц</div>
       <canvas class="tc-spark" id="spark-grand" width="80" height="36"></canvas>
     </div>
     <div class="total-card">
-      <div class="tc-label">👤 Вадимовна</div>
+      <div class="tc-label tip" data-tip="ГВС вода + подогрев
+ХВС + Водоотведение
+Отопление + ЭЭ + Интернет">👤 Вадимовна</div>
       <div class="tc-value" id="total-v">—</div>
       <div class="tc-delta flat" id="delta-v">—</div>
       <div class="tc-sub">ГВС, ХВС, отопление, ВО, ЭЭ, интернет</div>
       <canvas class="tc-spark" id="spark-v" width="80" height="36"></canvas>
     </div>
     <div class="total-card">
-      <div class="tc-label">👤 Я</div>
+      <div class="tc-label tip" data-tip="Капремонт + всё из
+Пик-Комфорт">👤 Я</div>
       <div class="tc-value" id="total-me">—</div>
       <div class="tc-delta flat" id="delta-me">—</div>
       <div class="tc-sub">Капремонт, Пик-Комфорт и др.</div>
@@ -705,6 +783,13 @@ function renderDynamics() {
   });
   tbody.innerHTML=rows||'<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:32px">Нет данных</td></tr>';
 }
+
+// ---- TOOLTIPS ----
+document.addEventListener('click', function(e) {
+  const tip = e.target.closest('.tip');
+  document.querySelectorAll('.tip.active').forEach(el => { if(el !== tip) el.classList.remove('active'); });
+  if(tip) { tip.classList.toggle('active'); e.stopPropagation(); }
+});
 
 // ---- TABS ----
 function switchTab(name) {
