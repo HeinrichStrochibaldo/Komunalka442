@@ -342,9 +342,12 @@
           <tr><td class="td-name tip tip-left" data-tip="Услуги связи для целей
 кабельного вещания
 Фиксированная сумма">ТВ (кабельное)</td><td><input type="number" id="t-tv" step="0.01" oninput="onInput()"></td><td class="td-dash">фикс.</td><td class="td-sum" id="s-tv">—</td><td><span class="badge badge-i tip" data-tip="Платишь ты">Я</span></td></tr>
-          <tr><td class="td-name dim tip tip-left" data-tip="Электроэнергия на содержание
-общего имущества
-(освещение подъездов и т.д.)">ЭЭ на сод. общ. имущ.</td><td><input type="number" id="t-oi-ee" step="0.01" oninput="onInput()"></td><td><input type="number" id="v-oi-ee" step="0.001" oninput="onInput()"></td><td class="td-sum" id="s-oi-ee">—</td><td><span class="badge badge-i tip" data-tip="Платишь ты">Я</span></td></tr>
+          <tr><td class="td-name dim tip tip-left" data-tip="Общедомовая электроэнергия
+(день, тариф Т1)
+Тариф × объём">ЭЭ на сод. общ. имущ. (день)</td><td><input type="number" id="t-oi-ee-d" step="0.01" oninput="onInput()"></td><td><input type="number" id="v-oi-ee-d" step="0.0001" oninput="onInput()"></td><td class="td-sum" id="s-oi-ee-d">—</td><td><span class="badge badge-i tip" data-tip="Платишь ты">Я</span></td></tr>
+          <tr><td class="td-name dim tip tip-left" data-tip="Общедомовая электроэнергия
+(ночь, тариф Т2)
+Тариф × объём">ЭЭ на сод. общ. имущ. (ночь)</td><td><input type="number" id="t-oi-ee-n" step="0.01" oninput="onInput()"></td><td><input type="number" id="v-oi-ee-n" step="0.0001" oninput="onInput()"></td><td class="td-sum" id="s-oi-ee-n">—</td><td><span class="badge badge-i tip" data-tip="Платишь ты">Я</span></td></tr>
           <tr><td class="td-name dim tip tip-left" data-tip="Водоотведение на содержание
 общего имущества">ВО на сод. общ. имущ.</td><td><input type="number" id="t-oi-vo" step="0.01" oninput="onInput()"></td><td><input type="number" id="v-oi-vo" step="0.001" oninput="onInput()"></td><td class="td-sum" id="s-oi-vo">—</td><td><span class="badge badge-i tip" data-tip="Платишь ты">Я</span></td></tr>
           <tr><td class="td-name dim tip tip-left" data-tip="Горячая вода на содержание
@@ -456,7 +459,7 @@ const MONTHS = {
 };
 const MONTH_KEYS = Object.keys(MONTHS);
 const TARIFF_IDS = ['t-kaprem','t-gvs-voda','t-gvs-pod','t-otop','t-hvs','t-vodo',
-  't-soderzh','t-bezop','t-tko','t-tv','t-oi-ee','t-oi-vo','t-oi-gvs','t-oi-gvsp','t-oi-hvs','v-oi-ee','v-oi-vo','v-oi-gvs','v-oi-gvsp','v-oi-hvs','t-t1','t-t2','t-inet'];
+  't-soderzh','t-bezop','t-tko','t-tv','t-oi-ee-d','v-oi-ee-d','t-oi-ee-n','v-oi-ee-n','t-oi-vo','t-oi-gvs','t-oi-gvsp','t-oi-hvs','v-oi-vo','v-oi-gvs','v-oi-gvsp','v-oi-hvs','t-t1','t-t2','t-inet'];
 const TARIFF_FIELDS = [
   {id:'kaprem',label:'Капремонт'},{id:'gvs-voda',label:'ГВС (вода)'},
   {id:'gvs-pod',label:'ГВС (подогрев)'},{id:'otop',label:'Отопление'},
@@ -532,7 +535,8 @@ function compute() {
     bezop:     gv('t-bezop'),
     tko:       gv('t-tko'),
     tv:        gv('t-tv'),
-    'oi-ee':   gv('t-oi-ee')*gv('v-oi-ee') || gv('t-oi-ee'),
+    'oi-ee-d':  gv('t-oi-ee-d')*gv('v-oi-ee-d') || gv('t-oi-ee-d'),
+    'oi-ee-n':  gv('t-oi-ee-n')*gv('v-oi-ee-n') || gv('t-oi-ee-n'),
     'oi-vo':   gv('t-oi-vo')*gv('v-oi-vo') || gv('t-oi-vo'),
     'oi-gvs':  gv('t-oi-gvs')*gv('v-oi-gvs') || gv('t-oi-gvs'),
     'oi-gvsp': gv('t-oi-gvsp')*gv('v-oi-gvsp') || gv('t-oi-gvsp'),
@@ -543,7 +547,7 @@ function compute() {
     volGvs:vGvs, volHvs:vHvs, volVodo:vVodo,
   };
   v.mosob = v.kaprem+v['gvs-voda']+v['gvs-pod']+v.otop+v.hvs+v.vodo;
-  v.pik   = v.soderzh+v.bezop+v.tko+v.tv+v['oi-ee']+v['oi-vo']+v['oi-gvs']+v['oi-gvsp']+v['oi-hvs'];
+  v.pik   = v.soderzh+v.bezop+v.tko+v.tv+v['oi-ee-d']+v['oi-ee-n']+v['oi-vo']+v['oi-gvs']+v['oi-gvsp']+v['oi-hvs'];
   v.ee    = v.t1+v.t2;
   v.grand = v.mosob+v.pik+v.ee+v.inet;
   v.vadim = v['gvs-voda']+v['gvs-pod']+v.otop+v.hvs+v.vodo+v.ee+v.inet;
@@ -562,7 +566,8 @@ function computeFromData(d) {
     'gvs-pod':g('t-gvs-pod')*g('v-gvs-pod'), otop:g('t-otop')*g('v-otop'),
     hvs:g('t-hvs')*vHvs, vodo:g('t-vodo')*(vGvs+vHvs),
     soderzh:g('t-soderzh'), bezop:g('t-bezop'), tko:g('t-tko'), tv:g('t-tv'),
-    'oi-ee':  g('t-oi-ee')*g('v-oi-ee') || g('t-oi-ee'),
+    'oi-ee-d':g('t-oi-ee-d')*g('v-oi-ee-d') || g('t-oi-ee-d'),
+    'oi-ee-n':g('t-oi-ee-n')*g('v-oi-ee-n') || g('t-oi-ee-n'),
     'oi-vo':  g('t-oi-vo')*g('v-oi-vo') || g('t-oi-vo'),
     'oi-gvs': g('t-oi-gvs')*g('v-oi-gvs') || g('t-oi-gvs'),
     'oi-gvsp':g('t-oi-gvsp')*g('v-oi-gvsp') || g('t-oi-gvsp'),
@@ -570,7 +575,7 @@ function computeFromData(d) {
     t1:g('t-t1')*vT1, t2:g('t-t2')*vT2, inet:g('t-inet'),
   };
   v.mosob=v.kaprem+v['gvs-voda']+v['gvs-pod']+v.otop+v.hvs+v.vodo;
-  v.pik=v.soderzh+v.bezop+v.tko+v.tv+v['oi-ee']+v['oi-vo']+v['oi-gvs']+v['oi-gvsp']+v['oi-hvs'];
+  v.pik=v.soderzh+v.bezop+v.tko+v.tv+v['oi-ee-d']+v['oi-ee-n']+v['oi-vo']+v['oi-gvs']+v['oi-gvsp']+v['oi-hvs'];
   v.ee=v.t1+v.t2; v.grand=v.mosob+v.pik+v.ee+v.inet;
   v.vadim=v['gvs-voda']+v['gvs-pod']+v.otop+v.hvs+v.vodo+v.ee+v.inet;
   v.me=v.grand-v.vadim;
@@ -594,7 +599,7 @@ function render() {
 
   // row sums
   const rows = ['kaprem','gvs-voda','gvs-pod','otop','hvs','vodo',
-    'soderzh','bezop','tko','tv','oi-ee','oi-vo','oi-gvs','oi-gvsp','oi-hvs','t1','t2','inet'];
+    'soderzh','bezop','tko','tv','oi-ee-d','oi-ee-n','oi-vo','oi-gvs','oi-gvsp','oi-hvs','t1','t2','inet'];
   rows.forEach(id => {
     const e = document.getElementById('s-'+id);
     if(e) e.textContent = c[id]>0 ? fmt(c[id]) : '—';
@@ -831,7 +836,12 @@ const MAY26 = {
   't-kaprem':594,'t-gvs-voda':63.26,'t-gvs-pod':0.0612684,'v-gvs-pod':2909.02,
   't-otop':0.3591,'v-otop':2909.02,'t-hvs':63.26,'t-vodo':62.21,
   't-soderzh':1631.88,'t-bezop':109.08,'t-tko':311.12,'t-tv':315,
-  't-oi-ee':106.85,'t-oi-vo':3.21,'t-oi-gvs':1.63,'t-oi-gvsp':3.98,'t-oi-hvs':1.63,
+  't-oi-ee-d':8.24,'v-oi-ee-d':10.7118,
+  't-oi-ee-n':3.54,'v-oi-ee-n':5.2505,
+  't-oi-vo':62.21,'v-oi-vo':0.0516,
+  't-oi-gvs':63.26,'v-oi-gvs':0.0258,
+  't-oi-gvsp':2909.02,'v-oi-gvsp':0.0014,
+  't-oi-hvs':63.26,'v-oi-hvs':0.0258,
   't-t1':8.24,'t-t2':3.54,'t-inet':800
 };
 // Start: load from Firebase, then init
