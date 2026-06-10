@@ -37,18 +37,26 @@
   .page { display: none; padding: 24px 32px; max-width: 960px; }
   .page.active { display: block; }
 
+  /* Month navigation */
   .month-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
   .month-bar label { color: var(--label); font-size: 13px; }
-  select { background: var(--surface); border: 1px solid var(--border); color: var(--text); border-radius: 6px; padding: 6px 10px; font-size: 13px; outline: none; }
-  .autosave { font-size: 11px; color: var(--muted); margin-left: auto; }
+  .month-nav { display: flex; align-items: center; gap: 6px; }
+  .nav-btn { background: var(--surface); border: 1px solid var(--border); color: var(--label); border-radius: 6px; padding: 6px 12px; font-size: 16px; cursor: pointer; transition: all 0.15s; }
+  .nav-btn:hover { background: var(--surface2); color: var(--text); }
+  .month-label { font-size: 14px; font-weight: 600; color: var(--text); min-width: 110px; text-align: center; }
+  .autosave { font-size: 11px; color: var(--muted); margin-left: auto; transition: color 0.3s; }
   .autosave.saved { color: var(--green); }
 
-  .btn { background: var(--accent); color: #fff; border: none; border-radius: 6px; padding: 7px 14px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+  .btn { background: var(--accent); color: #fff; border: none; border-radius: 6px; padding: 7px 14px; font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity 0.15s; white-space: nowrap; }
+  .btn:hover { opacity: 0.85; }
   .btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--label); }
-  .btn-sm { padding: 3px 8px; font-size: 11px; border-radius: 4px; }
+  .btn-ghost:hover { background: var(--surface2); opacity: 1; }
+  .btn-danger { background: transparent; border: 1px solid var(--red); color: var(--red); }
+  .btn-danger:hover { background: rgba(248,113,113,0.1); opacity: 1; }
 
   input[type=number] { background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 5px; padding: 4px 8px; font-size: 13px; outline: none; width: 100%; text-align: right; display: block; }
   input[type=number]:focus { border-color: var(--accent); }
+  input[type=number].tariff-changed { border-color: var(--yellow) !important; background: rgba(251,191,36,0.08) !important; }
 
   /* METER */
   .meter-block { background: var(--surface2); border: 1px solid var(--accent); border-radius: 10px; overflow: hidden; margin-bottom: 20px; }
@@ -79,7 +87,6 @@
   .source-header h3 { font-size: 11px; font-weight: 600; color: var(--label); text-transform: uppercase; letter-spacing: 0.5px; }
   .source-total { margin-left: auto; font-size: 15px; font-weight: 700; color: var(--text); }
 
-  /* TABLE */
   .bl-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
   .bl-table col.c-name  { width: auto; }
   .bl-table col.c-tar   { width: 100px; }
@@ -105,17 +112,30 @@
   .badge-v { background: rgba(167,139,250,0.15); color: #a78bfa; }
   .badge-i { background: rgba(91,140,255,0.12); color: #5b8cff; }
 
+  /* TOOLTIPS */
+  .tip { position: relative; cursor: help; }
+  .tip::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); background: #1e2235; color: #e2e8f0; font-size: 11px; font-weight: 400; line-height: 1.5; padding: 6px 10px; border-radius: 6px; border: 1px solid #2e3350; white-space: pre-line; width: max-content; max-width: 220px; z-index: 100; pointer-events: none; opacity: 0; transition: opacity 0.15s; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+  .tip::before { content: ''; position: absolute; bottom: calc(100% + 1px); left: 50%; transform: translateX(-50%); border: 5px solid transparent; border-top-color: #2e3350; z-index: 101; opacity: 0; transition: opacity 0.15s; pointer-events: none; }
+  .tip:hover::after, .tip:hover::before, .tip.active::after, .tip.active::before { opacity: 1; }
+  .tip-left::after { left: 0; transform: none; }
+  .tip-right::after { left: auto; right: 0; transform: none; }
+
   /* TOTALS */
   .totals-bar { margin-top: 20px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
   .total-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; position: relative; overflow: hidden; }
   .tc-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
-  .tc-value { font-size: 24px; font-weight: 700; color: var(--text); letter-spacing: -0.5px; }
-  .tc-delta { font-size: 12px; font-weight: 600; margin-top: 3px; }
+  .tc-value { font-size: 28px; font-weight: 700; color: var(--text); letter-spacing: -1px; line-height: 1.1; }
+  .tc-delta { font-size: 12px; font-weight: 600; margin-top: 4px; }
   .tc-delta.up   { color: var(--red); }
   .tc-delta.down { color: var(--green); }
   .tc-delta.flat { color: var(--muted); }
   .tc-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .tc-copy { position: absolute; top: 10px; right: 10px; background: transparent; border: none; color: var(--muted); cursor: pointer; font-size: 14px; padding: 2px 4px; border-radius: 4px; opacity: 0; transition: opacity 0.15s; }
+  .total-card:hover .tc-copy { opacity: 1; }
   .tc-spark { position: absolute; bottom: 0; right: 0; opacity: 0.2; }
+
+  /* ACTION BAR */
+  .action-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
 
   /* HISTORY */
   .hist-table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -137,52 +157,23 @@
   .dneg { color: var(--green); font-weight: 600; }
   .dzero { color: var(--muted); }
 
+  /* QR Modal */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; text-align: center; max-width: 320px; width: 90%; }
+  .modal h3 { font-size: 15px; font-weight: 600; margin-bottom: 16px; color: var(--text); }
+  .modal canvas { border-radius: 8px; }
+  .modal .modal-close { margin-top: 16px; width: 100%; }
+  .modal p { font-size: 12px; color: var(--muted); margin-top: 10px; word-break: break-all; }
+
   .notice { font-size: 12px; color: var(--muted); margin-top: 6px; }
   .section-title { font-size: 12px; font-weight: 700; color: var(--label); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
   .mt16 { margin-top: 16px; }
 
-  /* TOOLTIPS */
-  .tip { position: relative; cursor: help; }
-  .tip::after {
-    content: attr(data-tip);
-    position: absolute;
-    bottom: calc(100% + 6px);
-    left: 50%;
-    transform: translateX(-50%);
-    background: #1e2235;
-    color: #e2e8f0;
-    font-size: 11px;
-    font-weight: 400;
-    line-height: 1.5;
-    padding: 6px 10px;
-    border-radius: 6px;
-    border: 1px solid #2e3350;
-    white-space: pre-line;
-    width: max-content;
-    max-width: 220px;
-    z-index: 100;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.15s;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-  }
-  .tip::before {
-    content: '';
-    position: absolute;
-    bottom: calc(100% + 1px);
-    left: 50%;
-    transform: translateX(-50%);
-    border: 5px solid transparent;
-    border-top-color: #2e3350;
-    z-index: 101;
-    opacity: 0;
-    transition: opacity 0.15s;
-    pointer-events: none;
-  }
-  .tip:hover::after, .tip:hover::before,
-  .tip.active::after, .tip.active::before { opacity: 1; }
-  .tip-left::after { left: 0; transform: none; }
-  .tip-right::after { left: auto; right: 0; transform: none; }
+  /* Filter bar */
+  .filter-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+  .filter-bar label { font-size: 12px; color: var(--muted); }
+  .filter-bar select { background: var(--surface); border: 1px solid var(--border); color: var(--text); border-radius: 6px; padding: 5px 10px; font-size: 12px; outline: none; }
 
   @media (max-width: 640px) {
     header, .tabs, .page { padding-left: 16px; padding-right: 16px; }
@@ -190,11 +181,9 @@
     .meter-cell { border-bottom: 1px solid var(--border); }
     .totals-bar { grid-template-columns: 1fr; }
     .bl-table col.c-tar, .bl-table col.c-vol, .bl-table col.c-sum { width: 72px; }
+    .tc-value { font-size: 22px; }
   }
 </style>
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
 
@@ -212,24 +201,26 @@
 
 <!-- ВВОД -->
 <div id="page-entry" class="page active">
+
+  <!-- Month navigation -->
   <div class="month-bar">
-    <label>Месяц:</label>
-    <select id="monthSelect" onchange="loadMonth()">
-      <option value="2026-05">Май 2026</option>
-      <option value="2026-06">Июнь 2026</option>
-      <option value="2026-07">Июль 2026</option>
-      <option value="2026-08">Август 2026</option>
-      <option value="2026-09">Сентябрь 2026</option>
-      <option value="2026-10">Октябрь 2026</option>
-      <option value="2026-11">Ноябрь 2026</option>
-      <option value="2026-12">Декабрь 2026</option>
-      <option value="2027-01">Январь 2027</option>
-      <option value="2027-02">Февраль 2027</option>
-      <option value="2027-03">Март 2027</option>
-      <option value="2027-04">Апрель 2027</option>
-    </select>
-    <button class="btn btn-ghost" onclick="clearMonth()">Очистить</button>
+    <div class="month-nav">
+      <button class="nav-btn" onclick="prevMonth()">←</button>
+      <span class="month-label" id="month-label">Май 2026</span>
+      <button class="nav-btn" onclick="nextMonth()">→</button>
+    </div>
+    <button class="btn btn-danger" onclick="clearMonth()">Сбросить месяц</button>
     <span class="autosave" id="autosave-lbl"></span>
+  </div>
+
+  <!-- Action bar -->
+  <div class="action-bar">
+    <button class="btn btn-ghost" onclick="copyTariffsFromPrev()" title="Взять тарифы из прошлого месяца">↩ Тарифы из прошлого месяца</button>
+    <button class="btn btn-ghost" onclick="shareResult()" title="Поделиться итогом">📤 Поделиться</button>
+    <button class="btn btn-ghost" onclick="showQR()" title="QR-код ссылки">QR</button>
+    <button class="btn btn-ghost" onclick="exportJSON()" title="Резервная копия">💾 Экспорт</button>
+    <button class="btn btn-ghost" onclick="document.getElementById('import-file').click()" title="Импорт данных">📂 Импорт</button>
+    <input type="file" id="import-file" accept=".json" style="display:none" onchange="importJSON(event)">
   </div>
 
   <!-- СЧЁТЧИКИ -->
@@ -248,7 +239,7 @@
           <div class="mc-serial">ПУЛЬСАР · 19-3097262</div>
           <div class="mc-verify-row">
             <span class="mc-verify" id="verify-gvs">—</span>
-            <button class="btn btn-ghost btn-sm" id="cal-gvs" onclick="addToCalendar('gvs')" style="display:none">📅</button>
+            <button class="btn btn-ghost" style="padding:2px 7px;font-size:11px;display:none" id="cal-gvs" onclick="addToCalendar('gvs')">📅</button>
           </div>
         </div>
       </div>
@@ -261,7 +252,7 @@
           <div class="mc-serial">ПУЛЬСАР · 19-3097272</div>
           <div class="mc-verify-row">
             <span class="mc-verify" id="verify-hvs">—</span>
-            <button class="btn btn-ghost btn-sm" id="cal-hvs" onclick="addToCalendar('hvs')" style="display:none">📅</button>
+            <button class="btn btn-ghost" style="padding:2px 7px;font-size:11px;display:none" id="cal-hvs" onclick="addToCalendar('hvs')">📅</button>
           </div>
         </div>
       </div>
@@ -274,7 +265,7 @@
           <div class="mc-serial">Меркурий-200.02 · 41804817</div>
           <div class="mc-verify-row">
             <span class="mc-verify" id="verify-ee">—</span>
-            <button class="btn btn-ghost btn-sm" id="cal-ee" onclick="addToCalendar('ee')" style="display:none">📅</button>
+            <button class="btn btn-ghost" style="padding:2px 7px;font-size:11px;display:none" id="cal-ee" onclick="addToCalendar('ee')">📅</button>
           </div>
         </div>
       </div>
@@ -293,27 +284,19 @@
     <div class="source-block" style="border-left:3px solid #5b8cff">
       <div class="source-header">
         <span class="source-icon">🏦</span>
-        <h3 class="tip" data-tip="Московский областной
-единый информационно-
-расчётный центр">МосОблЕИРЦ</h3>
+        <h3 class="tip" data-tip="Московский областной единый информационно-расчётный центр">МосОблЕИРЦ</h3>
         <span class="source-total" id="total-mosob">—</span>
       </div>
       <table class="bl-table">
         <colgroup><col class="c-name"><col class="c-tar"><col class="c-vol"><col class="c-sum"><col class="c-badge"></colgroup>
         <thead><tr><th>Услуга</th><th>Тариф</th><th>Объём</th><th>Сумма</th><th></th></tr></thead>
         <tbody>
-          <tr><td class="td-name tip tip-left" data-tip="Капитальный ремонт
-Фиксированная сумма">Капремонт</td><td><input type="number" id="t-kaprem" step="0.01" oninput="onInput()"></td><td class="td-dash">фикс.</td><td class="td-sum" id="s-kaprem">—</td><td><span class="badge badge-i tip" data-tip="Платишь ты">Я</span></td></tr>
-          <tr><td class="td-name tip tip-left" data-tip="Горячее водоснабжение (вода)
-Тариф × объём из счётчика">ГВС (вода)</td><td><input type="number" id="t-gvs-voda" step="0.0001" oninput="onInput()"></td><td class="td-auto" id="disp-gvs-voda">—</td><td class="td-sum" id="s-gvs-voda">—</td><td><span class="badge badge-v tip" data-tip="Платит Вадимовна">В</span></td></tr>
-          <tr><td class="td-name tip tip-left" data-tip="Горячее водоснабжение (подогрев)
-Тариф × объём в Гкал">ГВС (подогрев)</td><td><input type="number" id="t-gvs-pod" step="0.000001" oninput="onInput()"></td><td><input type="number" id="v-gvs-pod" step="0.01" oninput="onInput()"></td><td class="td-sum" id="s-gvs-pod">—</td><td><span class="badge badge-v tip" data-tip="Платит Вадимовна">В</span></td></tr>
-          <tr><td class="td-name tip tip-left" data-tip="Отопление
-Тариф × объём в Гкал">Отопление</td><td><input type="number" id="t-otop" step="0.0001" oninput="onInput()"></td><td><input type="number" id="v-otop" step="0.01" oninput="onInput()"></td><td class="td-sum" id="s-otop">—</td><td><span class="badge badge-v tip" data-tip="Платит Вадимовна">В</span></td></tr>
-          <tr><td class="td-name tip tip-left" data-tip="Холодное водоснабжение
-Тариф × объём из счётчика">ХВС</td><td><input type="number" id="t-hvs" step="0.0001" oninput="onInput()"></td><td class="td-auto" id="disp-hvs">—</td><td class="td-sum" id="s-hvs">—</td><td><span class="badge badge-v tip" data-tip="Платит Вадимовна">В</span></td></tr>
-          <tr><td class="td-name tip tip-left" data-tip="Водоотведение (канализация)
-Тариф × (ГВС + ХВС)">Водоотведение</td><td><input type="number" id="t-vodo" step="0.0001" oninput="onInput()"></td><td class="td-auto" id="disp-vodo">—</td><td class="td-sum" id="s-vodo">—</td><td><span class="badge badge-v tip" data-tip="Платит Вадимовна">В</span></td></tr>
+          <tr><td class="td-name tip tip-left" data-tip="Капитальный ремонт&#10;Фиксированная сумма">Капремонт</td><td><input type="number" id="t-kaprem" step="0.01" oninput="onInput()"></td><td class="td-dash">фикс.</td><td class="td-sum" id="s-kaprem">—</td><td><span class="badge badge-i tip" data-tip="Платишь ты">Я</span></td></tr>
+          <tr><td class="td-name tip tip-left" data-tip="Горячее водоснабжение (вода)&#10;Тариф × объём из счётчика">ГВС (вода)</td><td><input type="number" id="t-gvs-voda" step="0.0001" oninput="onInput()"></td><td class="td-auto" id="disp-gvs-voda">—</td><td class="td-sum" id="s-gvs-voda">—</td><td><span class="badge badge-v tip" data-tip="Платит Вадимовна">В</span></td></tr>
+          <tr><td class="td-name tip tip-left" data-tip="Горячее водоснабжение (подогрев)&#10;Тариф × объём в Гкал">ГВС (подогрев)</td><td><input type="number" id="t-gvs-pod" step="0.000001" oninput="onInput()"></td><td><input type="number" id="v-gvs-pod" step="0.01" oninput="onInput()"></td><td class="td-sum" id="s-gvs-pod">—</td><td><span class="badge badge-v tip" data-tip="Платит Вадимовна">В</span></td></tr>
+          <tr><td class="td-name tip tip-left" data-tip="Отопление&#10;Тариф × объём в Гкал">Отопление</td><td><input type="number" id="t-otop" step="0.0001" oninput="onInput()"></td><td><input type="number" id="v-otop" step="0.01" oninput="onInput()"></td><td class="td-sum" id="s-otop">—</td><td><span class="badge badge-v tip" data-tip="Платит Вадимовна">В</span></td></tr>
+          <tr><td class="td-name tip tip-left" data-tip="Холодное водоснабжение&#10;Тариф × объём из счётчика">ХВС</td><td><input type="number" id="t-hvs" step="0.0001" oninput="onInput()"></td><td class="td-auto" id="disp-hvs">—</td><td class="td-sum" id="s-hvs">—</td><td><span class="badge badge-v tip" data-tip="Платит Вадимовна">В</span></td></tr>
+          <tr><td class="td-name tip tip-left" data-tip="Водоотведение (канализация)&#10;Тариф × (ГВС + ХВС)">Водоотведение</td><td><input type="number" id="t-vodo" step="0.0001" oninput="onInput()"></td><td class="td-auto" id="disp-vodo">—</td><td class="td-sum" id="s-vodo">—</td><td><span class="badge badge-v tip" data-tip="Платит Вадимовна">В</span></td></tr>
         </tbody>
       </table>
     </div>
@@ -329,33 +312,16 @@
         <colgroup><col class="c-name"><col class="c-tar"><col class="c-vol"><col class="c-sum"><col class="c-badge"></colgroup>
         <thead><tr><th>Услуга</th><th>Тариф</th><th>Объём</th><th>Итого</th><th></th></tr></thead>
         <tbody>
-          <tr><td class="td-name tip tip-left" data-tip="Содержание и обслуживание
-общего имущества дома
-Фиксированная сумма">Содержание помещения</td><td><input type="number" id="t-soderzh" step="0.01" oninput="onInput()"></td><td class="td-dash">фикс.</td><td class="td-sum" id="s-soderzh">—</td><td><span class="badge badge-i tip" data-tip="Платишь ты">Я</span></td></tr>
-          <tr><td class="td-name tip tip-left" data-tip="Обслуживание систем
-безопасности (домофон,
-видеонаблюдение и др.)
-Фиксированная сумма">Обслуж. систем безопасности</td><td><input type="number" id="t-bezop" step="0.01" oninput="onInput()"></td><td class="td-dash">фикс.</td><td class="td-sum" id="s-bezop">—</td><td><span class="badge badge-i tip" data-tip="Платишь ты">Я</span></td></tr>
-          <tr><td class="td-name tip tip-left" data-tip="Твёрдые коммунальные отходы
-(вывоз мусора)
-Фиксированная сумма">Обращение с ТКО</td><td><input type="number" id="t-tko" step="0.01" oninput="onInput()"></td><td class="td-dash">фикс.</td><td class="td-sum" id="s-tko">—</td><td><span class="badge badge-i tip" data-tip="Платишь ты">Я</span></td></tr>
-          <tr><td class="td-name tip tip-left" data-tip="Услуги связи для целей
-кабельного вещания
-Фиксированная сумма">ТВ (кабельное)</td><td><input type="number" id="t-tv" step="0.01" oninput="onInput()"></td><td class="td-dash">фикс.</td><td class="td-sum" id="s-tv">—</td><td><span class="badge badge-i tip" data-tip="Платишь ты">Я</span></td></tr>
-          <tr><td class="td-name dim tip tip-left" data-tip="Общедомовая электроэнергия
-(день, тариф Т1)
-Тариф × объём">ЭЭ на сод. общ. имущ. (день)</td><td><input type="number" id="t-oi-ee-d" step="0.01" oninput="onInput()"></td><td><input type="number" id="v-oi-ee-d" step="0.0001" oninput="onInput()"></td><td class="td-sum" id="s-oi-ee-d">—</td><td><span class="badge badge-i tip" data-tip="Платишь ты">Я</span></td></tr>
-          <tr><td class="td-name dim tip tip-left" data-tip="Общедомовая электроэнергия
-(ночь, тариф Т2)
-Тариф × объём">ЭЭ на сод. общ. имущ. (ночь)</td><td><input type="number" id="t-oi-ee-n" step="0.01" oninput="onInput()"></td><td><input type="number" id="v-oi-ee-n" step="0.0001" oninput="onInput()"></td><td class="td-sum" id="s-oi-ee-n">—</td><td><span class="badge badge-i tip" data-tip="Платишь ты">Я</span></td></tr>
-          <tr><td class="td-name dim tip tip-left" data-tip="Водоотведение на содержание
-общего имущества">ВО на сод. общ. имущ.</td><td><input type="number" id="t-oi-vo" step="0.01" oninput="onInput()"></td><td><input type="number" id="v-oi-vo" step="0.001" oninput="onInput()"></td><td class="td-sum" id="s-oi-vo">—</td><td><span class="badge badge-i tip" data-tip="Платишь ты">Я</span></td></tr>
-          <tr><td class="td-name dim tip tip-left" data-tip="Горячая вода на содержание
-общего имущества">ГВС (вода) на сод. общ. имущ.</td><td><input type="number" id="t-oi-gvs" step="0.01" oninput="onInput()"></td><td><input type="number" id="v-oi-gvs" step="0.001" oninput="onInput()"></td><td class="td-sum" id="s-oi-gvs">—</td><td><span class="badge badge-i tip" data-tip="Платишь ты">Я</span></td></tr>
-          <tr><td class="td-name dim tip tip-left" data-tip="Подогрев воды на содержание
-общего имущества">ГВС (подогрев) на сод. общ. имущ.</td><td><input type="number" id="t-oi-gvsp" step="0.01" oninput="onInput()"></td><td><input type="number" id="v-oi-gvsp" step="0.001" oninput="onInput()"></td><td class="td-sum" id="s-oi-gvsp">—</td><td><span class="badge badge-i tip" data-tip="Платишь ты">Я</span></td></tr>
-          <tr><td class="td-name dim tip tip-left" data-tip="Холодная вода на содержание
-общего имущества">ХВС на сод. общ. имущ.</td><td><input type="number" id="t-oi-hvs" step="0.01" oninput="onInput()"></td><td><input type="number" id="v-oi-hvs" step="0.001" oninput="onInput()"></td><td class="td-sum" id="s-oi-hvs">—</td><td><span class="badge badge-i tip" data-tip="Платишь ты">Я</span></td></tr>
+          <tr><td class="td-name tip tip-left" data-tip="Содержание и обслуживание&#10;общего имущества дома&#10;Фиксированная сумма">Содержание помещения</td><td><input type="number" id="t-soderzh" step="0.01" oninput="onInput()"></td><td class="td-dash">фикс.</td><td class="td-sum" id="s-soderzh">—</td><td><span class="badge badge-i tip" data-tip="Платишь ты">Я</span></td></tr>
+          <tr><td class="td-name tip tip-left" data-tip="Обслуживание систем&#10;безопасности&#10;Фиксированная сумма">Обслуж. систем безопасности</td><td><input type="number" id="t-bezop" step="0.01" oninput="onInput()"></td><td class="td-dash">фикс.</td><td class="td-sum" id="s-bezop">—</td><td><span class="badge badge-i tip" data-tip="Платишь ты">Я</span></td></tr>
+          <tr><td class="td-name tip tip-left" data-tip="Твёрдые коммунальные отходы&#10;(вывоз мусора)&#10;Фиксированная сумма">Обращение с ТКО</td><td><input type="number" id="t-tko" step="0.01" oninput="onInput()"></td><td class="td-dash">фикс.</td><td class="td-sum" id="s-tko">—</td><td><span class="badge badge-i tip" data-tip="Платишь ты">Я</span></td></tr>
+          <tr><td class="td-name tip tip-left" data-tip="Услуги связи для целей&#10;кабельного вещания&#10;Фиксированная сумма">ТВ (кабельное)</td><td><input type="number" id="t-tv" step="0.01" oninput="onInput()"></td><td class="td-dash">фикс.</td><td class="td-sum" id="s-tv">—</td><td><span class="badge badge-i tip" data-tip="Платишь ты">Я</span></td></tr>
+          <tr><td class="td-name dim tip tip-left" data-tip="Общедомовая электроэнергия&#10;(день, тариф Т1)&#10;Тариф × объём">ЭЭ на сод. общ. имущ. (день)</td><td><input type="number" id="t-oi-ee-d" step="0.01" oninput="onInput()"></td><td><input type="number" id="v-oi-ee-d" step="0.0001" oninput="onInput()"></td><td class="td-sum" id="s-oi-ee-d">—</td><td><span class="badge badge-i tip" data-tip="Платишь ты">Я</span></td></tr>
+          <tr><td class="td-name dim tip tip-left" data-tip="Общедомовая электроэнергия&#10;(ночь, тариф Т2)&#10;Тариф × объём">ЭЭ на сод. общ. имущ. (ночь)</td><td><input type="number" id="t-oi-ee-n" step="0.01" oninput="onInput()"></td><td><input type="number" id="v-oi-ee-n" step="0.0001" oninput="onInput()"></td><td class="td-sum" id="s-oi-ee-n">—</td><td><span class="badge badge-i tip" data-tip="Платишь ты">Я</span></td></tr>
+          <tr><td class="td-name dim tip tip-left" data-tip="Водоотведение на содержание&#10;общего имущества">ВО на сод. общ. имущ.</td><td><input type="number" id="t-oi-vo" step="0.01" oninput="onInput()"></td><td><input type="number" id="v-oi-vo" step="0.001" oninput="onInput()"></td><td class="td-sum" id="s-oi-vo">—</td><td><span class="badge badge-i tip" data-tip="Платишь ты">Я</span></td></tr>
+          <tr><td class="td-name dim tip tip-left" data-tip="Горячая вода на содержание&#10;общего имущества">ГВС (вода) на сод. общ. имущ.</td><td><input type="number" id="t-oi-gvs" step="0.01" oninput="onInput()"></td><td><input type="number" id="v-oi-gvs" step="0.001" oninput="onInput()"></td><td class="td-sum" id="s-oi-gvs">—</td><td><span class="badge badge-i tip" data-tip="Платишь ты">Я</span></td></tr>
+          <tr><td class="td-name dim tip tip-left" data-tip="Подогрев воды на содержание&#10;общего имущества">ГВС (подогрев) на сод. общ. имущ.</td><td><input type="number" id="t-oi-gvsp" step="0.01" oninput="onInput()"></td><td><input type="number" id="v-oi-gvsp" step="0.001" oninput="onInput()"></td><td class="td-sum" id="s-oi-gvsp">—</td><td><span class="badge badge-i tip" data-tip="Платишь ты">Я</span></td></tr>
+          <tr><td class="td-name dim tip tip-left" data-tip="Холодная вода на содержание&#10;общего имущества">ХВС на сод. общ. имущ.</td><td><input type="number" id="t-oi-hvs" step="0.01" oninput="onInput()"></td><td><input type="number" id="v-oi-hvs" step="0.001" oninput="onInput()"></td><td class="td-sum" id="s-oi-hvs">—</td><td><span class="badge badge-i tip" data-tip="Платишь ты">Я</span></td></tr>
         </tbody>
       </table>
     </div>
@@ -364,22 +330,15 @@
     <div class="source-block" style="border-left:3px solid #a78bfa">
       <div class="source-header">
         <span class="source-icon">⚡</span>
-        <h3 class="tip" data-tip="Поставщик электроэнергии
-в Московском регионе">Мосэнергосбыт</h3>
+        <h3 class="tip" data-tip="Поставщик электроэнергии&#10;в Московском регионе">Мосэнергосбыт</h3>
         <span class="source-total" id="total-mosen">—</span>
       </div>
       <table class="bl-table">
         <colgroup><col class="c-name"><col class="c-tar"><col class="c-vol"><col class="c-sum"><col class="c-badge"></colgroup>
         <thead><tr><th>Тариф</th><th>₽/кВт·ч</th><th>Объём</th><th>Сумма</th><th></th></tr></thead>
         <tbody>
-          <tr><td class="td-name tip tip-left" data-tip="Электроэнергия тариф Т1
-(дневной, пиковый)
-c 7:00 до 23:00
-Тариф × объём из счётчика">Т1 (пик)</td><td><input type="number" id="t-t1" step="0.01" oninput="onInput()"></td><td class="td-auto" id="disp-t1">—</td><td class="td-sum" id="s-t1">—</td><td><span class="badge badge-v tip" data-tip="Платит Вадимовна">В</span></td></tr>
-          <tr><td class="td-name tip tip-left" data-tip="Электроэнергия тариф Т2
-(ночной)
-с 23:00 до 7:00
-Тариф × объём из счётчика">Т2 (ночь)</td><td><input type="number" id="t-t2" step="0.01" oninput="onInput()"></td><td class="td-auto" id="disp-t2">—</td><td class="td-sum" id="s-t2">—</td><td><span class="badge badge-v tip" data-tip="Платит Вадимовна">В</span></td></tr>
+          <tr><td class="td-name tip tip-left" data-tip="Электроэнергия тариф Т1&#10;(дневной, пиковый)&#10;c 7:00 до 23:00">Т1 (пик)</td><td><input type="number" id="t-t1" step="0.01" oninput="onInput()"></td><td class="td-auto" id="disp-t1">—</td><td class="td-sum" id="s-t1">—</td><td><span class="badge badge-v tip" data-tip="Платит Вадимовна">В</span></td></tr>
+          <tr><td class="td-name tip tip-left" data-tip="Электроэнергия тариф Т2&#10;(ночной)&#10;с 23:00 до 7:00">Т2 (ночь)</td><td><input type="number" id="t-t2" step="0.01" oninput="onInput()"></td><td class="td-auto" id="disp-t2">—</td><td class="td-sum" id="s-t2">—</td><td><span class="badge badge-v tip" data-tip="Платит Вадимовна">В</span></td></tr>
         </tbody>
       </table>
     </div>
@@ -395,8 +354,7 @@ c 7:00 до 23:00
         <colgroup><col class="c-name"><col class="c-tar"><col class="c-vol"><col class="c-sum"><col class="c-badge"></colgroup>
         <thead><tr><th>Услуга</th><th>Сумма</th><th></th><th></th><th></th></tr></thead>
         <tbody>
-          <tr><td class="td-name tip tip-left" data-tip="Ежемесячная фиксированная
-плата за интернет">Абонентская плата</td><td><input type="number" id="t-inet" step="0.01" oninput="onInput()"></td><td class="td-dash">фикс.</td><td class="td-sum" id="s-inet">—</td><td><span class="badge badge-v tip" data-tip="Платит Вадимовна">В</span></td></tr>
+          <tr><td class="td-name tip tip-left" data-tip="Ежемесячная фиксированная&#10;плата за интернет">Абонентская плата</td><td><input type="number" id="t-inet" step="0.01" oninput="onInput()"></td><td class="td-dash">фикс.</td><td class="td-sum" id="s-inet">—</td><td><span class="badge badge-v tip" data-tip="Платит Вадимовна">В</span></td></tr>
         </tbody>
       </table>
     </div>
@@ -405,25 +363,24 @@ c 7:00 до 23:00
   <!-- ИТОГО -->
   <div class="totals-bar">
     <div class="total-card">
-      <div class="tc-label tip" data-tip="МосОблЕИРЦ + Пик-Комфорт
-+ Мосэнергосбыт + Интернет">💰 Всего</div>
+      <button class="tc-copy tip" data-tip="Копировать итог" onclick="copyTotal('grand')">📋</button>
+      <div class="tc-label tip" data-tip="МосОблЕИРЦ + Пик-Комфорт&#10;+ Мосэнергосбыт + Интернет">💰 Всего</div>
       <div class="tc-value" id="grand-total">—</div>
       <div class="tc-delta flat" id="delta-grand">—</div>
       <div class="tc-sub">за месяц</div>
       <canvas class="tc-spark" id="spark-grand" width="80" height="36"></canvas>
     </div>
     <div class="total-card">
-      <div class="tc-label tip" data-tip="ГВС вода + подогрев
-ХВС + Водоотведение
-Отопление + ЭЭ + Интернет">👤 Вадимовна</div>
+      <button class="tc-copy tip" data-tip="Копировать итог" onclick="copyTotal('v')">📋</button>
+      <div class="tc-label tip" data-tip="ГВС вода + подогрев&#10;ХВС + Водоотведение&#10;Отопление + ЭЭ + Интернет">👤 Вадимовна</div>
       <div class="tc-value" id="total-v">—</div>
       <div class="tc-delta flat" id="delta-v">—</div>
       <div class="tc-sub">ГВС, ХВС, отопление, ВО, ЭЭ, интернет</div>
       <canvas class="tc-spark" id="spark-v" width="80" height="36"></canvas>
     </div>
     <div class="total-card">
-      <div class="tc-label tip" data-tip="Капремонт + всё из
-Пик-Комфорт">👤 Я</div>
+      <button class="tc-copy tip" data-tip="Копировать итог" onclick="copyTotal('me')">📋</button>
+      <div class="tc-label tip" data-tip="Капремонт + всё из Пик-Комфорт">👤 Я</div>
       <div class="tc-value" id="total-me">—</div>
       <div class="tc-delta flat" id="delta-me">—</div>
       <div class="tc-sub">Капремонт, Пик-Комфорт и др.</div>
@@ -443,6 +400,25 @@ c 7:00 до 23:00
 <!-- ДИНАМИКА -->
 <div id="page-dynamics" class="page">
   <div class="section-title">Динамика тарифов</div>
+  <div class="filter-bar">
+    <label>Услуга:</label>
+    <select id="dyn-filter" onchange="renderDynamics()">
+      <option value="">Все</option>
+      <option value="Капремонт">Капремонт</option>
+      <option value="ГВС (вода)">ГВС (вода)</option>
+      <option value="ГВС (подогрев)">ГВС (подогрев)</option>
+      <option value="Отопление">Отопление</option>
+      <option value="ХВС">ХВС</option>
+      <option value="Водоотведение">Водоотведение</option>
+      <option value="Содержание">Содержание</option>
+      <option value="Безопасность">Безопасность</option>
+      <option value="ТКО">ТКО</option>
+      <option value="ТВ">ТВ</option>
+      <option value="ЭЭ Т1">ЭЭ Т1</option>
+      <option value="ЭЭ Т2">ЭЭ Т2</option>
+      <option value="Интернет">Интернет</option>
+    </select>
+  </div>
   <p class="notice">База — май 2026. Изменение тарифов по месяцам.</p>
   <table class="dyn-table mt16">
     <thead><tr><th>Месяц</th><th>Услуга</th><th>Тариф</th><th>Δ к базе (₽)</th><th>Δ к базе (%)</th></tr></thead>
@@ -450,6 +426,19 @@ c 7:00 до 23:00
   </table>
 </div>
 
+<!-- QR Modal -->
+<div class="modal-overlay" id="qr-modal">
+  <div class="modal">
+    <h3>QR-код трекера</h3>
+    <canvas id="qr-canvas"></canvas>
+    <p id="qr-url"></p>
+    <button class="btn modal-close" onclick="document.getElementById('qr-modal').classList.remove('open')">Закрыть</button>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <script>
 const MONTHS = {
   "2026-05":"Май 2026","2026-06":"Июнь 2026","2026-07":"Июль 2026",
@@ -471,7 +460,12 @@ const TARIFF_FIELDS = [
 const VERIFY_DATES = { gvs:new Date('2026-07-13'), hvs:new Date('2027-03-13'), ee:new Date('2036-01-01') };
 const VERIFY_NAMES = { gvs:'ГВС', hvs:'ХВС', ee:'Электричество' };
 
-// Firebase init
+let allData = {};
+let currentMonthIdx = 0;
+let prevMonthTariffs = {};
+let autoTimer = null;
+
+// Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyCRM9lmIqknSQ-BrYOtk6MVFlMQ9XuOcVo",
   authDomain: "hata442-3d94c.firebaseapp.com",
@@ -484,20 +478,15 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const DOC_REF = db.collection('kommunalka').doc('data');
 
-let allData = {};
-let firebaseReady = false;
-
-// Load all data from Firebase on start
 async function loadFromFirebase() {
   try {
     const doc = await DOC_REF.get();
     if (doc.exists) allData = doc.data() || {};
     else allData = {};
   } catch(e) {
-    console.warn('Firebase load error, using localStorage:', e);
     allData = JSON.parse(localStorage.getItem('komunalka_v5') || '{}');
   }
-  firebaseReady = true;
+  if(!allData['2026-05']){ allData['2026-05']=MAY26; saveToFirebase(); }
   loadMonth();
   updateVerifyBadges();
 }
@@ -505,53 +494,49 @@ async function loadFromFirebase() {
 async function saveToFirebase() {
   try {
     await DOC_REF.set(allData);
-    localStorage.setItem('komunalka_v5', JSON.stringify(allData)); // backup
+    localStorage.setItem('komunalka_v5', JSON.stringify(allData));
   } catch(e) {
-    console.warn('Firebase save error, saved to localStorage only:', e);
     localStorage.setItem('komunalka_v5', JSON.stringify(allData));
   }
 }
-let autoTimer = null;
 
-// ---- UTILS ----
-function gv(id) { const e=document.getElementById(id); return e ? (parseFloat(e.value)||0) : 0; }
-function vol(m) { return Math.max(0, gv('cur-'+m) - gv('prev-'+m)); }
+// Utils
+function gv(id) { const e=document.getElementById(id); return e?(parseFloat(e.value)||0):0; }
+function vol(m) { return Math.max(0, gv('cur-'+m)-gv('prev-'+m)); }
 function fmt(n) { return n.toLocaleString('ru-RU',{minimumFractionDigits:2,maximumFractionDigits:2})+' ₽'; }
-function fv(n,u) { return n>0 ? n.toLocaleString('ru-RU',{minimumFractionDigits:3,maximumFractionDigits:3})+' '+u : '—'; }
+function fv(n,u) { return n>0?n.toLocaleString('ru-RU',{minimumFractionDigits:3,maximumFractionDigits:3})+' '+u:'—'; }
 function set(id,v) { const e=document.getElementById(id); if(e) e.textContent=v; }
 function getPrev(m) { const i=MONTH_KEYS.indexOf(m); return i>0?MONTH_KEYS[i-1]:null; }
+function currentMonth() { return MONTH_KEYS[currentMonthIdx]; }
 
-// ---- COMPUTE ALL from inputs ----
+// Month navigation
+function prevMonth() {
+  if(currentMonthIdx > 0) { currentMonthIdx--; loadMonth(); }
+}
+function nextMonth() {
+  if(currentMonthIdx < MONTH_KEYS.length-1) { currentMonthIdx++; loadMonth(); }
+}
+
+// Compute
 function compute() {
   const vGvs=vol('gvs'), vHvs=vol('hvs'), vVodo=vGvs+vHvs;
   const v = {
-    kaprem:    gv('t-kaprem'),
-    'gvs-voda':gv('t-gvs-voda')*vGvs,
-    'gvs-pod': gv('t-gvs-pod')*gv('v-gvs-pod'),
-    otop:      gv('t-otop')*gv('v-otop'),
-    hvs:       gv('t-hvs')*vHvs,
-    vodo:      gv('t-vodo')*vVodo,
-    soderzh:   gv('t-soderzh'),
-    bezop:     gv('t-bezop'),
-    tko:       gv('t-tko'),
-    tv:        gv('t-tv'),
-    'oi-ee-d':  gv('t-oi-ee-d')*gv('v-oi-ee-d'),
-    'oi-ee-n':  gv('t-oi-ee-n')*gv('v-oi-ee-n'),
-    'oi-vo':   gv('t-oi-vo')*gv('v-oi-vo'),
-    'oi-gvs':  gv('t-oi-gvs')*gv('v-oi-gvs'),
-    'oi-gvsp': gv('t-oi-gvsp')*gv('v-oi-gvsp'),
-    'oi-hvs':  gv('t-oi-hvs')*gv('v-oi-hvs'),
-    t1:        gv('t-t1')*vol('t1'),
-    t2:        gv('t-t2')*vol('t2'),
-    inet:      gv('t-inet'),
+    kaprem:gv('t-kaprem'), 'gvs-voda':gv('t-gvs-voda')*vGvs,
+    'gvs-pod':gv('t-gvs-pod')*gv('v-gvs-pod'), otop:gv('t-otop')*gv('v-otop'),
+    hvs:gv('t-hvs')*vHvs, vodo:gv('t-vodo')*vVodo,
+    soderzh:gv('t-soderzh'), bezop:gv('t-bezop'), tko:gv('t-tko'), tv:gv('t-tv'),
+    'oi-ee-d':gv('t-oi-ee-d')*gv('v-oi-ee-d'), 'oi-ee-n':gv('t-oi-ee-n')*gv('v-oi-ee-n'),
+    'oi-vo':gv('t-oi-vo')*gv('v-oi-vo'), 'oi-gvs':gv('t-oi-gvs')*gv('v-oi-gvs'),
+    'oi-gvsp':gv('t-oi-gvsp')*gv('v-oi-gvsp'), 'oi-hvs':gv('t-oi-hvs')*gv('v-oi-hvs'),
+    t1:gv('t-t1')*vol('t1'), t2:gv('t-t2')*vol('t2'), inet:gv('t-inet'),
     volGvs:vGvs, volHvs:vHvs, volVodo:vVodo,
   };
   v.mosob = v.kaprem+v['gvs-voda']+v['gvs-pod']+v.otop+v.hvs+v.vodo;
-  v.pik   = v.soderzh+v.bezop+v.tko+v.tv+v['oi-ee-d']+v['oi-ee-n']+v['oi-vo']+v['oi-gvs']+v['oi-gvsp']+v['oi-hvs'];
-  v.ee    = v.t1+v.t2;
+  v.pik = v.soderzh+v.bezop+v.tko+v.tv+v['oi-ee-d']+v['oi-ee-n']+v['oi-vo']+v['oi-gvs']+v['oi-gvsp']+v['oi-hvs'];
+  v.ee = v.t1+v.t2;
   v.grand = v.mosob+v.pik+v.ee+v.inet;
   v.vadim = v['gvs-voda']+v['gvs-pod']+v.otop+v.hvs+v.vodo+v.ee+v.inet;
-  v.me    = v.grand-v.vadim;
+  v.me = v.grand-v.vadim;
   return v;
 }
 
@@ -559,19 +544,16 @@ function computeFromData(d) {
   function g(k){ return d[k]||0; }
   const vGvs=Math.max(0,(d['cur-gvs']||0)-(d['prev-gvs']||0));
   const vHvs=Math.max(0,(d['cur-hvs']||0)-(d['prev-hvs']||0));
-  const vT1 =Math.max(0,(d['cur-t1'] ||0)-(d['prev-t1'] ||0));
-  const vT2 =Math.max(0,(d['cur-t2'] ||0)-(d['prev-t2'] ||0));
+  const vT1=Math.max(0,(d['cur-t1']||0)-(d['prev-t1']||0));
+  const vT2=Math.max(0,(d['cur-t2']||0)-(d['prev-t2']||0));
   const v = {
     kaprem:g('t-kaprem'), 'gvs-voda':g('t-gvs-voda')*vGvs,
     'gvs-pod':g('t-gvs-pod')*g('v-gvs-pod'), otop:g('t-otop')*g('v-otop'),
     hvs:g('t-hvs')*vHvs, vodo:g('t-vodo')*(vGvs+vHvs),
     soderzh:g('t-soderzh'), bezop:g('t-bezop'), tko:g('t-tko'), tv:g('t-tv'),
-    'oi-ee-d':g('t-oi-ee-d')*g('v-oi-ee-d'),
-    'oi-ee-n':g('t-oi-ee-n')*g('v-oi-ee-n'),
-    'oi-vo':  g('t-oi-vo')*g('v-oi-vo'),
-    'oi-gvs': g('t-oi-gvs')*g('v-oi-gvs'),
-    'oi-gvsp':g('t-oi-gvsp')*g('v-oi-gvsp'),
-    'oi-hvs': g('t-oi-hvs')*g('v-oi-hvs'),
+    'oi-ee-d':g('t-oi-ee-d')*g('v-oi-ee-d'), 'oi-ee-n':g('t-oi-ee-n')*g('v-oi-ee-n'),
+    'oi-vo':g('t-oi-vo')*g('v-oi-vo'), 'oi-gvs':g('t-oi-gvs')*g('v-oi-gvs'),
+    'oi-gvsp':g('t-oi-gvsp')*g('v-oi-gvsp'), 'oi-hvs':g('t-oi-hvs')*g('v-oi-hvs'),
     t1:g('t-t1')*vT1, t2:g('t-t2')*vT2, inet:g('t-inet'),
   };
   v.mosob=v.kaprem+v['gvs-voda']+v['gvs-pod']+v.otop+v.hvs+v.vodo;
@@ -582,185 +564,232 @@ function computeFromData(d) {
   return v;
 }
 
-// ---- RENDER ----
+// Tariff change highlight
+function highlightChangedTariffs() {
+  const month = currentMonth();
+  const prev = getPrev(month);
+  if(!prev || !allData[prev]) { TARIFF_IDS.forEach(id=>{ const e=document.getElementById(id); if(e) e.classList.remove('tariff-changed'); }); return; }
+  const pd = allData[prev];
+  TARIFF_IDS.forEach(id => {
+    const e = document.getElementById(id);
+    if(!e) return;
+    const cur = parseFloat(e.value)||0;
+    const p = pd[id]||0;
+    if(cur > 0 && p > 0 && Math.abs(cur-p) > 0.001) e.classList.add('tariff-changed');
+    else e.classList.remove('tariff-changed');
+  });
+}
+
+// Render
 function render() {
   const c = compute();
-
-  // volumes
-  set('vol-gvs', fv(c.volGvs,'м³'));
-  set('vol-hvs', fv(c.volHvs,'м³'));
-  set('vol-t1', vol('t1')>0 ? vol('t1')+' кВт·ч' : '—');
-  set('vol-t2', vol('t2')>0 ? vol('t2')+' кВт·ч' : '—');
-  set('disp-gvs-voda', fv(c.volGvs,'м³'));
-  set('disp-hvs',      fv(c.volHvs,'м³'));
-  set('disp-vodo',     fv(c.volVodo,'м³'));
-  set('disp-t1', vol('t1')>0 ? vol('t1')+' кВт·ч' : '—');
-  set('disp-t2', vol('t2')>0 ? vol('t2')+' кВт·ч' : '—');
-
-  // row sums
-  const rows = ['kaprem','gvs-voda','gvs-pod','otop','hvs','vodo',
-    'soderzh','bezop','tko','tv','oi-ee-d','oi-ee-n','oi-vo','oi-gvs','oi-gvsp','oi-hvs','t1','t2','inet'];
-  rows.forEach(id => {
-    const e = document.getElementById('s-'+id);
-    if(e) e.textContent = c[id]>0 ? fmt(c[id]) : '—';
-  });
-
-  // block totals
-  set('total-mosob', c.mosob>0 ? fmt(c.mosob) : '—');
-  set('total-pik',   c.pik>0   ? fmt(c.pik)   : '—');
-  set('total-mosen', c.ee>0    ? fmt(c.ee)     : '—');
-  set('total-inet',  c.inet>0  ? fmt(c.inet)   : '—');
-
-  // grand totals
-  set('grand-total', c.grand>0 ? fmt(c.grand) : '—');
-  set('total-v',     c.vadim>0 ? fmt(c.vadim) : '—');
-  set('total-me',    c.me>0    ? fmt(c.me)    : '—');
-
-  // delta vs prev month
-  const month = document.getElementById('monthSelect').value;
-  const prev = getPrev(month);
-  if(prev && allData[prev]) {
-    const p = computeFromData(allData[prev]);
-    setDelta('delta-grand', c.grand, p.grand);
-    setDelta('delta-v',     c.vadim, p.vadim);
-    setDelta('delta-me',    c.me,    p.me);
+  set('vol-gvs', fv(c.volGvs,'м³')); set('vol-hvs', fv(c.volHvs,'м³'));
+  set('vol-t1', vol('t1')>0?vol('t1')+' кВт·ч':'—'); set('vol-t2', vol('t2')>0?vol('t2')+' кВт·ч':'—');
+  set('disp-gvs-voda', fv(c.volGvs,'м³')); set('disp-hvs', fv(c.volHvs,'м³'));
+  set('disp-vodo', fv(c.volVodo,'м³'));
+  set('disp-t1', vol('t1')>0?vol('t1')+' кВт·ч':'—'); set('disp-t2', vol('t2')>0?vol('t2')+' кВт·ч':'—');
+  const rows=['kaprem','gvs-voda','gvs-pod','otop','hvs','vodo','soderzh','bezop','tko','tv','oi-ee-d','oi-ee-n','oi-vo','oi-gvs','oi-gvsp','oi-hvs','t1','t2','inet'];
+  rows.forEach(id=>{ const e=document.getElementById('s-'+id); if(e) e.textContent=c[id]>0?fmt(c[id]):'—'; });
+  set('total-mosob', c.mosob>0?fmt(c.mosob):'—');
+  set('total-pik', c.pik>0?fmt(c.pik):'—');
+  set('total-mosen', c.ee>0?fmt(c.ee):'—');
+  set('total-inet', c.inet>0?fmt(c.inet):'—');
+  set('grand-total', c.grand>0?fmt(c.grand):'—');
+  set('total-v', c.vadim>0?fmt(c.vadim):'—');
+  set('total-me', c.me>0?fmt(c.me):'—');
+  const month=currentMonth(), prev=getPrev(month);
+  if(prev&&allData[prev]){
+    const p=computeFromData(allData[prev]);
+    setDelta('delta-grand',c.grand,p.grand); setDelta('delta-v',c.vadim,p.vadim); setDelta('delta-me',c.me,p.me);
   } else {
-    ['delta-grand','delta-v','delta-me'].forEach(id => {
-      const e=document.getElementById(id);
-      if(e){e.textContent='—';e.className='tc-delta flat';}
-    });
+    ['delta-grand','delta-v','delta-me'].forEach(id=>{ const e=document.getElementById(id); if(e){e.textContent='—';e.className='tc-delta flat';}});
   }
+  highlightChangedTariffs();
   drawSparklines();
 }
 
-function setDelta(id, cur, prev) {
-  const e = document.getElementById(id);
-  if(!e) return;
-  if(!prev || !cur) { e.textContent='—'; e.className='tc-delta flat'; return; }
-  const diff = cur-prev, pct = (diff/prev*100).toFixed(1);
-  const sign = diff>0?'+':'';
-  e.textContent = sign+fmt(diff)+' ('+sign+pct+'%)';
-  e.className = 'tc-delta '+(diff>0?'up':diff<0?'down':'flat');
+function setDelta(id,cur,prev) {
+  const e=document.getElementById(id); if(!e) return;
+  if(!prev||!cur){e.textContent='—';e.className='tc-delta flat';return;}
+  const diff=cur-prev, pct=(diff/prev*100).toFixed(1), sign=diff>0?'+':'';
+  e.textContent=sign+fmt(diff)+' ('+sign+pct+'%)';
+  e.className='tc-delta '+(diff>0?'up':diff<0?'down':'flat');
 }
 
-// ---- SPARKLINES ----
 function drawSparklines() {
-  const months = MONTH_KEYS.filter(m=>allData[m]);
-  if(months.length < 2) return;
-  const series = {grand:[], v:[], me:[]};
-  months.forEach(m => {
-    const c = computeFromData(allData[m]);
-    series.grand.push(c.grand); series.v.push(c.vadim); series.me.push(c.me);
-  });
-  ['grand','v','me'].forEach(key => {
-    const canvas = document.getElementById('spark-'+key);
-    if(!canvas) return;
-    const ctx = canvas.getContext('2d'), data = series[key];
-    if(data.length<2) return;
-    const W=canvas.width, H=canvas.height;
-    ctx.clearRect(0,0,W,H);
-    const min=Math.min(...data), max=Math.max(...data), range=max-min||1;
-    const pts = data.map((v,i)=>({x:i/(data.length-1)*(W-4)+2, y:H-2-(v-min)/range*(H-4)}));
-    ctx.beginPath(); ctx.moveTo(pts[0].x,pts[0].y);
-    pts.slice(1).forEach(p=>ctx.lineTo(p.x,p.y));
+  const months=MONTH_KEYS.filter(m=>allData[m]);
+  if(months.length<2) return;
+  const series={grand:[],v:[],me:[]};
+  months.forEach(m=>{ const c=computeFromData(allData[m]); series.grand.push(c.grand); series.v.push(c.vadim); series.me.push(c.me); });
+  ['grand','v','me'].forEach(key=>{
+    const canvas=document.getElementById('spark-'+key); if(!canvas) return;
+    const ctx=canvas.getContext('2d'), data=series[key]; if(data.length<2) return;
+    const W=canvas.width,H=canvas.height; ctx.clearRect(0,0,W,H);
+    const min=Math.min(...data),max=Math.max(...data),range=max-min||1;
+    const pts=data.map((v,i)=>({x:i/(data.length-1)*(W-4)+2,y:H-2-(v-min)/range*(H-4)}));
+    ctx.beginPath(); ctx.moveTo(pts[0].x,pts[0].y); pts.slice(1).forEach(p=>ctx.lineTo(p.x,p.y));
     ctx.strokeStyle='#5b8cff'; ctx.lineWidth=1.5; ctx.stroke();
-    const last=pts[pts.length-1];
-    ctx.beginPath(); ctx.arc(last.x,last.y,2.5,0,Math.PI*2);
-    ctx.fillStyle='#5b8cff'; ctx.fill();
+    const last=pts[pts.length-1]; ctx.beginPath(); ctx.arc(last.x,last.y,2.5,0,Math.PI*2); ctx.fillStyle='#5b8cff'; ctx.fill();
   });
 }
 
-// ---- INPUT HANDLER ----
+// Input handler
 function onInput() {
   render();
   clearTimeout(autoTimer);
-  autoTimer = setTimeout(autoSave, 1500);
+  autoTimer=setTimeout(autoSave, 1500);
 }
 
 async function autoSave() {
-  const month = document.getElementById('monthSelect').value;
-  const data = {};
-  document.querySelectorAll('input[type=number]').forEach(el => { if(el.value!=='') data[el.id]=parseFloat(el.value); });
-  allData[month] = data;
+  const month=currentMonth();
+  const data={};
+  document.querySelectorAll('input[type=number]').forEach(el=>{ if(el.value!=='') data[el.id]=parseFloat(el.value); });
+  allData[month]=data;
   await saveToFirebase();
-  const lbl = document.getElementById('autosave-lbl');
-  if(lbl) { lbl.textContent='Сохранено ✓'; lbl.className='autosave saved'; setTimeout(()=>{lbl.textContent='';lbl.className='autosave';},2500); }
+  const lbl=document.getElementById('autosave-lbl');
+  const now=new Date();
+  const timeStr=now.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+  if(lbl){lbl.textContent='Сохранено в '+timeStr+' ✓';lbl.className='autosave saved';setTimeout(()=>{lbl.textContent='';lbl.className='autosave';},3000);}
+  // Vibrate on save
+  if(navigator.vibrate) navigator.vibrate(50);
 }
 
-// ---- LOAD / CLEAR ----
+// Load / Clear
 function loadMonth() {
-  const month = document.getElementById('monthSelect').value;
-  const data = allData[month] || {};
-  document.querySelectorAll('input[type=number]').forEach(el => { el.value = data[el.id]!==undefined ? data[el.id] : ''; });
-
+  const month=currentMonth();
+  set('month-label', MONTHS[month]);
+  const data=allData[month]||{};
+  document.querySelectorAll('input[type=number]').forEach(el=>{ el.value=data[el.id]!==undefined?data[el.id]:''; });
   if(!allData[month]) {
-    const prev = getPrev(month);
-    if(prev && allData[prev]) {
-      ['gvs','hvs','t1','t2'].forEach(m => {
-        const el = document.getElementById('prev-'+m);
-        if(el && !el.value && allData[prev]['cur-'+m]!==undefined) el.value = allData[prev]['cur-'+m];
-      });
-      TARIFF_IDS.forEach(id => {
-        const el = document.getElementById(id);
-        if(el && !el.value && allData[prev][id]!==undefined) el.value = allData[prev][id];
-      });
+    const prev=getPrev(month);
+    if(prev&&allData[prev]) {
+      ['gvs','hvs','t1','t2'].forEach(m=>{ const el=document.getElementById('prev-'+m); if(el&&!el.value&&allData[prev]['cur-'+m]!==undefined) el.value=allData[prev]['cur-'+m]; });
+      TARIFF_IDS.forEach(id=>{ const el=document.getElementById(id); if(el&&!el.value&&allData[prev][id]!==undefined) el.value=allData[prev][id]; });
     }
   }
   render();
 }
 
 function clearMonth() {
-  if(!confirm('Очистить данные за этот месяц?')) return;
-  document.querySelectorAll('input[type=number]').forEach(el => el.value='');
+  if(!confirm('Сбросить все данные за '+MONTHS[currentMonth()]+'?\nЭто действие нельзя отменить.')) return;
+  document.querySelectorAll('input[type=number]').forEach(el=>el.value='');
+  delete allData[currentMonth()];
+  saveToFirebase();
   render();
 }
 
-// ---- VERIFICATION ----
+// Copy tariffs from prev month
+function copyTariffsFromPrev() {
+  const prev=getPrev(currentMonth());
+  if(!prev||!allData[prev]){ alert('Нет данных за прошлый месяц'); return; }
+  TARIFF_IDS.forEach(id=>{
+    const el=document.getElementById(id);
+    if(el&&allData[prev][id]!==undefined) el.value=allData[prev][id];
+  });
+  render();
+  const lbl=document.getElementById('autosave-lbl');
+  if(lbl){lbl.textContent='Тарифы скопированы ✓';lbl.className='autosave saved';setTimeout(()=>{lbl.textContent='';lbl.className='autosave';},2500);}
+}
+
+// Copy total to clipboard
+function copyTotal(type) {
+  const month=MONTHS[currentMonth()];
+  const grand=document.getElementById('grand-total').textContent;
+  const v=document.getElementById('total-v').textContent;
+  const me=document.getElementById('total-me').textContent;
+  let text='';
+  if(type==='grand') text=month+': Всего '+grand;
+  else if(type==='v') text=month+': Вадимовна '+v;
+  else text=month+': Я '+me;
+  navigator.clipboard.writeText(text).then(()=>{
+    const lbl=document.getElementById('autosave-lbl');
+    if(lbl){lbl.textContent='Скопировано ✓';lbl.className='autosave saved';setTimeout(()=>{lbl.textContent='';lbl.className='autosave';},2000);}
+  });
+}
+
+// Share result
+function shareResult() {
+  const month=MONTHS[currentMonth()];
+  const grand=document.getElementById('grand-total').textContent;
+  const v=document.getElementById('total-v').textContent;
+  const me=document.getElementById('total-me').textContent;
+  const text=month+'\nВсего: '+grand+'\nВадимовна: '+v+'\nЯ: '+me;
+  if(navigator.share) { navigator.share({title:'Коммуналка '+month, text}); }
+  else { navigator.clipboard.writeText(text); const lbl=document.getElementById('autosave-lbl'); if(lbl){lbl.textContent='Скопировано ✓';lbl.className='autosave saved';setTimeout(()=>{lbl.textContent='';lbl.className='autosave';},2000);} }
+}
+
+// QR Code
+function showQR() {
+  const url=window.location.href;
+  document.getElementById('qr-url').textContent=url;
+  const canvas=document.getElementById('qr-canvas');
+  QRCode.toCanvas(canvas, url, {width:200, margin:1, color:{dark:'#0f172a',light:'#f8fafc'}});
+  document.getElementById('qr-modal').classList.add('open');
+}
+
+// Export / Import JSON
+function exportJSON() {
+  const blob=new Blob([JSON.stringify(allData,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='kommunalka_backup_'+new Date().toISOString().slice(0,10)+'.json'; a.click();
+}
+
+function importJSON(e) {
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=async(ev)=>{
+    try {
+      const data=JSON.parse(ev.target.result);
+      if(confirm('Импортировать данные? Текущие данные будут перезаписаны.')) {
+        allData=data; await saveToFirebase(); loadMonth();
+        const lbl=document.getElementById('autosave-lbl');
+        if(lbl){lbl.textContent='Импорт выполнен ✓';lbl.className='autosave saved';setTimeout(()=>{lbl.textContent='';lbl.className='autosave';},2500);}
+      }
+    } catch(err){ alert('Ошибка импорта: неверный формат файла'); }
+  };
+  reader.readAsText(file);
+  e.target.value='';
+}
+
+// Verification
 function updateVerifyBadges() {
-  const now = new Date();
-  Object.entries(VERIFY_DATES).forEach(([key, expiry]) => {
-    const el = document.getElementById('verify-'+key);
-    const btn = document.getElementById('cal-'+key);
+  const now=new Date();
+  Object.entries(VERIFY_DATES).forEach(([key,expiry])=>{
+    const el=document.getElementById('verify-'+key), btn=document.getElementById('cal-'+key);
     if(!el) return;
-    const days = Math.ceil((expiry-now)/(864e5));
-    const ds = expiry.toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit',year:'numeric'});
-    if(days<=0)       { el.className='mc-verify danger'; el.textContent='⚠ Просрочена!'; if(btn) btn.style.display='inline-block'; }
-    else if(days<=90) { el.className='mc-verify warn';   el.textContent='⚠ до '+ds;      if(btn) btn.style.display='inline-block'; }
-    else              { el.className='mc-verify ok';     el.textContent='до '+ds;         if(btn) btn.style.display='none'; }
+    const days=Math.ceil((expiry-now)/864e5);
+    const ds=expiry.toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit',year:'numeric'});
+    if(days<=0){el.className='mc-verify danger';el.textContent='⚠ Просрочена!';if(btn)btn.style.display='inline-block';}
+    else if(days<=90){el.className='mc-verify warn';el.textContent='⚠ до '+ds;if(btn)btn.style.display='inline-block';}
+    else{el.className='mc-verify ok';el.textContent='до '+ds;if(btn)btn.style.display='none';}
   });
 }
 
 function addToCalendar(key) {
-  const expiry = VERIFY_DATES[key];
-  const remind = new Date(expiry); remind.setMonth(remind.getMonth()-1);
-  const f8 = d => d.toISOString().replace(/[-:]/g,'').slice(0,8);
-  const title = encodeURIComponent('Поверка счётчика: '+VERIFY_NAMES[key]);
-  const details = encodeURIComponent('Срок поверки истекает '+expiry.toLocaleDateString('ru-RU'));
+  const expiry=VERIFY_DATES[key], remind=new Date(expiry);
+  remind.setMonth(remind.getMonth()-1);
+  const f8=d=>d.toISOString().replace(/[-:]/g,'').slice(0,8);
+  const title=encodeURIComponent('Поверка счётчика: '+VERIFY_NAMES[key]);
+  const details=encodeURIComponent('Срок поверки истекает '+expiry.toLocaleDateString('ru-RU'));
   window.open('https://calendar.google.com/calendar/render?action=TEMPLATE&text='+title+'&dates='+f8(remind)+'/'+f8(expiry)+'&details='+details,'_blank');
 }
 
-// ---- HISTORY ----
+// History
 function renderHistory() {
-  const months = MONTH_KEYS.filter(m=>allData[m]);
-  const head = document.getElementById('hist-head');
-  const body = document.getElementById('hist-body');
-  if(!months.length) { head.innerHTML=''; body.innerHTML='<tr><td colspan="2" style="color:var(--muted);text-align:center;padding:32px">Нет данных</td></tr>'; return; }
-  head.innerHTML = '<tr><th>Статья</th>'+months.map(m=>'<th>'+MONTHS[m].replace(' ','<br>')+'</th>').join('')+'</tr>';
-  const computed = months.map(m=>computeFromData(allData[m]));
-  const rows = [
-    {label:'Всего',key:'grand',bold:true},{label:'Вадимовна',key:'vadim'},{label:'Я',key:'me'},
-    null,
-    {label:'МосОблЕИРЦ',key:'mosob'},{label:'Пик-Комфорт',key:'pik'},
-    {label:'Мосэнергосбыт',key:'ee'},{label:'Интернет',key:'inet'},
-  ];
+  const months=MONTH_KEYS.filter(m=>allData[m]);
+  const head=document.getElementById('hist-head'), body=document.getElementById('hist-body');
+  if(!months.length){head.innerHTML='';body.innerHTML='<tr><td colspan="2" style="color:var(--muted);text-align:center;padding:32px">Нет данных</td></tr>';return;}
+  head.innerHTML='<tr><th>Статья</th>'+months.map(m=>'<th>'+MONTHS[m].replace(' ','<br>')+'</th>').join('')+'</tr>';
+  const computed=months.map(m=>computeFromData(allData[m]));
+  const rows=[{label:'Всего',key:'grand',bold:true},{label:'Вадимовна',key:'vadim'},{label:'Я',key:'me'},null,
+    {label:'МосОблЕИРЦ',key:'mosob'},{label:'Пик-Комфорт',key:'pik'},{label:'Мосэнергосбыт',key:'ee'},{label:'Интернет',key:'inet'}];
   let html='';
-  rows.forEach(row => {
-    if(!row){ html+='<tr><td colspan="'+(months.length+1)+'" style="height:6px;border:none"></td></tr>'; return; }
+  rows.forEach(row=>{
+    if(!row){html+='<tr><td colspan="'+(months.length+1)+'" style="height:6px;border:none"></td></tr>';return;}
     html+='<tr><td>'+(row.bold?'<b>'+row.label+'</b>':row.label)+'</td>';
-    computed.forEach((c,i) => {
-      const val=c[row.key]||0;
-      let cls = row.bold?'h-total':'';
-      if(i>0){ const diff=val-(computed[i-1][row.key]||0); if(diff>0) cls+=' dpos'; else if(diff<0) cls+=' dneg'; }
+    computed.forEach((c,i)=>{
+      const val=c[row.key]||0; let cls=row.bold?'h-total':'';
+      if(i>0){const diff=val-(computed[i-1][row.key]||0);if(diff>0)cls+=' dpos';else if(diff<0)cls+=' dneg';}
       html+='<td class="'+cls+'">'+(val>0?fmt(val):'—')+'</td>';
     });
     html+='</tr>';
@@ -768,24 +797,25 @@ function renderHistory() {
   body.innerHTML=html;
 }
 
-// ---- DYNAMICS ----
+// Dynamics
 function renderDynamics() {
-  const tbody = document.getElementById('dynamics-body');
-  const months = Object.keys(allData).sort();
-  if(!months.length){ tbody.innerHTML='<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:32px">Нет данных</td></tr>'; return; }
-  const base = allData[months[0]];
-  const tk = {kaprem:'t-kaprem','gvs-voda':'t-gvs-voda','gvs-pod':'t-gvs-pod',otop:'t-otop',
+  const tbody=document.getElementById('dynamics-body');
+  const months=Object.keys(allData).sort();
+  if(!months.length){tbody.innerHTML='<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:32px">Нет данных</td></tr>';return;}
+  const base=allData[months[0]];
+  const tk={kaprem:'t-kaprem','gvs-voda':'t-gvs-voda','gvs-pod':'t-gvs-pod',otop:'t-otop',
     hvs:'t-hvs',vodo:'t-vodo',soderzh:'t-soderzh',bezop:'t-bezop',tko:'t-tko',tv:'t-tv',
     t1:'t-t1',t2:'t-t2',inet:'t-inet'};
+  const filter=document.getElementById('dyn-filter').value;
   let rows='';
-  months.forEach(m => {
+  months.forEach(m=>{
     const d=allData[m];
-    TARIFF_FIELDS.forEach(f => {
-      const k=tk[f.id], cur=d[k], b=base[k];
+    TARIFF_FIELDS.filter(f=>!filter||f.label===filter).forEach(f=>{
+      const k=tk[f.id],cur=d[k],b=base[k];
       if(cur===undefined&&b===undefined) return;
-      const diff=(cur||0)-(b||0), pct=b?diff/b*100:null;
+      const diff=(cur||0)-(b||0),pct=b?diff/b*100:null;
       const cls=diff>0?'dpos':diff<0?'dneg':'dzero';
-      const dr=b!==undefined&&cur!==undefined ? (diff>=0?'+':'')+diff.toLocaleString('ru-RU',{minimumFractionDigits:2,maximumFractionDigits:4})+' ₽' : '—';
+      const dr=b!==undefined&&cur!==undefined?(diff>=0?'+':'')+diff.toLocaleString('ru-RU',{minimumFractionDigits:2,maximumFractionDigits:4})+' ₽':'—';
       const dp=pct!==null?(diff>=0?'+':'')+pct.toFixed(1)+'%':'—';
       rows+=`<tr><td>${MONTHS[m]||m}</td><td>${f.label}</td><td>${cur!==undefined?cur.toLocaleString('ru-RU',{minimumFractionDigits:2,maximumFractionDigits:6}):'—'}</td><td class="${cls}">${dr}</td><td class="${cls}">${dp}</td></tr>`;
     });
@@ -793,14 +823,7 @@ function renderDynamics() {
   tbody.innerHTML=rows||'<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:32px">Нет данных</td></tr>';
 }
 
-// ---- TOOLTIPS ----
-document.addEventListener('click', function(e) {
-  const tip = e.target.closest('.tip');
-  document.querySelectorAll('.tip.active').forEach(el => { if(el !== tip) el.classList.remove('active'); });
-  if(tip) { tip.classList.toggle('active'); e.stopPropagation(); }
-});
-
-// ---- TABS ----
+// Tabs
 function switchTab(name) {
   document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['entry','history','dynamics'][i]===name));
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -809,7 +832,7 @@ function switchTab(name) {
   if(name==='dynamics') renderDynamics();
 }
 
-// ---- THEME ----
+// Theme
 function applyTheme(theme) {
   document.documentElement.classList.remove('light','dark');
   document.documentElement.classList.add(theme);
@@ -817,37 +840,35 @@ function applyTheme(theme) {
   if(btn) btn.textContent=theme==='light'?'🌙':'☀️';
   localStorage.setItem('komunalka_theme',theme);
 }
-function toggleTheme() {
-  applyTheme(document.documentElement.classList.contains('light')?'dark':'light');
-}
+function toggleTheme() { applyTheme(document.documentElement.classList.contains('light')?'dark':'light'); }
 (function(){
   const saved=localStorage.getItem('komunalka_theme');
   const sys=window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';
   applyTheme(saved||sys);
-  window.matchMedia('(prefers-color-scheme: light)').addEventListener('change',e=>{
-    if(!localStorage.getItem('komunalka_theme')) applyTheme(e.matches?'light':'dark');
-  });
+  window.matchMedia('(prefers-color-scheme: light)').addEventListener('change',e=>{ if(!localStorage.getItem('komunalka_theme')) applyTheme(e.matches?'light':'dark'); });
 })();
 
-// ---- INIT ----
-const MAY26 = {
+// Tooltip toggle
+document.addEventListener('click',function(e){
+  const tip=e.target.closest('.tip');
+  document.querySelectorAll('.tip.active').forEach(el=>{if(el!==tip)el.classList.remove('active');});
+  if(tip) tip.classList.toggle('active');
+});
+
+// MAY26 prefill
+const MAY26={
   'prev-gvs':94.380,'cur-gvs':95.496,'prev-hvs':150.577,'cur-hvs':153.196,
   'prev-t1':3407,'cur-t1':3449,'prev-t2':923,'cur-t2':937,
   't-kaprem':594,'t-gvs-voda':63.26,'t-gvs-pod':0.0612684,'v-gvs-pod':2909.02,
   't-otop':0.3591,'v-otop':2909.02,'t-hvs':63.26,'t-vodo':62.21,
   't-soderzh':1631.88,'t-bezop':109.08,'t-tko':311.12,'t-tv':315,
-  't-oi-ee-d':8.24,'v-oi-ee-d':10.7118,
-  't-oi-ee-n':3.54,'v-oi-ee-n':5.2505,
-  't-oi-vo':62.21,'v-oi-vo':0.0516,
-  't-oi-gvs':63.26,'v-oi-gvs':0.0258,
-  't-oi-gvsp':2909.02,'v-oi-gvsp':0.0014,
-  't-oi-hvs':63.26,'v-oi-hvs':0.0258,
+  't-oi-ee-d':8.24,'v-oi-ee-d':10.7118,'t-oi-ee-n':3.54,'v-oi-ee-n':5.2505,
+  't-oi-vo':62.21,'v-oi-vo':0.0516,'t-oi-gvs':63.26,'v-oi-gvs':0.0258,
+  't-oi-gvsp':2909.02,'v-oi-gvsp':0.001368,'t-oi-hvs':63.26,'v-oi-hvs':0.0258,
   't-t1':8.24,'t-t2':3.54,'t-inet':800
 };
-// Start: load from Firebase, then init
-loadFromFirebase().then(() => {
-  if(!allData['2026-05']){ allData['2026-05']=MAY26; saveToFirebase(); }
-});
+
+loadFromFirebase();
 </script>
 </body>
 </html>
