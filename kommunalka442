@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Коммуналка</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0f1117; --surface: #1a1d27; --surface2: #22263a; --border: #2e3350;
+    --accent: #5b8cff; --green: #34d399; --red: #f87171; --yellow: #fbbf24;
+    --text: #e2e8f0; --muted: #64748b; --label: #94a3b8;
+  }
+  :root.light {
+    --bg: #f4f6fb; --surface: #ffffff; --surface2: #eef1f7; --border: #d1d9e6;
+    --accent: #3b6ff5; --green: #16a97a; --red: #e03e3e; --yellow: #d97706;
+    --text: #1a1f2e; --muted: #8492a6; --label: #4a5568;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not(.dark) {
+      --bg: #f4f6fb; --surface: #ffffff; --surface2: #eef1f7; --border: #d1d9e6;
+      --accent: #3b6ff5; --green: #16a97a; --red: #e03e3e; --yellow: #d97706;
+      --text: #1a1f2e; --muted: #8492a6; --label: #4a5568;
+    }
+  }
+  body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; font-size: 14px; min-height: 100vh; }
+
+  header { padding: 24px 32px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 14px; }
+  header h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; color: var(--text); }
+  header .sub { color: var(--muted); font-size: 13px; }
+  #theme-btn { margin-left: auto; background: transparent; border: 1px solid var(--border); color: var(--label); border-radius: 6px; padding: 5px 12px; font-size: 14px; cursor: pointer; }
+
+  .tabs { display: flex; gap: 4px; padding: 14px 32px 0; border-bottom: 1px solid var(--border); }
+  .tab { padding: 7px 16px; border-radius: 6px 6px 0 0; cursor: pointer; color: var(--muted); font-weight: 500; font-size: 13px; border: 1px solid transparent; border-bottom: none; transition: all 0.15s; background: transparent; }
+  .tab.active { background: var(--surface); color: var(--text); border-color: var(--border); }
+
+  .page { display: none; padding: 24px 32px; max-width: 960px; }
+  .page.active { display: block; }
+
+  .month-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+  .month-bar label { color: var(--label); font-size: 13px; }
+  select { background: var(--surface); border: 1px solid var(--border); color: var(--text); border-radius: 6px; padding: 6px 10px; font-size: 13px; outline: none; }
+  .autosave { font-size: 11px; color: var(--muted); margin-left: auto; }
+  .autosave.saved { color: var(--green); }
+
+  .btn { background: var(--accent); color: #fff; border: none; border-radius: 6px; padding: 7px 14px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+  .btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--label); }
+  .btn-sm { padding: 3px 8px; font-size: 11px; border-radius: 4px; }
+
+  input[type=number] { background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 5px; padding: 4px 8px; font-size: 13px; outline: none; width: 100%; text-align: right; display: block; }
+  input[type=number]:focus { border-color: var(--accent); }
+
+  /* METER */
+  .meter-block { background: var(--surface2); border: 1px solid var(--accent); border-radius: 10px; overflow: hidden; margin-bottom: 20px; }
+  .meter-header { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid var(--border); }
+  .meter-header h3 { font-size: 11px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.8px; }
+  .meter-header .auto-note { margin-left: auto; font-size: 11px; color: var(--muted); }
+  .meter-grid { display: grid; grid-template-columns: repeat(4, 1fr); }
+  .meter-cell { padding: 12px 14px; border-right: 1px solid var(--border); }
+  .meter-cell:last-child { border-right: none; }
+  .mc-label { font-size: 11px; color: var(--muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.4px; font-weight: 600; }
+  .mc-row { display: flex; align-items: center; margin-bottom: 5px; }
+  .mc-row .mc-lbl { font-size: 11px; color: var(--muted); width: 36px; flex-shrink: 0; }
+  .mc-row input { flex: 1; }
+  .mc-vol { margin-top: 7px; font-size: 12px; color: var(--green); font-weight: 600; min-height: 16px; }
+  .mc-meta { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+  .mc-serial { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+  .mc-verify-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .mc-verify { font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 4px; display: inline-block; }
+  .mc-verify.ok     { background: rgba(52,211,153,0.12); color: #34d399; }
+  .mc-verify.warn   { background: rgba(251,191,36,0.15); color: #fbbf24; }
+  .mc-verify.danger { background: rgba(248,113,113,0.15); color: #f87171; }
+
+  /* SOURCE BLOCKS */
+  .sources { display: flex; flex-direction: column; gap: 16px; }
+  .source-block { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .source-header { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-bottom: 1px solid var(--border); }
+  .source-icon { font-size: 18px; line-height: 1; }
+  .source-header h3 { font-size: 11px; font-weight: 600; color: var(--label); text-transform: uppercase; letter-spacing: 0.5px; }
+  .source-total { margin-left: auto; font-size: 15px; font-weight: 700; color: var(--text); }
+
+  /* TABLE */
+  .bl-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+  .bl-table col.c-name  { width: auto; }
+  .bl-table col.c-tar   { width: 100px; }
+  .bl-table col.c-vol   { width: 100px; }
+  .bl-table col.c-sum   { width: 90px; }
+  .bl-table col.c-badge { width: 32px; }
+  .bl-table thead tr { background: var(--surface2); }
+  .bl-table thead th { padding: 5px 10px; font-size: 10px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; text-align: right; border-bottom: 1px solid var(--border); }
+  .bl-table thead th:first-child { text-align: left; }
+  .bl-table thead th:last-child  { text-align: center; }
+  .bl-table tbody tr { border-bottom: 1px solid var(--border); }
+  .bl-table tbody tr:last-child { border-bottom: none; }
+  .bl-table tbody tr:hover { background: rgba(255,255,255,0.015); }
+  .bl-table tbody td { padding: 6px 10px; vertical-align: middle; text-align: right; }
+  .bl-table tbody td:first-child { text-align: left; }
+  .bl-table tbody td:last-child  { text-align: center; }
+  .td-name { font-size: 13px; color: var(--text); }
+  .td-name.dim { font-size: 12px; color: var(--muted); }
+  .td-auto { font-size: 12px; color: var(--label); }
+  .td-dash { font-size: 11px; color: var(--muted); }
+  .td-sum  { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; }
+  .badge { font-size: 10px; padding: 2px 5px; border-radius: 4px; font-weight: 700; display: inline-block; }
+  .badge-v { background: rgba(167,139,250,0.15); color: #a78bfa; }
+  .badge-i { background: rgba(91,140,255,0.12); color: #5b8cff; }
+
+  /* TOTALS */
+  .totals-bar { margin-top: 20px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .total-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; position: relative; overflow: hidden; }
+  .tc-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
+  .tc-value { font-size: 24px; font-weight: 700; color: var(--text); letter-spacing: -0.5px; }
+  .tc-delta { font-size: 12px; font-weight: 600; margin-top: 3px; }
+  .tc-delta.up   { color: var(--red); }
+  .tc-delta.down { color: var(--green); }
+  .tc-delta.flat { color: var(--muted); }
+  .tc-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .tc-spark { position: absolute; bottom: 0; right: 0; opacity: 0.2; }
+
+  /* HISTORY */
+  .hist-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .hist-table th { text-align: right; color: var(--muted); font-size: 10px; text-transform: uppercase; padding: 7px 10px; border-bottom: 1px solid var(--border); font-weight: 500; white-space: nowrap; }
+  .hist-table th:first-child { text-align: left; }
+  .hist-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: right; white-space: nowrap; color: var(--text); }
+  .hist-table td:first-child { text-align: left; color: var(--label); }
+  .hist-table tr:last-child td { border-bottom: none; }
+  .hist-table tr:hover td { background: var(--surface2); }
+  .h-total { font-weight: 700; }
+
+  /* DYNAMICS */
+  .dyn-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .dyn-table th { text-align: left; color: var(--muted); font-size: 10px; text-transform: uppercase; padding: 7px 12px; border-bottom: 1px solid var(--border); font-weight: 500; }
+  .dyn-table td { padding: 9px 12px; border-bottom: 1px solid var(--border); color: var(--text); }
+  .dyn-table tr:last-child td { border-bottom: none; }
+  .dyn-table tr:hover td { background: var(--surface2); }
+  .dpos { color: var(--red); font-weight: 600; }
+  .dneg { color: var(--green); font-weight: 600; }
+  .dzero { color: var(--muted); }
+
+  .notice { font-size: 12px; color: var(--muted); margin-top: 6px; }
+  .section-title { font-size: 12px; font-weight: 700; color: var(--label); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+  .mt16 { margin-top: 16px; }
+
+  @media (max-width: 640px) {
+    header, .tabs, .page { padding-left: 16px; padding-right: 16px; }
+    .meter-grid { grid-template-columns: repeat(2, 1fr); }
+    .meter-cell { border-bottom: 1px solid var(--border); }
+    .totals-bar { grid-template-columns: 1fr; }
+    .bl-table col.c-tar, .bl-table col.c-vol, .bl-table col.c-sum { width: 72px; }
+  }
+</style>
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+
+<header>
+  <h1>Коммуналка</h1>
+  <span class="sub">Трекер расходов</span>
+  <button id="theme-btn" onclick="toggleTheme()">🌙</button>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('entry')">Ввод данных</div>
+  <div class="tab" onclick="switchTab('history')">История</div>
+  <div class="tab" onclick="switchTab('dynamics')">Динамика тарифов</div>
+</div>
+
+<!-- ВВОД -->
+<div id="page-entry" class="page active">
+  <div class="month-bar">
+    <label>Месяц:</label>
+    <select id="monthSelect" onchange="loadMonth()">
+      <option value="2026-05">Май 2026</option>
+      <option value="2026-06">Июнь 2026</option>
+      <option value="2026-07">Июль 2026</option>
+      <option value="2026-08">Август 2026</option>
+      <option value="2026-09">Сентябрь 2026</option>
+      <option value="2026-10">Октябрь 2026</option>
+      <option value="2026-11">Ноябрь 2026</option>
+      <option value="2026-12">Декабрь 2026</option>
+      <option value="2027-01">Январь 2027</option>
+      <option value="2027-02">Февраль 2027</option>
+      <option value="2027-03">Март 2027</option>
+      <option value="2027-04">Апрель 2027</option>
+    </select>
+    <button class="btn btn-ghost" onclick="clearMonth()">Очистить</button>
+    <span class="autosave" id="autosave-lbl"></span>
+  </div>
+
+  <!-- СЧЁТЧИКИ -->
+  <div class="meter-block">
+    <div class="meter-header">
+      <h3>Показания счётчиков</h3>
+      <span class="auto-note">Предыдущие подтягиваются из прошлого месяца</span>
+    </div>
+    <div class="meter-grid">
+      <div class="meter-cell" style="border-top:3px solid #f87171">
+        <div class="mc-label" style="color:#f87171">🔴 ГВС</div>
+        <div class="mc-row"><span class="mc-lbl">Пред.</span><input type="number" id="prev-gvs" step="0.001" oninput="onInput()"></div>
+        <div class="mc-row"><span class="mc-lbl">Тек.</span><input type="number" id="cur-gvs" step="0.001" oninput="onInput()"></div>
+        <div class="mc-vol" id="vol-gvs">—</div>
+        <div class="mc-meta">
+          <div class="mc-serial">ПУЛЬСАР · 19-3097262</div>
+          <div class="mc-verify-row">
+            <span class="mc-verify" id="verify-gvs">—</span>
+            <button class="btn btn-ghost btn-sm" id="cal-gvs" onclick="addToCalendar('gvs')" style="display:none">📅</button>
+          </div>
+        </div>
+      </div>
+      <div class="meter-cell" style="border-top:3px solid #60a5fa">
+        <div class="mc-label" style="color:#60a5fa">🔵 ХВС</div>
+        <div class="mc-row"><span class="mc-lbl">Пред.</span><input type="number" id="prev-hvs" step="0.001" oninput="onInput()"></div>
+        <div class="mc-row"><span class="mc-lbl">Тек.</span><input type="number" id="cur-hvs" step="0.001" oninput="onInput()"></div>
+        <div class="mc-vol" id="vol-hvs">—</div>
+        <div class="mc-meta">
+          <div class="mc-serial">ПУЛЬСАР · 19-3097272</div>
+          <div class="mc-verify-row">
+            <span class="mc-verify" id="verify-hvs">—</span>
+            <button class="btn btn-ghost btn-sm" id="cal-hvs" onclick="addToCalendar('hvs')" style="display:none">📅</button>
+          </div>
+        </div>
+      </div>
+      <div class="meter-cell" style="border-top:3px solid #fbbf24">
+        <div class="mc-label" style="color:#fbbf24">⚡ Электричество Т1</div>
+        <div class="mc-row"><span class="mc-lbl">Пред.</span><input type="number" id="prev-t1" step="1" oninput="onInput()"></div>
+        <div class="mc-row"><span class="mc-lbl">Тек.</span><input type="number" id="cur-t1" step="1" oninput="onInput()"></div>
+        <div class="mc-vol" id="vol-t1">—</div>
+        <div class="mc-meta">
+          <div class="mc-serial">Меркурий-200.02 · 41804817</div>
+          <div class="mc-verify-row">
+            <span class="mc-verify" id="verify-ee">—</span>
+            <button class="btn btn-ghost btn-sm" id="cal-ee" onclick="addToCalendar('ee')" style="display:none">📅</button>
+          </div>
+        </div>
+      </div>
+      <div class="meter-cell" style="border-top:3px solid #fbbf24">
+        <div class="mc-label" style="color:#fbbf24">⚡ Электричество Т2</div>
+        <div class="mc-row"><span class="mc-lbl">Пред.</span><input type="number" id="prev-t2" step="1" oninput="onInput()"></div>
+        <div class="mc-row"><span class="mc-lbl">Тек.</span><input type="number" id="cur-t2" step="1" oninput="onInput()"></div>
+        <div class="mc-vol" id="vol-t2">—</div>
+        <div class="mc-meta" style="visibility:hidden"><div class="mc-serial">—</div><div class="mc-verify-row"><span class="mc-verify">—</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sources">
+    <!-- МосОблЕИРЦ -->
+    <div class="source-block" style="border-left:3px solid #5b8cff">
+      <div class="source-header">
+        <span class="source-icon">🏦</span>
+        <h3>МосОблЕИРЦ</h3>
+        <span class="source-total" id="total-mosob">—</span>
+      </div>
+      <table class="bl-table">
+        <colgroup><col class="c-name"><col class="c-tar"><col class="c-vol"><col class="c-sum"><col class="c-badge"></colgroup>
+        <thead><tr><th>Услуга</th><th>Тариф</th><th>Объём</th><th>Сумма</th><th></th></tr></thead>
+        <tbody>
+          <tr><td class="td-name">Капремонт</td><td><input type="number" id="t-kaprem" step="0.01" oninput="onInput()"></td><td class="td-dash">фикс.</td><td class="td-sum" id="s-kaprem">—</td><td><span class="badge badge-i">Я</span></td></tr>
+          <tr><td class="td-name">ГВС (вода)</td><td><input type="number" id="t-gvs-voda" step="0.0001" oninput="onInput()"></td><td class="td-auto" id="disp-gvs-voda">—</td><td class="td-sum" id="s-gvs-voda">—</td><td><span class="badge badge-v">В</span></td></tr>
+          <tr><td class="td-name">ГВС (подогрев)</td><td><input type="number" id="t-gvs-pod" step="0.000001" oninput="onInput()"></td><td><input type="number" id="v-gvs-pod" step="0.01" oninput="onInput()"></td><td class="td-sum" id="s-gvs-pod">—</td><td><span class="badge badge-v">В</span></td></tr>
+          <tr><td class="td-name">Отопление</td><td><input type="number" id="t-otop" step="0.0001" oninput="onInput()"></td><td><input type="number" id="v-otop" step="0.01" oninput="onInput()"></td><td class="td-sum" id="s-otop">—</td><td><span class="badge badge-v">В</span></td></tr>
+          <tr><td class="td-name">ХВС</td><td><input type="number" id="t-hvs" step="0.0001" oninput="onInput()"></td><td class="td-auto" id="disp-hvs">—</td><td class="td-sum" id="s-hvs">—</td><td><span class="badge badge-v">В</span></td></tr>
+          <tr><td class="td-name">Водоотведение</td><td><input type="number" id="t-vodo" step="0.0001" oninput="onInput()"></td><td class="td-auto" id="disp-vodo">—</td><td class="td-sum" id="s-vodo">—</td><td><span class="badge badge-v">В</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Пик-Комфорт -->
+    <div class="source-block" style="border-left:3px solid #f97316">
+      <div class="source-header">
+        <span class="source-icon">🏠</span>
+        <h3 style="color:#f97316">Пик-Комфорт</h3>
+        <span class="source-total" id="total-pik">—</span>
+      </div>
+      <table class="bl-table">
+        <colgroup><col class="c-name"><col class="c-tar"><col class="c-vol"><col class="c-sum"><col class="c-badge"></colgroup>
+        <thead><tr><th>Услуга</th><th>Сумма</th><th></th><th></th><th></th></tr></thead>
+        <tbody>
+          <tr><td class="td-name">Содержание помещения</td><td><input type="number" id="t-soderzh" step="0.01" oninput="onInput()"></td><td class="td-dash">фикс.</td><td class="td-sum" id="s-soderzh">—</td><td><span class="badge badge-i">Я</span></td></tr>
+          <tr><td class="td-name">Обслуж. систем безопасности</td><td><input type="number" id="t-bezop" step="0.01" oninput="onInput()"></td><td class="td-dash">фикс.</td><td class="td-sum" id="s-bezop">—</td><td><span class="badge badge-i">Я</span></td></tr>
+          <tr><td class="td-name">Обращение с ТКО</td><td><input type="number" id="t-tko" step="0.01" oninput="onInput()"></td><td class="td-dash">фикс.</td><td class="td-sum" id="s-tko">—</td><td><span class="badge badge-i">Я</span></td></tr>
+          <tr><td class="td-name">ТВ (кабельное)</td><td><input type="number" id="t-tv" step="0.01" oninput="onInput()"></td><td class="td-dash">фикс.</td><td class="td-sum" id="s-tv">—</td><td><span class="badge badge-i">Я</span></td></tr>
+          <tr><td class="td-name dim">ЭЭ на сод. общ. имущ.</td><td><input type="number" id="t-oi-ee" step="0.01" oninput="onInput()"></td><td class="td-dash">фикс.</td><td class="td-sum" id="s-oi-ee">—</td><td><span class="badge badge-i">Я</span></td></tr>
+          <tr><td class="td-name dim">ВО на сод. общ. имущ.</td><td><input type="number" id="t-oi-vo" step="0.01" oninput="onInput()"></td><td class="td-dash">фикс.</td><td class="td-sum" id="s-oi-vo">—</td><td><span class="badge badge-i">Я</span></td></tr>
+          <tr><td class="td-name dim">ГВС (вода) на сод. общ. имущ.</td><td><input type="number" id="t-oi-gvs" step="0.01" oninput="onInput()"></td><td class="td-dash">фикс.</td><td class="td-sum" id="s-oi-gvs">—</td><td><span class="badge badge-i">Я</span></td></tr>
+          <tr><td class="td-name dim">ГВС (подогрев) на сод. общ. имущ.</td><td><input type="number" id="t-oi-gvsp" step="0.01" oninput="onInput()"></td><td class="td-dash">фикс.</td><td class="td-sum" id="s-oi-gvsp">—</td><td><span class="badge badge-i">Я</span></td></tr>
+          <tr><td class="td-name dim">ХВС на сод. общ. имущ.</td><td><input type="number" id="t-oi-hvs" step="0.01" oninput="onInput()"></td><td class="td-dash">фикс.</td><td class="td-sum" id="s-oi-hvs">—</td><td><span class="badge badge-i">Я</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Мосэнергосбыт -->
+    <div class="source-block" style="border-left:3px solid #a78bfa">
+      <div class="source-header">
+        <span class="source-icon">⚡</span>
+        <h3>Мосэнергосбыт</h3>
+        <span class="source-total" id="total-mosen">—</span>
+      </div>
+      <table class="bl-table">
+        <colgroup><col class="c-name"><col class="c-tar"><col class="c-vol"><col class="c-sum"><col class="c-badge"></colgroup>
+        <thead><tr><th>Тариф</th><th>₽/кВт·ч</th><th>Объём</th><th>Сумма</th><th></th></tr></thead>
+        <tbody>
+          <tr><td class="td-name">Т1 (пик)</td><td><input type="number" id="t-t1" step="0.01" oninput="onInput()"></td><td class="td-auto" id="disp-t1">—</td><td class="td-sum" id="s-t1">—</td><td><span class="badge badge-v">В</span></td></tr>
+          <tr><td class="td-name">Т2 (ночь)</td><td><input type="number" id="t-t2" step="0.01" oninput="onInput()"></td><td class="td-auto" id="disp-t2">—</td><td class="td-sum" id="s-t2">—</td><td><span class="badge badge-v">В</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Интернет -->
+    <div class="source-block" style="border-left:3px solid #34d399">
+      <div class="source-header">
+        <span class="source-icon">📶</span>
+        <h3>Интернет</h3>
+        <span class="source-total" id="total-inet">—</span>
+      </div>
+      <table class="bl-table">
+        <colgroup><col class="c-name"><col class="c-tar"><col class="c-vol"><col class="c-sum"><col class="c-badge"></colgroup>
+        <thead><tr><th>Услуга</th><th>Сумма</th><th></th><th></th><th></th></tr></thead>
+        <tbody>
+          <tr><td class="td-name">Абонентская плата</td><td><input type="number" id="t-inet" step="0.01" oninput="onInput()"></td><td class="td-dash">фикс.</td><td class="td-sum" id="s-inet">—</td><td><span class="badge badge-v">В</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ИТОГО -->
+  <div class="totals-bar">
+    <div class="total-card">
+      <div class="tc-label">💰 Всего</div>
+      <div class="tc-value" id="grand-total">—</div>
+      <div class="tc-delta flat" id="delta-grand">—</div>
+      <div class="tc-sub">за месяц</div>
+      <canvas class="tc-spark" id="spark-grand" width="80" height="36"></canvas>
+    </div>
+    <div class="total-card">
+      <div class="tc-label">👤 Вадимовна</div>
+      <div class="tc-value" id="total-v">—</div>
+      <div class="tc-delta flat" id="delta-v">—</div>
+      <div class="tc-sub">ГВС, ХВС, отопление, ВО, ЭЭ, интернет</div>
+      <canvas class="tc-spark" id="spark-v" width="80" height="36"></canvas>
+    </div>
+    <div class="total-card">
+      <div class="tc-label">👤 Я</div>
+      <div class="tc-value" id="total-me">—</div>
+      <div class="tc-delta flat" id="delta-me">—</div>
+      <div class="tc-sub">Капремонт, Пик-Комфорт и др.</div>
+      <canvas class="tc-spark" id="spark-me" width="80" height="36"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ИСТОРИЯ -->
+<div id="page-history" class="page">
+  <div class="section-title">История по месяцам</div>
+  <div style="overflow-x:auto">
+    <table class="hist-table"><thead id="hist-head"></thead><tbody id="hist-body"></tbody></table>
+  </div>
+</div>
+
+<!-- ДИНАМИКА -->
+<div id="page-dynamics" class="page">
+  <div class="section-title">Динамика тарифов</div>
+  <p class="notice">База — май 2026. Изменение тарифов по месяцам.</p>
+  <table class="dyn-table mt16">
+    <thead><tr><th>Месяц</th><th>Услуга</th><th>Тариф</th><th>Δ к базе (₽)</th><th>Δ к базе (%)</th></tr></thead>
+    <tbody id="dynamics-body"><tr><td colspan="5" style="color:var(--muted);text-align:center;padding:32px">Данные появятся после сохранения нескольких месяцев</td></tr></tbody>
+  </table>
+</div>
+
+<script>
+const MONTHS = {
+  "2026-05":"Май 2026","2026-06":"Июнь 2026","2026-07":"Июль 2026",
+  "2026-08":"Август 2026","2026-09":"Сентябрь 2026","2026-10":"Октябрь 2026",
+  "2026-11":"Ноябрь 2026","2026-12":"Декабрь 2026","2027-01":"Январь 2027",
+  "2027-02":"Февраль 2027","2027-03":"Март 2027","2027-04":"Апрель 2027"
+};
+const MONTH_KEYS = Object.keys(MONTHS);
+const TARIFF_IDS = ['t-kaprem','t-gvs-voda','t-gvs-pod','t-otop','t-hvs','t-vodo',
+  't-soderzh','t-bezop','t-tko','t-tv','t-oi-ee','t-oi-vo','t-oi-gvs','t-oi-gvsp','t-oi-hvs','t-t1','t-t2','t-inet'];
+const TARIFF_FIELDS = [
+  {id:'kaprem',label:'Капремонт'},{id:'gvs-voda',label:'ГВС (вода)'},
+  {id:'gvs-pod',label:'ГВС (подогрев)'},{id:'otop',label:'Отопление'},
+  {id:'hvs',label:'ХВС'},{id:'vodo',label:'Водоотведение'},
+  {id:'soderzh',label:'Содержание'},{id:'bezop',label:'Безопасность'},
+  {id:'tko',label:'ТКО'},{id:'tv',label:'ТВ'},
+  {id:'t1',label:'ЭЭ Т1'},{id:'t2',label:'ЭЭ Т2'},{id:'inet',label:'Интернет'},
+];
+const VERIFY_DATES = { gvs:new Date('2026-07-13'), hvs:new Date('2027-03-13'), ee:new Date('2036-01-01') };
+const VERIFY_NAMES = { gvs:'ГВС', hvs:'ХВС', ee:'Электричество' };
+
+// Firebase init
+const firebaseConfig = {
+  apiKey: "AIzaSyCRM9lmIqknSQ-BrYOtk6MVFlMQ9XuOcVo",
+  authDomain: "hata442-3d94c.firebaseapp.com",
+  projectId: "hata442-3d94c",
+  storageBucket: "hata442-3d94c.firebasestorage.app",
+  messagingSenderId: "33165937187",
+  appId: "1:33165937187:web:467f554ed05123551d3f96"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const DOC_REF = db.collection('kommunalka').doc('data');
+
+let allData = {};
+let firebaseReady = false;
+
+// Load all data from Firebase on start
+async function loadFromFirebase() {
+  try {
+    const doc = await DOC_REF.get();
+    if (doc.exists) allData = doc.data() || {};
+    else allData = {};
+  } catch(e) {
+    console.warn('Firebase load error, using localStorage:', e);
+    allData = JSON.parse(localStorage.getItem('komunalka_v5') || '{}');
+  }
+  firebaseReady = true;
+  loadMonth();
+  updateVerifyBadges();
+}
+
+async function saveToFirebase() {
+  try {
+    await DOC_REF.set(allData);
+    localStorage.setItem('komunalka_v5', JSON.stringify(allData)); // backup
+  } catch(e) {
+    console.warn('Firebase save error, saved to localStorage only:', e);
+    localStorage.setItem('komunalka_v5', JSON.stringify(allData));
+  }
+}
+let autoTimer = null;
+
+// ---- UTILS ----
+function gv(id) { const e=document.getElementById(id); return e ? (parseFloat(e.value)||0) : 0; }
+function vol(m) { return Math.max(0, gv('cur-'+m) - gv('prev-'+m)); }
+function fmt(n) { return n.toLocaleString('ru-RU',{minimumFractionDigits:2,maximumFractionDigits:2})+' ₽'; }
+function fv(n,u) { return n>0 ? n.toLocaleString('ru-RU',{minimumFractionDigits:3,maximumFractionDigits:3})+' '+u : '—'; }
+function set(id,v) { const e=document.getElementById(id); if(e) e.textContent=v; }
+function getPrev(m) { const i=MONTH_KEYS.indexOf(m); return i>0?MONTH_KEYS[i-1]:null; }
+
+// ---- COMPUTE ALL from inputs ----
+function compute() {
+  const vGvs=vol('gvs'), vHvs=vol('hvs'), vVodo=vGvs+vHvs;
+  const v = {
+    kaprem:    gv('t-kaprem'),
+    'gvs-voda':gv('t-gvs-voda')*vGvs,
+    'gvs-pod': gv('t-gvs-pod')*gv('v-gvs-pod'),
+    otop:      gv('t-otop')*gv('v-otop'),
+    hvs:       gv('t-hvs')*vHvs,
+    vodo:      gv('t-vodo')*vVodo,
+    soderzh:   gv('t-soderzh'),
+    bezop:     gv('t-bezop'),
+    tko:       gv('t-tko'),
+    tv:        gv('t-tv'),
+    'oi-ee':   gv('t-oi-ee'),
+    'oi-vo':   gv('t-oi-vo'),
+    'oi-gvs':  gv('t-oi-gvs'),
+    'oi-gvsp': gv('t-oi-gvsp'),
+    'oi-hvs':  gv('t-oi-hvs'),
+    t1:        gv('t-t1')*vol('t1'),
+    t2:        gv('t-t2')*vol('t2'),
+    inet:      gv('t-inet'),
+    volGvs:vGvs, volHvs:vHvs, volVodo:vVodo,
+  };
+  v.mosob = v.kaprem+v['gvs-voda']+v['gvs-pod']+v.otop+v.hvs+v.vodo;
+  v.pik   = v.soderzh+v.bezop+v.tko+v.tv+v['oi-ee']+v['oi-vo']+v['oi-gvs']+v['oi-gvsp']+v['oi-hvs'];
+  v.ee    = v.t1+v.t2;
+  v.grand = v.mosob+v.pik+v.ee+v.inet;
+  v.vadim = v['gvs-voda']+v['gvs-pod']+v.otop+v.hvs+v.vodo+v.ee+v.inet;
+  v.me    = v.grand-v.vadim;
+  return v;
+}
+
+function computeFromData(d) {
+  function g(k){ return d[k]||0; }
+  const vGvs=Math.max(0,(d['cur-gvs']||0)-(d['prev-gvs']||0));
+  const vHvs=Math.max(0,(d['cur-hvs']||0)-(d['prev-hvs']||0));
+  const vT1 =Math.max(0,(d['cur-t1'] ||0)-(d['prev-t1'] ||0));
+  const vT2 =Math.max(0,(d['cur-t2'] ||0)-(d['prev-t2'] ||0));
+  const v = {
+    kaprem:g('t-kaprem'), 'gvs-voda':g('t-gvs-voda')*vGvs,
+    'gvs-pod':g('t-gvs-pod')*g('v-gvs-pod'), otop:g('t-otop')*g('v-otop'),
+    hvs:g('t-hvs')*vHvs, vodo:g('t-vodo')*(vGvs+vHvs),
+    soderzh:g('t-soderzh'), bezop:g('t-bezop'), tko:g('t-tko'), tv:g('t-tv'),
+    'oi-ee':g('t-oi-ee'),'oi-vo':g('t-oi-vo'),'oi-gvs':g('t-oi-gvs'),'oi-gvsp':g('t-oi-gvsp'),'oi-hvs':g('t-oi-hvs'),
+    t1:g('t-t1')*vT1, t2:g('t-t2')*vT2, inet:g('t-inet'),
+  };
+  v.mosob=v.kaprem+v['gvs-voda']+v['gvs-pod']+v.otop+v.hvs+v.vodo;
+  v.pik=v.soderzh+v.bezop+v.tko+v.tv+v['oi-ee']+v['oi-vo']+v['oi-gvs']+v['oi-gvsp']+v['oi-hvs'];
+  v.ee=v.t1+v.t2; v.grand=v.mosob+v.pik+v.ee+v.inet;
+  v.vadim=v['gvs-voda']+v['gvs-pod']+v.otop+v.hvs+v.vodo+v.ee+v.inet;
+  v.me=v.grand-v.vadim;
+  return v;
+}
+
+// ---- RENDER ----
+function render() {
+  const c = compute();
+
+  // volumes
+  set('vol-gvs', fv(c.volGvs,'м³'));
+  set('vol-hvs', fv(c.volHvs,'м³'));
+  set('vol-t1', vol('t1')>0 ? vol('t1')+' кВт·ч' : '—');
+  set('vol-t2', vol('t2')>0 ? vol('t2')+' кВт·ч' : '—');
+  set('disp-gvs-voda', fv(c.volGvs,'м³'));
+  set('disp-hvs',      fv(c.volHvs,'м³'));
+  set('disp-vodo',     fv(c.volVodo,'м³'));
+  set('disp-t1', vol('t1')>0 ? vol('t1')+' кВт·ч' : '—');
+  set('disp-t2', vol('t2')>0 ? vol('t2')+' кВт·ч' : '—');
+
+  // row sums
+  const rows = ['kaprem','gvs-voda','gvs-pod','otop','hvs','vodo',
+    'soderzh','bezop','tko','tv','oi-ee','oi-vo','oi-gvs','oi-gvsp','oi-hvs','t1','t2','inet'];
+  rows.forEach(id => {
+    const e = document.getElementById('s-'+id);
+    if(e) e.textContent = c[id]>0 ? fmt(c[id]) : '—';
+  });
+
+  // block totals
+  set('total-mosob', c.mosob>0 ? fmt(c.mosob) : '—');
+  set('total-pik',   c.pik>0   ? fmt(c.pik)   : '—');
+  set('total-mosen', c.ee>0    ? fmt(c.ee)     : '—');
+  set('total-inet',  c.inet>0  ? fmt(c.inet)   : '—');
+
+  // grand totals
+  set('grand-total', c.grand>0 ? fmt(c.grand) : '—');
+  set('total-v',     c.vadim>0 ? fmt(c.vadim) : '—');
+  set('total-me',    c.me>0    ? fmt(c.me)    : '—');
+
+  // delta vs prev month
+  const month = document.getElementById('monthSelect').value;
+  const prev = getPrev(month);
+  if(prev && allData[prev]) {
+    const p = computeFromData(allData[prev]);
+    setDelta('delta-grand', c.grand, p.grand);
+    setDelta('delta-v',     c.vadim, p.vadim);
+    setDelta('delta-me',    c.me,    p.me);
+  } else {
+    ['delta-grand','delta-v','delta-me'].forEach(id => {
+      const e=document.getElementById(id);
+      if(e){e.textContent='—';e.className='tc-delta flat';}
+    });
+  }
+  drawSparklines();
+}
+
+function setDelta(id, cur, prev) {
+  const e = document.getElementById(id);
+  if(!e) return;
+  if(!prev || !cur) { e.textContent='—'; e.className='tc-delta flat'; return; }
+  const diff = cur-prev, pct = (diff/prev*100).toFixed(1);
+  const sign = diff>0?'+':'';
+  e.textContent = sign+fmt(diff)+' ('+sign+pct+'%)';
+  e.className = 'tc-delta '+(diff>0?'up':diff<0?'down':'flat');
+}
+
+// ---- SPARKLINES ----
+function drawSparklines() {
+  const months = MONTH_KEYS.filter(m=>allData[m]);
+  if(months.length < 2) return;
+  const series = {grand:[], v:[], me:[]};
+  months.forEach(m => {
+    const c = computeFromData(allData[m]);
+    series.grand.push(c.grand); series.v.push(c.vadim); series.me.push(c.me);
+  });
+  ['grand','v','me'].forEach(key => {
+    const canvas = document.getElementById('spark-'+key);
+    if(!canvas) return;
+    const ctx = canvas.getContext('2d'), data = series[key];
+    if(data.length<2) return;
+    const W=canvas.width, H=canvas.height;
+    ctx.clearRect(0,0,W,H);
+    const min=Math.min(...data), max=Math.max(...data), range=max-min||1;
+    const pts = data.map((v,i)=>({x:i/(data.length-1)*(W-4)+2, y:H-2-(v-min)/range*(H-4)}));
+    ctx.beginPath(); ctx.moveTo(pts[0].x,pts[0].y);
+    pts.slice(1).forEach(p=>ctx.lineTo(p.x,p.y));
+    ctx.strokeStyle='#5b8cff'; ctx.lineWidth=1.5; ctx.stroke();
+    const last=pts[pts.length-1];
+    ctx.beginPath(); ctx.arc(last.x,last.y,2.5,0,Math.PI*2);
+    ctx.fillStyle='#5b8cff'; ctx.fill();
+  });
+}
+
+// ---- INPUT HANDLER ----
+function onInput() {
+  render();
+  clearTimeout(autoTimer);
+  autoTimer = setTimeout(autoSave, 1500);
+}
+
+async function autoSave() {
+  const month = document.getElementById('monthSelect').value;
+  const data = {};
+  document.querySelectorAll('input[type=number]').forEach(el => { if(el.value!=='') data[el.id]=parseFloat(el.value); });
+  allData[month] = data;
+  await saveToFirebase();
+  const lbl = document.getElementById('autosave-lbl');
+  if(lbl) { lbl.textContent='Сохранено ✓'; lbl.className='autosave saved'; setTimeout(()=>{lbl.textContent='';lbl.className='autosave';},2500); }
+}
+
+// ---- LOAD / CLEAR ----
+function loadMonth() {
+  const month = document.getElementById('monthSelect').value;
+  const data = allData[month] || {};
+  document.querySelectorAll('input[type=number]').forEach(el => { el.value = data[el.id]!==undefined ? data[el.id] : ''; });
+
+  if(!allData[month]) {
+    const prev = getPrev(month);
+    if(prev && allData[prev]) {
+      ['gvs','hvs','t1','t2'].forEach(m => {
+        const el = document.getElementById('prev-'+m);
+        if(el && !el.value && allData[prev]['cur-'+m]!==undefined) el.value = allData[prev]['cur-'+m];
+      });
+      TARIFF_IDS.forEach(id => {
+        const el = document.getElementById(id);
+        if(el && !el.value && allData[prev][id]!==undefined) el.value = allData[prev][id];
+      });
+    }
+  }
+  render();
+}
+
+function clearMonth() {
+  if(!confirm('Очистить данные за этот месяц?')) return;
+  document.querySelectorAll('input[type=number]').forEach(el => el.value='');
+  render();
+}
+
+// ---- VERIFICATION ----
+function updateVerifyBadges() {
+  const now = new Date();
+  Object.entries(VERIFY_DATES).forEach(([key, expiry]) => {
+    const el = document.getElementById('verify-'+key);
+    const btn = document.getElementById('cal-'+key);
+    if(!el) return;
+    const days = Math.ceil((expiry-now)/(864e5));
+    const ds = expiry.toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit',year:'numeric'});
+    if(days<=0)       { el.className='mc-verify danger'; el.textContent='⚠ Просрочена!'; if(btn) btn.style.display='inline-block'; }
+    else if(days<=90) { el.className='mc-verify warn';   el.textContent='⚠ до '+ds;      if(btn) btn.style.display='inline-block'; }
+    else              { el.className='mc-verify ok';     el.textContent='до '+ds;         if(btn) btn.style.display='none'; }
+  });
+}
+
+function addToCalendar(key) {
+  const expiry = VERIFY_DATES[key];
+  const remind = new Date(expiry); remind.setMonth(remind.getMonth()-1);
+  const f8 = d => d.toISOString().replace(/[-:]/g,'').slice(0,8);
+  const title = encodeURIComponent('Поверка счётчика: '+VERIFY_NAMES[key]);
+  const details = encodeURIComponent('Срок поверки истекает '+expiry.toLocaleDateString('ru-RU'));
+  window.open('https://calendar.google.com/calendar/render?action=TEMPLATE&text='+title+'&dates='+f8(remind)+'/'+f8(expiry)+'&details='+details,'_blank');
+}
+
+// ---- HISTORY ----
+function renderHistory() {
+  const months = MONTH_KEYS.filter(m=>allData[m]);
+  const head = document.getElementById('hist-head');
+  const body = document.getElementById('hist-body');
+  if(!months.length) { head.innerHTML=''; body.innerHTML='<tr><td colspan="2" style="color:var(--muted);text-align:center;padding:32px">Нет данных</td></tr>'; return; }
+  head.innerHTML = '<tr><th>Статья</th>'+months.map(m=>'<th>'+MONTHS[m].replace(' ','<br>')+'</th>').join('')+'</tr>';
+  const computed = months.map(m=>computeFromData(allData[m]));
+  const rows = [
+    {label:'Всего',key:'grand',bold:true},{label:'Вадимовна',key:'vadim'},{label:'Я',key:'me'},
+    null,
+    {label:'МосОблЕИРЦ',key:'mosob'},{label:'Пик-Комфорт',key:'pik'},
+    {label:'Мосэнергосбыт',key:'ee'},{label:'Интернет',key:'inet'},
+  ];
+  let html='';
+  rows.forEach(row => {
+    if(!row){ html+='<tr><td colspan="'+(months.length+1)+'" style="height:6px;border:none"></td></tr>'; return; }
+    html+='<tr><td>'+(row.bold?'<b>'+row.label+'</b>':row.label)+'</td>';
+    computed.forEach((c,i) => {
+      const val=c[row.key]||0;
+      let cls = row.bold?'h-total':'';
+      if(i>0){ const diff=val-(computed[i-1][row.key]||0); if(diff>0) cls+=' dpos'; else if(diff<0) cls+=' dneg'; }
+      html+='<td class="'+cls+'">'+(val>0?fmt(val):'—')+'</td>';
+    });
+    html+='</tr>';
+  });
+  body.innerHTML=html;
+}
+
+// ---- DYNAMICS ----
+function renderDynamics() {
+  const tbody = document.getElementById('dynamics-body');
+  const months = Object.keys(allData).sort();
+  if(!months.length){ tbody.innerHTML='<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:32px">Нет данных</td></tr>'; return; }
+  const base = allData[months[0]];
+  const tk = {kaprem:'t-kaprem','gvs-voda':'t-gvs-voda','gvs-pod':'t-gvs-pod',otop:'t-otop',
+    hvs:'t-hvs',vodo:'t-vodo',soderzh:'t-soderzh',bezop:'t-bezop',tko:'t-tko',tv:'t-tv',
+    t1:'t-t1',t2:'t-t2',inet:'t-inet'};
+  let rows='';
+  months.forEach(m => {
+    const d=allData[m];
+    TARIFF_FIELDS.forEach(f => {
+      const k=tk[f.id], cur=d[k], b=base[k];
+      if(cur===undefined&&b===undefined) return;
+      const diff=(cur||0)-(b||0), pct=b?diff/b*100:null;
+      const cls=diff>0?'dpos':diff<0?'dneg':'dzero';
+      const dr=b!==undefined&&cur!==undefined ? (diff>=0?'+':'')+diff.toLocaleString('ru-RU',{minimumFractionDigits:2,maximumFractionDigits:4})+' ₽' : '—';
+      const dp=pct!==null?(diff>=0?'+':'')+pct.toFixed(1)+'%':'—';
+      rows+=`<tr><td>${MONTHS[m]||m}</td><td>${f.label}</td><td>${cur!==undefined?cur.toLocaleString('ru-RU',{minimumFractionDigits:2,maximumFractionDigits:6}):'—'}</td><td class="${cls}">${dr}</td><td class="${cls}">${dp}</td></tr>`;
+    });
+  });
+  tbody.innerHTML=rows||'<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:32px">Нет данных</td></tr>';
+}
+
+// ---- TABS ----
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['entry','history','dynamics'][i]===name));
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  if(name==='history') renderHistory();
+  if(name==='dynamics') renderDynamics();
+}
+
+// ---- THEME ----
+function applyTheme(theme) {
+  document.documentElement.classList.remove('light','dark');
+  document.documentElement.classList.add(theme);
+  const btn=document.getElementById('theme-btn');
+  if(btn) btn.textContent=theme==='light'?'🌙':'☀️';
+  localStorage.setItem('komunalka_theme',theme);
+}
+function toggleTheme() {
+  applyTheme(document.documentElement.classList.contains('light')?'dark':'light');
+}
+(function(){
+  const saved=localStorage.getItem('komunalka_theme');
+  const sys=window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';
+  applyTheme(saved||sys);
+  window.matchMedia('(prefers-color-scheme: light)').addEventListener('change',e=>{
+    if(!localStorage.getItem('komunalka_theme')) applyTheme(e.matches?'light':'dark');
+  });
+})();
+
+// ---- INIT ----
+const MAY26 = {
+  'prev-gvs':94.380,'cur-gvs':95.496,'prev-hvs':150.577,'cur-hvs':153.196,
+  'prev-t1':3407,'cur-t1':3449,'prev-t2':923,'cur-t2':937,
+  't-kaprem':594,'t-gvs-voda':63.26,'t-gvs-pod':0.0612684,'v-gvs-pod':2909.02,
+  't-otop':0.3591,'v-otop':2909.02,'t-hvs':63.26,'t-vodo':62.21,
+  't-soderzh':1631.88,'t-bezop':109.08,'t-tko':311.12,'t-tv':315,
+  't-oi-ee':106.85,'t-oi-vo':3.21,'t-oi-gvs':1.63,'t-oi-gvsp':3.98,'t-oi-hvs':1.63,
+  't-t1':8.24,'t-t2':3.54,'t-inet':800
+};
+// Start: load from Firebase, then init
+loadFromFirebase().then(() => {
+  if(!allData['2026-05']){ allData['2026-05']=MAY26; saveToFirebase(); }
+});
+</script>
+</body>
+</html>
