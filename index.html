@@ -176,10 +176,12 @@
 
   /* TOOLTIPS */
   .tip { position: relative; cursor: help; }
-  .tip::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); background: #1e2235; color: #e2e8f0; font-size: 11px; line-height: 1.5; padding: 6px 10px; border-radius: 6px; border: 1px solid #2e3350; white-space: pre-line; width: max-content; max-width: 220px; z-index: 100; pointer-events: none; opacity: 0; transition: opacity 0.15s; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
-  .tip::before { content: ''; position: absolute; bottom: calc(100% + 1px); left: 50%; transform: translateX(-50%); border: 5px solid transparent; border-top-color: #2e3350; z-index: 101; opacity: 0; transition: opacity 0.15s; pointer-events: none; }
-  .tip:hover::after,.tip:hover::before,.tip.active::after,.tip.active::before { opacity: 1; }
+  .tip { position: relative !important; }
+  .tip::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); background: #1e2235; color: #e2e8f0; font-size: 12px; line-height: 1.5; padding: 8px 12px; border-radius: 8px; border: 1px solid #2e3350; white-space: pre-line; width: max-content; max-width: 240px; z-index: 9999; pointer-events: none; opacity: 0; transition: opacity 0.2s; box-shadow: 0 4px 16px rgba(0,0,0,0.4); }
+  .tip::before { content: ''; position: absolute; bottom: calc(100% + 3px); left: 50%; transform: translateX(-50%); border: 5px solid transparent; border-top-color: #2e3350; z-index: 9998; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
+  .tip:hover::after,.tip:hover::before,.tip.active::after,.tip.active::before { opacity: 1 !important; }
   .tip-left::after { left: 0; transform: none; }
+  .tip-right::after { left: auto; right: 0; transform: none; }
 
   /* TOTALS */
   .totals-bar { margin-top: 20px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 80px; }
@@ -790,22 +792,103 @@ async function restoreVersion(idx){
   const lbl=document.getElementById('autosave-lbl');if(lbl){lbl.textContent='Версия восстановлена ✓';lbl.className='autosave saved';setTimeout(()=>{lbl.textContent='';lbl.className='autosave';},2500);}
 }
 
-// Pie chart
+// Interactive Pie chart
+let pieData=null,pieHovered=-1;
+
 function drawPie(c){
-  const canvas=document.getElementById('pie-canvas');if(!canvas||!c||c.grand===0)return;
-  const ctx=canvas.getContext('2d'),W=canvas.width,H=canvas.height,cx=W/2,cy=H/2,r=Math.min(W,H)/2-12;
+  const canvas=document.getElementById('pie-canvas');if(!canvas)return;
+  if(!c||c.grand===0){const ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);return;}
+  const slices=[
+    {value:c.mosob,color:'#5b8cff',label:'МосОблЕИРЦ'},
+    {value:c.pik,color:'#f97316',label:'Пик-Комфорт'},
+    {value:c.ee,color:'#a78bfa',label:'Мосэнергосбыт'},
+    {value:c.inet,color:'#34d399',label:'Интернет'},
+  ].filter(s=>s.value>0);
+  pieData={slices,grand:c.grand};
+  renderPie(pieHovered);
+
+  // Setup events once
+  if(!canvas._pieInit){
+    canvas._pieInit=true;
+    canvas.addEventListener('mousemove',e=>{
+      const rect=canvas.getBoundingClientRect();
+      const mx=e.clientX-rect.left,my=e.clientY-rect.top;
+      const idx=getPieSliceAt(canvas,mx,my);
+      if(idx!==pieHovered){pieHovered=idx;renderPie(pieHovered);showPieTooltip(canvas,e,idx);}
+    });
+    canvas.addEventListener('mouseleave',()=>{pieHovered=-1;renderPie(-1);hidePieTooltip();});
+    canvas.addEventListener('click',e=>{
+      const rect=canvas.getBoundingClientRect();
+      const idx=getPieSliceAt(canvas,e.clientX-rect.left,e.clientY-rect.top);
+      if(idx>=0&&pieData)showPieTooltip(canvas,e,idx,true);
+    });
+    canvas.addEventListener('touchstart',e=>{
+      const rect=canvas.getBoundingClientRect();
+      const t=e.touches[0];
+      const idx=getPieSliceAt(canvas,t.clientX-rect.left,t.clientY-rect.top);
+      if(idx>=0&&pieData){pieHovered=idx;renderPie(idx);showPieTooltip(canvas,t,idx,true);}
+    },{passive:true});
+  }
+}
+
+function getPieSliceAt(canvas,mx,my){
+  if(!pieData)return -1;
+  const W=canvas.width,H=canvas.height,cx=W/2,cy=H/2,r=Math.min(W,H)/2-12;
+  const dx=mx-cx,dy=my-cy,dist=Math.sqrt(dx*dx+dy*dy);
+  if(dist>r||dist<4)return -1;
+  let angle=Math.atan2(dy,dx)+Math.PI/2;
+  if(angle<0)angle+=Math.PI*2;
+  let start=0;
+  for(let i=0;i<pieData.slices.length;i++){
+    const a=(pieData.slices[i].value/pieData.grand)*Math.PI*2;
+    if(angle>=start&&angle<start+a)return i;
+    start+=a;
+  }
+  return -1;
+}
+
+function renderPie(hoveredIdx){
+  const canvas=document.getElementById('pie-canvas');if(!canvas||!pieData)return;
+  const ctx=canvas.getContext('2d'),W=canvas.width,H=canvas.height,cx=W/2,cy=H/2,r=Math.min(W,H)/2-14;
   ctx.clearRect(0,0,W,H);
-  const slices=[{value:c.mosob,color:'#5b8cff'},{value:c.pik,color:'#f97316'},{value:c.ee,color:'#a78bfa'},{value:c.inet,color:'#34d399'}].filter(s=>s.value>0);
   let startAngle=-Math.PI/2;
-  slices.forEach(s=>{
-    const angle=(s.value/c.grand)*Math.PI*2;
-    ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,startAngle,startAngle+angle);ctx.closePath();
+  pieData.slices.forEach((s,i)=>{
+    const angle=(s.value/pieData.grand)*Math.PI*2;
+    const isHov=i===hoveredIdx;
+    const offset=isHov?6:0;
+    const mid=startAngle+angle/2;
+    const ox=Math.cos(mid)*offset,oy=Math.sin(mid)*offset;
+    ctx.beginPath();ctx.moveTo(cx+ox,cy+oy);ctx.arc(cx+ox,cy+oy,isHov?r+4:r,startAngle,startAngle+angle);ctx.closePath();
     ctx.fillStyle=s.color;ctx.fill();
-    ctx.strokeStyle='rgba(0,0,0,0.3)';ctx.lineWidth=2;ctx.stroke();
-    const mid=startAngle+angle/2,pct=Math.round(s.value/c.grand*100);
-    if(pct>=8){ctx.fillStyle='#fff';ctx.font='bold 9px sans-serif';ctx.textAlign='center';ctx.fillText(pct+'%',cx+Math.cos(mid)*r*0.65,cy+Math.sin(mid)*r*0.65+3);}
+    ctx.strokeStyle='rgba(0,0,0,0.25)';ctx.lineWidth=2;ctx.stroke();
+    const pct=Math.round(s.value/pieData.grand*100);
+    if(pct>=8||isHov){
+      ctx.fillStyle='#fff';ctx.font=isHov?'bold 11px sans-serif':'bold 9px sans-serif';ctx.textAlign='center';
+      ctx.fillText(pct+'%',cx+ox+Math.cos(mid)*r*0.62,cy+oy+Math.sin(mid)*r*0.62+3);
+    }
     startAngle+=angle;
   });
+}
+
+let pieTooltipEl=null;
+function showPieTooltip(canvas,e,idx,pin=false){
+  if(!pieData||idx<0)return;
+  const s=pieData.slices[idx];
+  const pct=Math.round(s.value/pieData.grand*100);
+  if(!pieTooltipEl){
+    pieTooltipEl=document.createElement('div');
+    pieTooltipEl.style.cssText='position:fixed;background:#1e2235;color:#e2e8f0;font-size:12px;padding:8px 12px;border-radius:8px;border:1px solid #2e3350;z-index:9999;pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,0.4);transition:opacity 0.15s;';
+    document.body.appendChild(pieTooltipEl);
+  }
+  pieTooltipEl.innerHTML=`<div style="display:flex;align-items:center;gap:6px"><div style="width:10px;height:10px;border-radius:50%;background:${s.color}"></div><b>${s.label}</b></div><div style="margin-top:4px;color:#94a3b8">${fmt(s.value)} · ${pct}%</div>`;
+  pieTooltipEl.style.opacity='1';
+  const x=e.clientX||e.pageX,y=e.clientY||e.pageY;
+  pieTooltipEl.style.left=(x+12)+'px';
+  pieTooltipEl.style.top=(y-40)+'px';
+  if(pin)setTimeout(hidePieTooltip,3000);
+}
+function hidePieTooltip(){
+  if(pieTooltipEl)pieTooltipEl.style.opacity='0';
 }
 
 // Year summary
@@ -860,7 +943,10 @@ function showAchToast(a){
 function renderAchievements(){
   const grid=document.getElementById('ach-grid');if(!grid)return;
   const u=getUnlocked();
-  grid.innerHTML=ACHIEVEMENTS.map(a=>`<div style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 6px;border-radius:8px;background:var(--surface2);border:1px solid ${u.includes(a.id)?'var(--yellow)':'var(--border)'};text-align:center"><div style="font-size:28px;filter:${u.includes(a.id)?'none':'grayscale(1) opacity(0.3)'}">${a.icon}</div><div style="font-size:10px;color:${u.includes(a.id)?'var(--yellow)':'var(--muted)'};line-height:1.3">${a.name}</div></div>`).join('');
+  grid.innerHTML=ACHIEVEMENTS.map(a=>{
+    const locked=!u.includes(a.id);
+    return `<div class="tip" data-tip="${locked?'🔒 '+a.desc:a.name+': '+a.desc}" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 6px;border-radius:8px;background:var(--surface2);border:1px solid ${locked?'var(--border)':'var(--yellow)'};text-align:center;cursor:pointer;transition:transform 0.15s" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'"><div style="font-size:28px;filter:${locked?'grayscale(1) opacity(0.3)':'none'}">${a.icon}</div><div style="font-size:10px;color:${locked?'var(--muted)':'var(--yellow)'};line-height:1.3">${a.name}</div></div>`;
+  }).join('');
 }
 function checkAchs(){
   const months=MONTH_KEYS.filter(m=>allData[m]);
