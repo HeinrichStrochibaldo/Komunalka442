@@ -135,16 +135,14 @@ header {
    TOOLTIPS  — работают везде, не обрезаются
    ============================================================ */
 [data-tip] {
-  position: relative;
   cursor: help;
 }
-[data-tip]::after {
-  content: attr(data-tip);
-  position: fixed; /* fixed чтобы не обрезалось overflow:hidden */
+/* Глобальный тултип — позиционируется через JS */
+#global-tip {
+  position: fixed;
   background: #1a1f35;
   color: #e2e8f0;
   font-size: 12px;
-  font-weight: 400;
   line-height: 1.5;
   padding: 7px 11px;
   border-radius: 8px;
@@ -157,13 +155,8 @@ header {
   opacity: 0;
   transition: opacity .15s;
   box-shadow: 0 4px 16px rgba(0,0,0,.45);
-  /* позиционируем через JS-переменные */
-  left: var(--tip-x, 50%);
-  top: var(--tip-y, 0);
-  transform: translateY(-100%) translateY(-8px);
 }
-[data-tip]:hover::after,
-[data-tip].tip-show::after { opacity: 1; }
+#global-tip.show { opacity: 1; }
 
 /* ============================================================
    BUTTONS
@@ -546,6 +539,60 @@ input.changed { border-color: var(--yellow) !important; background: rgba(251,191
 }
 .version-label { font-size: 12px; color: var(--text); }
 .version-time { font-size: 11px; color: var(--muted); }
+
+/* ============================================================
+   DYNAMIC ISLAND ACHIEVEMENT TOAST
+   ============================================================ */
+#ach-toast {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%) scaleX(0.3) scaleY(0.6);
+  background: #000;
+  border-radius: 40px;
+  padding: 0;
+  z-index: 9000;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  overflow: hidden;
+  max-width: 48px;
+  max-height: 36px;
+  opacity: 0;
+  transition:
+    transform .4s cubic-bezier(.34,1.56,.64,1),
+    max-width .4s cubic-bezier(.34,1.56,.64,1),
+    max-height .35s cubic-bezier(.34,1.56,.64,1),
+    opacity .2s,
+    border-radius .4s;
+  pointer-events: none;
+  box-shadow: 0 8px 32px rgba(0,0,0,.6);
+}
+#ach-toast.expand {
+  transform: translateX(-50%) scaleX(1) scaleY(1);
+  max-width: 320px;
+  max-height: 80px;
+  opacity: 1;
+  border-radius: 20px;
+  padding: 10px 16px;
+  gap: 12px;
+}
+#ach-toast-icon {
+  font-size: 28px;
+  line-height: 1;
+  flex-shrink: 0;
+  transform: scale(0);
+  transition: transform .3s cubic-bezier(.34,1.56,.64,1) .2s;
+}
+#ach-toast.expand #ach-toast-icon { transform: scale(1); }
+#ach-toast-text {
+  display: flex; flex-direction: column; gap: 2px;
+  opacity: 0; transform: translateX(8px);
+  transition: opacity .25s .3s, transform .25s .3s;
+}
+#ach-toast.expand #ach-toast-text { opacity: 1; transform: none; }
+#ach-toast-title { font-size: 11px; color: #fbbf24; font-weight: 700; letter-spacing: .3px; }
+#ach-toast-name  { font-size: 13px; color: #fff; font-weight: 600; }
 
 /* ============================================================
    MODALS / OVERLAYS
@@ -1172,6 +1219,18 @@ input.changed { border-color: var(--yellow) !important; background: rgba(251,191
   </div>
 </div>
 
+<!-- DYNAMIC ISLAND ACHIEVEMENT TOAST -->
+<div id="ach-toast">
+  <div id="ach-toast-icon">🎯</div>
+  <div id="ach-toast-text">
+    <div id="ach-toast-title">Достижение!</div>
+    <div id="ach-toast-name">Первый шаг</div>
+  </div>
+</div>
+
+<!-- GLOBAL TOOLTIP -->
+<div id="global-tip"></div>
+
 <!-- TOASTY -->
 <div id="toasty">
   <div id="toasty-face">🔥</div>
@@ -1259,10 +1318,23 @@ const db = firebase.firestore();
 const DOC = db.collection('kommunalka').doc('data');
 
 async function fbLoad() {
-  try { const d = await DOC.get(); allData = d.exists ? (d.data()||{}) : {}; }
-  catch(e) { allData = JSON.parse(localStorage.getItem('kv5')||'{}'); }
-  if (!allData['2026-05']) { allData['2026-05'] = MAY26; fbSave(); }
-  hideSplash(); loadMonth(); updateVerify(); renderMiniCal(); updateStreak(); checkEaster();
+  try {
+    const d = await Promise.race([
+      DOC.get(),
+      new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),8000))
+    ]);
+    allData = d.exists ? (d.data()||{}) : {};
+  } catch(e) {
+    console.warn('Firebase:', e.message);
+    allData = JSON.parse(localStorage.getItem('kv5')||'{}');
+  }
+  try {
+    if (!allData['2026-05']) { allData['2026-05'] = MAY26; fbSave(); }
+    if (allData._achs) localStorage.setItem('kachs', JSON.stringify(allData._achs));
+  } catch(e) {}
+  hideSplash();
+  try { loadMonth(); updateVerify(); renderMiniCal(); updateStreak(); checkEaster(); }
+  catch(e) { console.error('Render:', e); }
 }
 
 async function fbSave() {
@@ -1628,23 +1700,44 @@ function hidePieTip(){
 /* ============================================================
    TOOLTIPS — positioning via JS for fixed positioning
    ============================================================ */
-document.addEventListener('mouseover', e => {
-  const el=e.target.closest('[data-tip]'); if(!el) return;
-  const r=el.getBoundingClientRect();
-  el.style.setProperty('--tip-x', (r.left+r.width/2)+'px');
-  el.style.setProperty('--tip-y', (r.top)+'px');
-});
+const GTip = document.getElementById('global-tip');
+let tipPinned = false, tipTarget = null;
 
-// Mobile tap support
+function showTip(text, x, y) {
+  if (!GTip) return;
+  GTip.textContent = text;
+  GTip.classList.add('show');
+  const vw=window.innerWidth, bw=Math.min(240,vw-20);
+  GTip.style.maxWidth = bw+'px';
+  GTip.style.left='0px'; GTip.style.top='0px';
+  const tw=GTip.offsetWidth, th=GTip.offsetHeight;
+  let lx=x-tw/2, ly=y-th-10;
+  if(lx+tw>vw-8) lx=vw-tw-8;
+  if(lx<8) lx=8;
+  if(ly<8) ly=y+16;
+  GTip.style.left=lx+'px'; GTip.style.top=ly+'px';
+}
+function hideTip(){ if(GTip)GTip.classList.remove('show'); tipPinned=false; tipTarget=null; }
+
+document.addEventListener('mouseover', e => {
+  if(tipPinned) return;
+  const el=e.target.closest('[data-tip]'); if(!el) return;
+  tipTarget=el;
+  const r=el.getBoundingClientRect();
+  showTip(el.getAttribute('data-tip'), r.left+r.width/2, r.top);
+});
+document.addEventListener('mouseout', e => {
+  if(tipPinned) return;
+  if(e.target.closest('[data-tip]')===tipTarget) hideTip();
+});
 document.addEventListener('click', e => {
   const el=e.target.closest('[data-tip]');
-  document.querySelectorAll('[data-tip].tip-show').forEach(x=>{ if(x!==el) x.classList.remove('tip-show'); });
-  if(el){
-    const r=el.getBoundingClientRect();
-    el.style.setProperty('--tip-x',(r.left+r.width/2)+'px');
-    el.style.setProperty('--tip-y',(r.top)+'px');
-    el.classList.toggle('tip-show');
-  }
+  if(!el){if(tipPinned)hideTip();return;}
+  if(tipPinned&&tipTarget===el){hideTip();return;}
+  tipPinned=true; tipTarget=el;
+  const r=el.getBoundingClientRect();
+  showTip(el.getAttribute('data-tip'),r.left+r.width/2,r.top);
+  setTimeout(()=>{if(tipPinned&&tipTarget===el)hideTip();},3000);
 });
 
 /* ============================================================
@@ -2083,20 +2176,44 @@ function renderYear(){
 /* ============================================================
    ACHIEVEMENTS
    ============================================================ */
-function getAchs(){ return JSON.parse(localStorage.getItem('kachs')||'[]'); }
+function getAchs(){
+  // Firebase-synced: stored in allData._achs, fallback to localStorage
+  if(allData._achs) return allData._achs;
+  return JSON.parse(localStorage.getItem('kachs')||'[]');
+}
 function unlockAch(id){
   const u=getAchs(); if(u.includes(id)) return;
-  u.push(id); localStorage.setItem('kachs',JSON.stringify(u));
+  u.push(id);
+  localStorage.setItem('kachs',JSON.stringify(u));
+  // Sync to Firebase
+  if(!allData._achs) allData._achs=[];
+  if(!allData._achs.includes(id)){
+    allData._achs=u;
+    fbSave();
+  }
   const a=ACHIEVEMENTS_DEF.find(x=>x.id===id); if(a) showAchToast(a);
   renderAchievements();
 }
+let achToastTimer = null;
 function showAchToast(a){
-  const el=document.createElement('div');
-  el.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--yellow);border-radius:10px;padding:12px 18px;z-index:5000;display:flex;align-items:center;gap:10px;box-shadow:0 4px 20px rgba(0,0,0,.35);animation:pagein .3s ease;white-space:nowrap;';
-  el.innerHTML=`<span style="font-size:22px">${a.icon}</span><div><div style="font-size:13px;font-weight:600;color:var(--yellow)">Достижение!</div><div style="font-size:12px;color:var(--muted)">${a.name}</div></div>`;
-  document.body.appendChild(el);
-  if(settings.sounds) playSound('ach');
-  setTimeout(()=>el.remove(),4000);
+  const toast = document.getElementById('ach-toast');
+  const icon  = document.getElementById('ach-toast-icon');
+  const title = document.getElementById('ach-toast-title');
+  const name  = document.getElementById('ach-toast-name');
+  if(!toast) return;
+  // Reset
+  toast.classList.remove('expand');
+  clearTimeout(achToastTimer);
+  // Set content
+  setTimeout(()=>{
+    if(icon)  icon.textContent  = a.icon;
+    if(name)  name.textContent  = a.name;
+    if(title) title.textContent = 'Достижение!';
+    // Expand (Dynamic Island effect)
+    requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ toast.classList.add('expand'); }); });
+    if(settings.sounds) playSound('ach');
+    achToastTimer = setTimeout(()=>toast.classList.remove('expand'), 4000);
+  }, 50);
 }
 function renderAchievements(){
   const grid=document.getElementById('ach-grid'); if(!grid) return;
