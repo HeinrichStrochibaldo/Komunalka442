@@ -6,6 +6,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Коммуналка">
+<meta name="theme-color" id="meta-theme-color" content="#0f1117">
+<link rel="manifest" id="pwa-manifest" href="">
 <title>Коммуналка</title>
 <style>
 /* ============================================================
@@ -71,7 +73,9 @@ header {
   display: flex; align-items: center; gap: 10px;
   padding: 18px 24px 14px; border-bottom: 1px solid var(--border);
   position: sticky; top: 0; background: var(--bg); z-index: 40;
+  transition: box-shadow .25s cubic-bezier(.4,0,.2,1);
 }
+header.scrolled { box-shadow: 0 4px 24px rgba(0,0,0,.35); }
 #app-title { font-size: 19px; font-weight: 700; letter-spacing: -.5px; cursor: default; }
 .header-sub { font-size: 12px; color: var(--muted); }
 #streak-badge {
@@ -91,19 +95,34 @@ header {
    TABS
    ============================================================ */
 .tabs {
-  display: flex; gap: 3px; padding: 10px 24px 0;
+  display: flex; gap: 2px; padding: 8px 24px 0;
   border-bottom: 1px solid var(--border);
   overflow-x: auto; scrollbar-width: none;
   position: sticky; top: 57px; background: var(--bg); z-index: 39;
 }
 .tabs::-webkit-scrollbar { display: none; }
+.tabs.scrolled { box-shadow: 0 2px 12px rgba(0,0,0,.2); }
 .tab {
-  padding: 6px 13px; border-radius: 6px 6px 0 0; cursor: pointer;
+  position: relative;
+  padding: 7px 14px 10px; cursor: pointer;
   color: var(--muted); font-size: 12px; font-weight: 500;
-  border: 1px solid transparent; border-bottom: none;
-  background: transparent; transition: all .15s; white-space: nowrap;
+  border: none; background: transparent;
+  transition: color .2s cubic-bezier(.4,0,.2,1); white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
 }
-.tab.active { background: var(--surface); color: var(--text); border-color: var(--border); }
+.tab::after {
+  content:''; position:absolute; bottom:0; left:50%; transform:translateX(-50%) scaleX(0);
+  width:24px; height:3px; border-radius:2px 2px 0 0;
+  background: var(--accent); transition: transform .3s cubic-bezier(.34,1.56,.64,1);
+}
+.tab.active { color: var(--text); font-weight:600; }
+.tab.active::after { transform: translateX(-50%) scaleX(1); }
+.tab-badge {
+  display:inline-flex; align-items:center; justify-content:center;
+  background:var(--accent); color:#fff; font-size:9px; font-weight:700;
+  border-radius:10px; padding:1px 5px; margin-left:4px; min-width:16px;
+  line-height:1.4;
+}
 
 /* ============================================================
    PAGES
@@ -130,12 +149,14 @@ header {
    BUTTONS
    ============================================================ */
 .btn {
-  background: var(--accent); color: #fff; border: none;
+  background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 70%, #6d28d9));
+  color: #fff; border: none;
   border-radius: 7px; padding: 7px 14px; font-size: 13px; font-weight: 600;
-  cursor: pointer; white-space: nowrap; transition: all .15s; font-family: inherit;
+  cursor: pointer; white-space: nowrap; transition: all .25s cubic-bezier(.34,1.56,.64,1); font-family: inherit;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 40%, transparent);
 }
-.btn:hover { opacity: .85; transform: translateY(-1px); }
-.btn:active { transform: none; }
+.btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+.btn:active { transform: scale(0.95) !important; transition: transform .1s !important; filter: brightness(0.95); }
 .btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--label); }
 .btn-ghost:hover { background: var(--surface2); opacity: 1; }
 .btn-danger { background: transparent; border: 1px solid var(--red); color: var(--red); }
@@ -162,23 +183,26 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
    MONTH NAV
    ============================================================ */
 .month-bar {
-  display: flex; align-items: center; justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
   margin-bottom: 16px; gap: 8px;
 }
-.month-bar-left, .month-bar-right {
-  display: flex; align-items: center; gap: 6px; flex: 1;
+.month-bar-left {
+  display: flex; align-items: center; gap: 6px; justify-content: flex-start;
 }
-.month-bar-right { justify-content: flex-end; }
+.month-bar-right { display: flex; align-items: center; gap: 6px; justify-content: flex-end; }
 .month-center {
   display: flex; align-items: center; gap: 8px;
-  flex-shrink: 0;
+  justify-content: center;
 }
 .nav-btn {
   background: var(--surface); border: 1px solid var(--border);
   color: var(--label); border-radius: 7px; padding: 6px 13px;
-  font-size: 16px; cursor: pointer; transition: all .15s; user-select: none;
+  font-size: 16px; cursor: pointer; transition: all .25s cubic-bezier(.34,1.56,.64,1); user-select: none;
 }
 .nav-btn:hover { background: var(--surface2); color: var(--text); }
+.nav-btn:active { transform: scale(0.9); }
 #month-label {
   font-size: 15px; font-weight: 700; color: var(--text);
   min-width: 120px; text-align: center; cursor: pointer;
@@ -435,8 +459,9 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
 }
 .ach-card:hover { transform: scale(1.05); }
 .ach-card.unlocked { border-color: var(--yellow); background: rgba(251,191,36,.06); }
-.ach-icon { font-size: 28px; filter: grayscale(1) opacity(.25); }
+.ach-icon { font-size: 28px; filter: grayscale(1) opacity(.3); transition: filter .3s; }
 .ach-card.unlocked .ach-icon { filter: none; }
+.ach-card:not(.unlocked) .ach-icon::after { content: '🔒'; font-size: 11px; position: relative; top: -8px; left: -6px; }
 .ach-name { font-size: 10px; color: var(--muted); line-height: 1.3; }
 .ach-card.unlocked .ach-name { color: var(--yellow); }
 
@@ -573,9 +598,197 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
   .pres-total { font-size: 44px; }
   .pres-row { gap: 24px; }
   .pres-item-val { font-size: 22px; }
-  .month-bar { flex-wrap: wrap; gap: 6px; }
-  .month-bar-left, .month-bar-right { flex: 0 0 auto; }
+  .month-bar { grid-template-columns: auto auto auto; }
 }
+
+/* ============================================================
+   FAB — быстрый ввод
+   ============================================================ */
+#fab {
+  position: fixed; bottom: 80px; right: 20px; z-index: 200;
+  width: 56px; height: 56px; border-radius: 50%;
+  background: var(--accent); color: #fff; font-size: 22px;
+  border: none; cursor: pointer; box-shadow: 0 4px 20px rgba(0,0,0,.4);
+  display: flex; align-items: center; justify-content: center;
+  transition: transform .35s cubic-bezier(.34,1.56,.64,1), background .2s;
+  animation: fabIn .5s cubic-bezier(.34,1.56,.64,1) .3s both;
+  -webkit-tap-highlight-color: transparent;
+}
+@keyframes fabIn{from{transform:scale(0) rotate(-180deg)}to{transform:scale(1) rotate(0)}}
+#fab:active { transform: scale(0.9); }
+#fab.saved { background: var(--green); }
+#fab.saved::after {
+  content:'✓'; position:absolute; font-size:18px; font-weight:700;
+  animation: fabCheck .6s ease forwards;
+}
+@keyframes fabCheck{0%{opacity:0;transform:scale(.5)}40%{opacity:1;transform:scale(1.2)}100%{opacity:1;transform:scale(1)}}
+#fab.loading { animation: fabSpin 1s linear infinite; }
+@keyframes fabSpin{to{transform:rotate(360deg)}}
+
+/* ============================================================
+   iOS BOTTOM SHEET ШТОРКА
+   ============================================================ */
+#sheet-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,.5);
+  z-index: 300; opacity: 0; pointer-events: none;
+  transition: opacity .3s cubic-bezier(.4,0,.2,1);
+  -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+}
+#sheet-backdrop.show { opacity: 1; pointer-events: auto; }
+#bottom-sheet {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  z-index: 301; background: var(--surface);
+  border-radius: 20px 20px 0 0;
+  border-top: 1px solid var(--border);
+  transform: translateY(100%);
+  transition: transform .4s cubic-bezier(.32,1,.6,1);
+  max-height: 90vh; display: flex; flex-direction: column;
+  -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
+  box-shadow: 0 -8px 40px rgba(0,0,0,.35);
+}
+#bottom-sheet.open { transform: translateY(0); }
+.sheet-handle-area {
+  display: flex; justify-content: center;
+  padding: 12px 0 8px; flex-shrink: 0; cursor: grab;
+}
+.sheet-handle {
+  width: 40px; height: 4px; border-radius: 2px;
+  background: var(--border);
+}
+.sheet-content { overflow-y: auto; padding: 0 20px 32px; flex: 1; }
+.sheet-title {
+  font-size: 17px; font-weight: 700; color: var(--text);
+  margin-bottom: 4px; padding-top: 4px;
+}
+.sheet-subtitle { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+
+/* Быстрый ввод в шторке */
+.qi-sheet-grid { display: flex; flex-direction: column; gap: 14px; margin-bottom: 20px; }
+.qi-sheet-cell {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 14px 16px;
+}
+.qi-sheet-lbl {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .5px; margin-bottom: 10px;
+}
+.qi-sheet-row {
+  display: grid; grid-template-columns: 60px 1fr 60px 1fr;
+  align-items: center; gap: 8px; margin-bottom: 6px;
+}
+.qi-sheet-row span { font-size: 12px; color: var(--muted); }
+.qi-sheet-row input {
+  font-size: 16px; padding: 8px 10px; border-radius: 8px;
+  text-align: right;
+}
+.qi-prev-hint {
+  font-size: 11px; color: var(--muted); text-align: right;
+  margin-top: 2px;
+}
+.qi-vol-row {
+  margin-top: 8px; font-size: 13px; color: var(--green);
+  font-weight: 600; min-height: 18px; text-align: center;
+}
+.sheet-torch-btn {
+  position: absolute; top: 60px; right: 20px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 6px 10px; font-size: 18px;
+  cursor: pointer; color: var(--text);
+}
+.sheet-apply-btn { width: 100%; margin-top: 4px; padding: 14px; font-size: 16px; border-radius: 12px; }
+
+/* История в шторке */
+.sheet-streak { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; background: rgba(251,191,36,.08); border: 1px solid rgba(251,191,36,.2); border-radius: 10px; padding: 10px 14px; }
+.sheet-streak-fire { font-size: 22px; }
+.sheet-streak-info { font-size: 13px; color: var(--yellow); font-weight: 600; }
+.sheet-hist-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 11px 0; border-bottom: 1px solid var(--border);
+}
+.sheet-hist-item:last-child { border-bottom: none; }
+.shi-month { font-size: 14px; font-weight: 600; color: var(--text); }
+.shi-payer { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.shi-amount { font-size: 15px; font-weight: 700; color: var(--green); }
+.shi-badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 700; }
+.shi-badge-v { background: rgba(167,139,250,.15); color: #a78bfa; }
+.shi-badge-me { background: rgba(91,140,255,.12); color: #5b8cff; }
+
+/* ============================================================
+   PULL-TO-REFRESH
+   ============================================================ */
+#ptr-indicator {
+  position: fixed; top: -60px; left: 50%; transform: translateX(-50%);
+  z-index: 999; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 50px; padding: 8px 18px; font-size: 13px; color: var(--muted);
+  display: flex; align-items: center; gap: 8px;
+  transition: top .25s cubic-bezier(.4,0,.2,1), opacity .2s;
+  box-shadow: 0 4px 20px rgba(0,0,0,.3); white-space: nowrap;
+}
+#ptr-indicator.visible { top: 14px; }
+#ptr-arrow { font-size: 16px; transition: transform .3s; display: inline-block; }
+#ptr-indicator.ready #ptr-arrow { transform: rotate(180deg); }
+#ptr-indicator.loading #ptr-arrow { animation: fabSpin .7s linear infinite; }
+
+/* ============================================================
+   HAPTIC PRESS FEEDBACK
+   ============================================================ */
+.btn, .hbtn, .nav-btn, .tab, .ach-card, .mp-item, .dyn-month-head {
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:active, .hbtn:active, .nav-btn:active {
+  transform: scale(0.96) !important;
+  transition: transform .1s !important;
+}
+
+/* ============================================================
+   П56: долгое нажатие на сумму → копирует
+   ============================================================ */
+.copyable {
+  cursor: pointer; position: relative;
+  -webkit-user-select: none; user-select: none;
+}
+.copyable:active { opacity: .7; }
+.copy-flash {
+  position: fixed; z-index: 9999;
+  background: var(--surface); border: 1px solid var(--green);
+  color: var(--green); font-size: 12px; font-weight: 600;
+  padding: 6px 14px; border-radius: 20px;
+  pointer-events: none; animation: copyFadeUp .8s ease forwards;
+  box-shadow: 0 4px 16px rgba(0,0,0,.3);
+}
+@keyframes copyFadeUp{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-24px)}}
+
+/* П57: свернуть source block */
+.source-block.collapsed .bl-table,
+.source-block.collapsed thead { display: none; }
+.source-block.collapsed .source-head { border-radius: 10px; border-bottom: none; }
+
+/* П51: Оффлайн-индикатор уже в HTML */
+
+/* ============================================================
+   П53: PWA install toast
+   ============================================================ */
+#pwa-toast {
+  position: fixed; bottom: 80px; left: 16px; right: 16px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; padding: 16px; z-index: 9000;
+  box-shadow: 0 8px 32px rgba(0,0,0,.4);
+  transform: translateY(120%); transition: transform .4s cubic-bezier(.34,1.56,.64,1);
+  display: none;
+}
+#pwa-toast.show { display: block; transform: translateY(0); }
+.pwa-toast-title { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+.pwa-toast-text { font-size: 13px; color: var(--muted); margin-bottom: 14px; line-height: 1.5; }
+.pwa-toast-btns { display: flex; gap: 10px; }
+
+/* ============================================================
+   П49: Цитата в сплэше
+   ============================================================ */
+#splash-quote {
+  transition: opacity .5s;
+  line-height: 1.5;
+}
+
 </style>
 </head>
 <body>
@@ -596,7 +809,60 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
     <path d="M43,22 L38,31 L41,31 L36,40 L46,29 L42,29 Z" fill="#f97316"/>
   </svg>
   <div id="splash-title">Коммуналка</div>
+  <div id="splash-greeting" style="font-size:13px;color:var(--muted);margin-top:-8px"></div>
+  <div id="splash-quote" style="font-size:12px;color:var(--muted);max-width:260px;text-align:center;font-style:italic;min-height:32px;padding:0 16px"></div>
   <div id="splash-sub">Загружаем данные <span class="sdot"></span><span class="sdot"></span><span class="sdot"></span></div>
+</div>
+
+<!-- SKELETON LOADING -->
+<div id="skeleton-overlay">
+  <div style="padding:18px 0 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px">
+    <div class="skeleton sk-line" style="width:120px;height:18px"></div>
+    <div style="margin-left:auto;display:flex;gap:8px">
+      <div class="skeleton" style="width:36px;height:28px;border-radius:7px"></div>
+      <div class="skeleton" style="width:36px;height:28px;border-radius:7px"></div>
+      <div class="skeleton" style="width:36px;height:28px;border-radius:7px"></div>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;padding:12px 0 0;border-bottom:1px solid var(--border);margin-bottom:20px">
+    <div class="skeleton" style="width:90px;height:28px;border-radius:4px"></div>
+    <div class="skeleton" style="width:70px;height:28px;border-radius:4px"></div>
+    <div class="skeleton" style="width:70px;height:28px;border-radius:4px"></div>
+    <div class="skeleton" style="width:50px;height:28px;border-radius:4px"></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;margin-bottom:16px;gap:8px">
+    <div class="skeleton" style="width:80px;height:26px;border-radius:5px"></div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <div class="skeleton" style="width:36px;height:32px;border-radius:7px"></div>
+      <div class="skeleton" style="width:100px;height:20px;border-radius:5px"></div>
+      <div class="skeleton" style="width:36px;height:32px;border-radius:7px"></div>
+    </div>
+    <div></div>
+  </div>
+  <div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:16px">
+    <div style="padding:10px 16px;border-bottom:1px solid var(--border)"><div class="skeleton sk-line wide"></div></div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr)">
+      <div style="padding:14px;border-right:1px solid var(--border)">
+        <div class="skeleton sk-line short" style="margin-bottom:12px"></div>
+        <div class="skeleton sk-cell" style="margin-bottom:6px"></div>
+        <div class="skeleton sk-cell"></div>
+      </div>
+      <div style="padding:14px;border-right:1px solid var(--border)">
+        <div class="skeleton sk-line short" style="margin-bottom:12px"></div>
+        <div class="skeleton sk-cell" style="margin-bottom:6px"></div>
+        <div class="skeleton sk-cell"></div>
+      </div>
+      <div style="padding:14px">
+        <div class="skeleton sk-line short" style="margin-bottom:12px"></div>
+        <div class="skeleton sk-cell" style="margin-bottom:6px"></div>
+        <div class="skeleton sk-cell"></div>
+      </div>
+    </div>
+  </div>
+  <div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:12px">
+    <div style="padding:10px 16px;border-bottom:1px solid var(--border)"><div class="skeleton sk-line mid"></div></div>
+    <div style="padding:10px 16px"><div class="skeleton sk-line wide"></div><div class="skeleton sk-line mid"></div><div class="skeleton sk-line short"></div></div>
+  </div>
 </div>
 
 <!-- HEADER -->
@@ -605,20 +871,20 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
   <span class="header-sub">Трекер расходов</span>
   <span id="streak-badge">🔥 <span id="streak-count">0</span> мес.</span>
   <div class="header-btns">
-    <button class="hbtn" onclick="switchTab('achievements')" data-tip="Достижения">🏆</button>
-    <button class="hbtn" onclick="switchTab('settings')" data-tip="Настройки">⚙️</button>
+    <button class="hbtn" id="back-btn" onclick="goBack()" style="display:none" data-tip="Назад">← Назад</button>
+    <div id="offline-badge" style="display:none;background:rgba(248,113,113,.15);border:1px solid rgba(248,113,113,.3);border-radius:20px;padding:3px 8px;font-size:11px;font-weight:600;color:var(--red)">📵 Оффлайн</div>
+    <button class="hbtn" onclick="openSection('achievements')" data-tip="Достижения">🏆</button>
+    <button class="hbtn" onclick="openSection('settings')" data-tip="Настройки">⚙️</button>
     <button class="hbtn" id="theme-btn" onclick="toggleTheme()" data-tip="Сменить тему">🌙</button>
   </div>
 </header>
 
 <!-- TABS -->
-<div class="tabs">
-  <div class="tab active" onclick="switchTab('entry')">Ввод данных</div>
-  <div class="tab" onclick="switchTab('history')">История</div>
-  <div class="tab" onclick="switchTab('dynamics')">Динамика</div>
-  <div class="tab" onclick="switchTab('year')">Год</div>
-  <div class="tab" onclick="switchTab('achievements')">Достижения</div>
-  <div class="tab" onclick="switchTab('settings')">Настройки</div>
+<div class="tabs" id="main-tabs">
+  <div class="tab active" onclick="switchTab('entry')">📝 Ввод</div>
+  <div class="tab" onclick="switchTab('history')">📋 История <span class="tab-badge" id="history-badge" style="display:none">0</span></div>
+  <div class="tab" onclick="switchTab('dynamics')">📈 Динамика</div>
+  <div class="tab" onclick="switchTab('year')">📅 Год</div>
 </div>
 
 <!-- MONTH PICKER DROPDOWN -->
@@ -640,11 +906,21 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
       <button class="nav-btn" onclick="nextMonth()">→</button>
     </div>
     <div class="month-bar-right">
-      <button class="btn btn-danger btn-sm" onclick="confirmClear()">Сбросить</button>
     </div>
   </div>
   <div style="text-align:center;margin-top:-10px;margin-bottom:12px">
     <span class="autosave-lbl" id="autosave-lbl"></span>
+  </div>
+  <!-- Онбординг: пустой месяц П33 -->
+  <div id="onboarding-hint" style="display:none;text-align:center;padding:16px;margin-bottom:12px;background:rgba(91,140,255,.07);border:1px dashed rgba(91,140,255,.3);border-radius:12px;animation:pagein .4s ease">
+    <div style="font-size:28px;margin-bottom:6px">👆</div>
+    <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px">Начни с показаний счётчиков</div>
+    <div style="font-size:12px;color:var(--muted)">Введи предыдущие и текущие показания выше — всё посчитается автоматически</div>
+  </div>
+
+  <!-- П31: Прогресс-полоска заполненности месяца -->
+  <div id="month-progress-bar" style="height:3px;background:var(--border);border-radius:2px;margin-bottom:14px;overflow:hidden">
+    <div id="month-progress-fill" style="height:100%;width:0%;border-radius:2px;background:var(--border);transition:width .5s cubic-bezier(.4,0,.2,1),background .5s"></div>
   </div>
 
   <!-- Paid status block -->
@@ -657,7 +933,7 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
           <div class="paid-summary" id="paid-summary-txt">—</div>
         </div>
       </div>
-      <button class="btn btn-ghost btn-sm" onclick="handleUnpaid()">Снять</button>
+      <button class="btn btn-ghost btn-sm" onclick="handleUnpaid()">Отменить оплату</button>
     </div>
     <div class="paid-next" id="paid-next-txt"></div>
     <a class="paid-detail-btn" onclick="toggleDetail()">Показать подробно ▾</a>
@@ -814,14 +1090,14 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
 
   <!-- Quick input btn -->
   <div style="margin-top:16px;text-align:center">
-    <button class="btn btn-ghost" onclick="openOverlay('quick-overlay')">⚡ Быстрый ввод показаний</button>
+    <button class="btn btn-ghost" onclick="openSheet('input')">⚡ Быстрый ввод показаний</button>
   </div>
 </div>
 
 <!-- ИСТОРИЯ -->
 <div id="page-history" class="page">
   <div class="sec-title">История по месяцам</div>
-  <div style="overflow-x:auto"><table class="hist-table"><thead id="hist-head"></thead><tbody id="hist-body"></tbody></table></div>
+  <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory" id="hist-scroll"><table class="hist-table"><thead id="hist-head"></thead><tbody id="hist-body"></tbody></table></div>
 </div>
 
 <!-- ДИНАМИКА -->
@@ -840,8 +1116,20 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
 
 <!-- ДОСТИЖЕНИЯ -->
 <div id="page-achievements" class="page">
-  <div class="sec-title">Достижения 🏆</div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+    <div class="sec-title" style="margin-bottom:0">Достижения 🏆</div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <div id="xp-display" style="background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.25);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;color:var(--yellow)">✨ <span id="xp-count">0</span> XP</div>
+      <button class="btn btn-ghost btn-sm" onclick="testAllAchs()">🧪 Тест</button>
+    </div>
+  </div>
   <div class="ach-grid" id="ach-grid"></div>
+
+  <!-- П39: Таблица рекордов -->
+  <div style="margin-top:24px">
+    <div class="sec-title">🏅 Рекорды</div>
+    <div id="records-table"></div>
+  </div>
 </div>
 
 <!-- НАСТРОЙКИ -->
@@ -890,7 +1178,17 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
         <input type="file" id="import-file" accept=".json" style="display:none" onchange="importJSON(event)">
       </div>
     </div>
+    <div class="set-row"><label style="color:var(--red)">Сбросить данные месяца</label>
+      <button class="btn btn-danger btn-sm" onclick="confirmClear()">🗑 Сбросить</button>
+    </div>
     <div class="set-row"><label>История версий</label><button class="btn btn-ghost btn-sm" onclick="document.getElementById('version-section').classList.toggle('show')">Показать</button></div>
+    <div class="set-row"><label>📱 Установить как приложение</label>
+      <button class="btn btn-ghost btn-sm" id="pwa-btn" onclick="showPWAInstall()">Установить PWA</button>
+    </div>
+    <div class="set-row" id="tariff-check-row" style="display:none">
+      <label style="color:var(--yellow)">⚠ Тарифы не менялись 3+ мес.</label>
+      <button class="btn btn-ghost btn-sm" onclick="dismissTariffAlert()">Понял</button>
+    </div>
     <div id="version-section" style="display:none;margin-top:8px">
       <div class="version-list" id="version-list"></div>
     </div>
@@ -926,7 +1224,9 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
     <div class="float-bar-pill"></div>
   </div>
   <div class="float-bar-totals">
-    <div class="ft-item"><div class="ft-lbl">💰 Всего</div><div class="ft-val" id="ft-grand">—</div></div>
+    <div class="ft-item"><div class="ft-lbl">💰 Всего</div><div class="ft-val" id="ft-grand">—</div>
+        <div id="ft-yoy" style="font-size:10px;color:var(--muted);min-height:14px"></div>
+        <div id="ft-savings" style="font-size:10px;color:var(--green);min-height:14px;display:none"></div></div>
     <div class="ft-item"><div class="ft-lbl">👤 <span id="ft-name-v">Вадимовна</span></div><div class="ft-val" id="ft-v">—</div></div>
     <div class="ft-item"><div class="ft-lbl">👤 <span id="ft-name-me">Я</span></div><div class="ft-val" id="ft-me">—</div></div>
   </div>
@@ -986,7 +1286,46 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
 
 <!-- Global tooltip -->
 <div id="gtip"></div>
+
+<!-- FAB — быстрый ввод показаний -->
+<button id="fab" onclick="openSheet('input')" title="Быстрый ввод показаний">⚡</button>
+
+<!-- Pull-to-refresh indicator -->
+<div id="ptr-indicator"><span id="ptr-arrow">↓</span><span id="ptr-text">Потяни чтобы обновить</span></div>
+
+<!-- Sheet backdrop -->
+<div id="sheet-backdrop" onclick="closeSheet()"></div>
+
+<!-- Bottom Sheet -->
+<div id="bottom-sheet">
+  <div class="sheet-handle-area" id="sheet-handle-area">
+    <div class="sheet-handle"></div>
+  </div>
+  <div class="sheet-content" id="sheet-content">
+    <!-- контент подставляется динамически -->
+  </div>
+</div>
+<!-- PWA Install Toast -->
+<div id="pwa-toast">
+  <div class="pwa-toast-title">📱 Установить Коммуналку</div>
+  <div class="pwa-toast-text" id="pwa-toast-text">Добавь на главный экран для быстрого доступа — работает как приложение!</div>
+  <div class="pwa-toast-btns">
+    <button class="btn" id="pwa-install-btn" onclick="triggerPWAInstall()">Установить</button>
+    <button class="btn btn-ghost" onclick="closePWAToast()">Не сейчас</button>
+  </div>
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<!-- PWA Install Toast -->
+<div id="pwa-toast">
+  <div class="pwa-toast-title">📱 Установить Коммуналку</div>
+  <div class="pwa-toast-text" id="pwa-toast-text">Добавь на главный экран для быстрого доступа — работает как приложение!</div>
+  <div class="pwa-toast-btns">
+    <button class="btn" id="pwa-install-btn" onclick="triggerPWAInstall()">Установить</button>
+    <button class="btn btn-ghost" onclick="closePWAToast()">Не сейчас</button>
+  </div>
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script>
 /* ============================================================ CONSTANTS ============================================================ */
@@ -1156,7 +1495,7 @@ function updatePaidUI(c){
       const today=new Date();
       const days=Math.ceil((next-today)/864e5);
       const nextStr=next.toLocaleDateString('ru-RU',{day:'numeric',month:'long'});
-      if(days>0)setT('paid-next-txt','Следующий платёж ориентировочно '+nextStr+' · через <span>'+days+' дн.</span>');
+      if(days>0){const txt='Следующий платёж ориентировочно '+nextStr+' · через '+days+' дн.';setT('paid-next-txt',txt);}
       else setT('paid-next-txt','Пора оплачивать! Следующий платёж был '+nextStr);
     }
     // Detail view visibility
@@ -1186,14 +1525,13 @@ function toggleDetail(){
   if(dv)dv.classList.toggle('show',detailOpen);
   const btn=document.querySelector('.paid-detail-btn');
   if(btn)btn.textContent=detailOpen?'Скрыть подробности ▴':'Показать подробно ▾';
+  const pb=document.getElementById('paid-block');
+  if(pb&&detailOpen){pb.style.overflow='visible';}
 }
 
 /* ============================================================ FLOATING BAR ============================================================ */
 function toggleFloatBar(){
-  floatBarOpen=!floatBarOpen;
-  const bar=document.getElementById('float-bar');
-  if(bar)bar.classList.toggle('expanded',floatBarOpen);
-  if(floatBarOpen)renderPayHistory();
+  openPayHistorySheet();
 }
 
 // Touch drag for float bar
@@ -1654,7 +1992,27 @@ document.addEventListener('keydown',e=>{
   }
 });
 const appTitle=document.getElementById('app-title');
-if(appTitle){appTitle.addEventListener('click',()=>{headerTaps++;clearTimeout(headerTapTimer);headerTapTimer=setTimeout(()=>{if(headerTaps>=3){unlockAch('birthday');launchConfetti();showEgg('🎂 С днём рождения!','Трекер поздравляет!');}headerTaps=0;},600);});}
+let mobileTapCount=0, mobileTapTimer=null;
+if(appTitle){
+  appTitle.addEventListener('click',()=>{
+    mobileTapCount++;
+    clearTimeout(mobileTapTimer);
+    mobileTapTimer=setTimeout(()=>{
+      if(mobileTapCount>=5){
+        // Konami на телефоне — 5 тапов
+        unlockAch('konami');unlockAch('secret');
+        document.documentElement.style.setProperty('--accent','#00ff41');
+        document.documentElement.style.setProperty('--bg-img','repeating-linear-gradient(0deg,rgba(0,255,65,.04) 0,rgba(0,255,65,.04) 1px,transparent 0,transparent 4px)');
+        showEgg('🎮 MOBILE KONAMI!','5 тапов — ретро режим активирован!');
+        playDoom();haptic([100,50,100,50,200]);
+        setTimeout(()=>{document.documentElement.style.setProperty('--accent',settings.accent);document.documentElement.style.setProperty('--bg-img','none');applySettings();},10000);
+      } else if(mobileTapCount>=3){
+        unlockAch('birthday');launchConfetti();showEgg('🎂 С днём рождения!','Трекер поздравляет!');
+      }
+      mobileTapCount=0;
+    },600);
+  });
+}
 function checkEaster(){
   const now=new Date();
   if(now.getMonth()===0&&now.getDate()===1){unlockAch('newyear');setTimeout(()=>{launchConfetti();showEgg('🎉 С Новым годом!','Пусть все счета будут маленькими!');},1200);}
@@ -1669,10 +2027,11 @@ function showEgg(title,text){
 
 /* ============================================================ TABS ============================================================ */
 function switchTab(name){
-  const tabs=['entry','history','dynamics','year','achievements','settings'];
+  const tabs=['entry','history','dynamics','year'];
   document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',tabs[i]===name));
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.getElementById('page-'+name).classList.add('active');
+  const pg=document.getElementById('page-'+name);
+  if(pg){pg.classList.add('active');}
   if(name==='history')renderHistory();
   if(name==='dynamics')renderDynamics();
   if(name==='year')renderYear();
@@ -1684,7 +2043,7 @@ function applyTheme(t){document.documentElement.classList.remove('light','dark')
 function toggleTheme(){applyTheme(document.documentElement.classList.contains('light')?'dark':'light');}
 
 /* ============================================================ SPLASH ============================================================ */
-function hideSplash(){setTimeout(()=>{const s=document.getElementById('splash');if(s){s.classList.add('hide');setTimeout(()=>s.remove(),400);}},900);}
+function hideSplash(){setTimeout(()=>{const s=document.getElementById('splash');if(s){s.classList.add('hide');setTimeout(()=>s.remove(),400);}hideSkeleton();},900);}
 
 /* ============================================================ INIT DATA ============================================================ */
 const MAY26={'prev-gvs':94.380,'cur-gvs':95.496,'prev-hvs':150.577,'cur-hvs':153.196,'prev-t1':3407,'cur-t1':3449,'prev-t2':923,'cur-t2':937,'t-kaprem':594,'t-gvs-voda':63.26,'t-gvs-pod':0.0612684,'v-gvs-pod':2909.02,'t-otop':0.3591,'v-otop':2909.02,'t-hvs':63.26,'t-vodo':62.21,'t-soderzh':1631.88,'t-bezop':109.08,'t-tko':311.12,'t-tv':315,'t-oi-ee-d':8.24,'v-oi-ee-d':10.7118,'t-oi-ee-n':3.54,'v-oi-ee-n':5.2505,'t-oi-vo':62.21,'v-oi-vo':0.0516,'t-oi-gvs':63.26,'v-oi-gvs':0.0258,'t-oi-gvsp':2909.02,'v-oi-gvsp':0.001368,'t-oi-hvs':63.26,'v-oi-hvs':0.0258,'t-t1':8.24,'t-t2':3.54,'t-inet':800};
@@ -1701,7 +2060,934 @@ const MAY26={'prev-gvs':94.380,'cur-gvs':95.496,'prev-hvs':150.577,'cur-hvs':153
   fbLoad();
 })();
 
+/* ============================================================ HAPTIC ============================================================ */
+function haptic(pattern){
+  try{if(navigator.vibrate)navigator.vibrate(pattern||50);}catch(e){}
+}
+
+// Haptic на каждую кнопку (п.19)
+document.addEventListener('click',e=>{
+  if(e.target.closest('.btn, .hbtn, .nav-btn, .tab, .mp-item'))haptic(30);
+},{passive:true});
+
+/* ============================================================ FAB ============================================================ */
+function fabSaved(){
+  const fab=document.getElementById('fab');if(!fab)return;
+  fab.classList.add('saved');
+  fab.textContent='';
+  haptic([50,30,80]);
+  setTimeout(()=>{fab.classList.remove('saved');fab.textContent='⚡';},1500);
+}
+
+/* ============================================================ BOTTOM SHEET ============================================================ */
+let sheetMode='input', sheetDragStart=0, sheetCurrentY=0, sheetDragging=false;
+
+function openSheet(mode){
+  sheetMode=mode||'input';
+  haptic(40);
+  const bs=document.getElementById('bottom-sheet');
+  const bd=document.getElementById('sheet-backdrop');
+  const content=document.getElementById('sheet-content');
+  if(!bs||!bd)return;
+  content.innerHTML=sheetMode==='input'?buildSheetInput():buildSheetHistory();
+  bd.classList.add('show');
+  bs.classList.add('open');
+  document.body.style.overflow='hidden';
+  if(sheetMode==='input')prefillSheet();
+  initSheetDrag();
+}
+
+function closeSheet(){
+  haptic(20);
+  const bs=document.getElementById('bottom-sheet');
+  const bd=document.getElementById('sheet-backdrop');
+  if(bs)bs.classList.remove('open');
+  if(bd)bd.classList.remove('show');
+  document.body.style.overflow='';
+  bs&&(bs.style.transform='');
+}
+
+// Тянется за пальцем до 50% экрана (п.11), закрывается свайпом вниз и тапом по фону (п.12)
+function initSheetDrag(){
+  const area=document.getElementById('sheet-handle-area');
+  const bs=document.getElementById('bottom-sheet');
+  if(!area||!bs)return;
+  area.addEventListener('touchstart',e=>{
+    sheetDragStart=e.touches[0].clientY;sheetDragging=true;
+    bs.style.transition='none';
+  },{passive:true});
+  area.addEventListener('touchmove',e=>{
+    if(!sheetDragging)return;
+    const dy=Math.max(0,e.touches[0].clientY-sheetDragStart);
+    const maxDrag=window.innerHeight*0.5;
+    const clamped=Math.min(dy,maxDrag);
+    bs.style.transform='translateY('+clamped+'px)';
+  },{passive:true});
+  area.addEventListener('touchend',e=>{
+    sheetDragging=false;
+    bs.style.transition='';
+    const dy=e.changedTouches[0].clientY-sheetDragStart;
+    if(dy>80)closeSheet();
+    else bs.style.transform='';
+  },{passive:true});
+}
+
+// Быстрый ввод в шторке (п.7-10)
+function buildSheetInput(){
+  const m=curMonth(),d=allData[m]||{};
+  const getCur=(k)=>d[k]!==undefined?d[k]:'';
+  return `<div style="position:relative">
+    <div class="sheet-title">⚡ Быстрый ввод показаний</div>
+    <div class="sheet-subtitle">${MONTHS[m]} · Введи текущие показания</div>
+    <button class="sheet-torch-btn" onclick="toggleTorch()" id="torch-btn" title="Фонарик">🔦</button>
+    <div class="qi-sheet-grid">
+      <div class="qi-sheet-cell">
+        <div class="qi-sheet-lbl" style="color:#f87171">🔴 ГВС &nbsp; <span style="color:#60a5fa">🔵 ХВС</span></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:4px">Пред. / Тек.</div>
+            <input type="number" id="sh-pgvs" step="0.001" placeholder="${getCur('prev-gvs')||''}" style="width:100%;margin-bottom:4px;font-size:15px;padding:7px 9px" oninput="sheetSyncVol('gvs')">
+            <input type="number" id="sh-cgvs" step="0.001" placeholder="" style="width:100%;font-size:15px;padding:7px 9px" oninput="sheetSyncVol('gvs')">
+            <div class="qi-prev-hint" id="sh-hint-gvs">${getCur('cur-gvs')?'прошлое: '+getCur('cur-gvs'):''}</div>
+            <div class="qi-vol-row" id="sh-vol-gvs">—</div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:4px">Пред. / Тек.</div>
+            <input type="number" id="sh-phvs" step="0.001" placeholder="${getCur('prev-hvs')||''}" style="width:100%;margin-bottom:4px;font-size:15px;padding:7px 9px" oninput="sheetSyncVol('hvs')">
+            <input type="number" id="sh-chvs" step="0.001" placeholder="" style="width:100%;font-size:15px;padding:7px 9px" oninput="sheetSyncVol('hvs')">
+            <div class="qi-prev-hint" id="sh-hint-hvs">${getCur('cur-hvs')?'прошлое: '+getCur('cur-hvs'):''}</div>
+            <div class="qi-vol-row" id="sh-vol-hvs">—</div>
+          </div>
+        </div>
+      </div>
+      <div class="qi-sheet-cell">
+        <div class="qi-sheet-lbl" style="color:#fbbf24">⚡ Электричество</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:4px">Т1 Пред. / Тек.</div>
+            <input type="number" id="sh-pt1" step="1" placeholder="${getCur('prev-t1')||''}" style="width:100%;margin-bottom:4px;font-size:15px;padding:7px 9px" oninput="sheetSyncVol('t1')">
+            <input type="number" id="sh-ct1" step="1" placeholder="" style="width:100%;font-size:15px;padding:7px 9px" oninput="sheetSyncVol('t1')">
+            <div class="qi-prev-hint" id="sh-hint-t1">${getCur('cur-t1')?'прошлое: '+getCur('cur-t1'):''}</div>
+            <div class="qi-vol-row" id="sh-vol-t1">—</div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:4px">Т2 Пред. / Тек.</div>
+            <input type="number" id="sh-pt2" step="1" placeholder="${getCur('prev-t2')||''}" style="width:100%;margin-bottom:4px;font-size:15px;padding:7px 9px" oninput="sheetSyncVol('t2')">
+            <input type="number" id="sh-ct2" step="1" placeholder="" style="width:100%;font-size:15px;padding:7px 9px" oninput="sheetSyncVol('t2')">
+            <div class="qi-prev-hint" id="sh-hint-t2">${getCur('cur-t2')?'прошлое: '+getCur('cur-t2'):''}</div>
+            <div class="qi-vol-row" id="sh-vol-t2">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <button class="btn sheet-apply-btn" onclick="sheetApply()">✅ Применить показания</button>
+  </div>`;
+}
+
+// Предзаполнение шторки текущими значениями (п.8)
+function prefillSheet(){
+  const m=curMonth(),d=allData[m]||{};
+  ['gvs','hvs','t1','t2'].forEach(k=>{
+    const pe=document.getElementById('sh-p'+k);
+    const ce=document.getElementById('sh-c'+k);
+    if(pe&&d['prev-'+k]!==undefined)pe.value=d['prev-'+k];
+    if(ce&&d['cur-'+k]!==undefined)ce.value=d['cur-'+k];
+  });
+}
+
+function sheetSyncVol(k){
+  const p=parseFloat(document.getElementById('sh-p'+k)?.value)||0;
+  const c=parseFloat(document.getElementById('sh-c'+k)?.value)||0;
+  const v=Math.max(0,c-p);
+  const el=document.getElementById('sh-vol-'+k);
+  if(el)el.textContent=v>0?(v.toFixed(k==='gvs'||k==='hvs'?3:0)+(k==='t1'||k==='t2'?' кВт·ч':' м³')):'—';
+}
+
+function sheetApply(){
+  haptic([50,30,100]);
+  ['gvs','hvs','t1','t2'].forEach(k=>{
+    const pv=document.getElementById('sh-p'+k)?.value;
+    const cv=document.getElementById('sh-c'+k)?.value;
+    const pe=document.getElementById('prev-'+k);
+    const ce=document.getElementById('cur-'+k);
+    if(pv!==''&&pv!==undefined&&pe){pe.value=pv;pe.classList.add('changed');}
+    if(cv!==''&&cv!==undefined&&ce){ce.value=cv;ce.classList.add('changed');}
+  });
+  onInput();
+  closeSheet();
+  // Вибрация + зелёная галочка на FAB (п.16)
+  setTimeout(()=>{
+    autoSave().then(()=>{fabSaved();haptic([30,20,30,20,80]);});
+  },1600);
+}
+
+// Фонарик (п.10)
+let torchOn=false;
+async function toggleTorch(){
+  haptic(30);
+  try{
+    if(!torchOn){
+      const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+      const track=stream.getVideoTracks()[0];
+      await track.applyConstraints({advanced:[{torch:true}]});
+      window._torchTrack=track;torchOn=true;
+      const btn=document.getElementById('torch-btn');
+      if(btn){btn.textContent='💡';btn.style.background='rgba(251,191,36,.2)';btn.style.borderColor='var(--yellow)';}
+    }else{
+      if(window._torchTrack){await window._torchTrack.applyConstraints({advanced:[{torch:false}]});window._torchTrack.stop();window._torchTrack=null;}
+      torchOn=false;
+      const btn=document.getElementById('torch-btn');
+      if(btn){btn.textContent='🔦';btn.style.background='';btn.style.borderColor='';}
+    }
+  }catch(e){alert('Фонарик недоступен на этом устройстве');}
+}
+
+// История оплат в шторке с разбивкой Вадимовна/Я + стрик (п.13)
+function buildSheetHistory(){
+  const nv=settings.nameV||'Вадимовна', nm=settings.nameMe||'Я';
+  const paid=MK.filter(m=>allData[m]&&allData[m]._paid&&allData[m]._paidDate).reverse();
+  // Стрик
+  let streak=0;
+  for(let i=curIdx;i>=0;i--){if(allData[MK[i]]&&allData[MK[i]]._paid)streak++;else break;}
+  const streakHtml=streak>0?`<div class="sheet-streak"><div class="sheet-streak-fire">🔥</div><div class="sheet-streak-info">${streak} ${streak===1?'месяц':streak<5?'месяца':'месяцев'} подряд оплачено!</div></div>`:'';
+  if(!paid.length)return`<div class="sheet-title">История оплат</div>${streakHtml}<div style="padding:30px 0;text-align:center;color:var(--muted)">Нет оплаченных месяцев</div>`;
+  const items=paid.map(m=>{
+    const c=cfd(allData[m]);
+    const pd=new Date(allData[m]._paidDate);
+    const ds=pd.toLocaleDateString('ru-RU',{day:'numeric',month:'long'});
+    return`<div class="sheet-hist-item">
+      <div><div class="shi-month">${MONTHS[m]}</div><div class="shi-payer">Оплачено ${ds}</div></div>
+      <div style="text-align:right">
+        <div class="shi-amount">${c.grand>0?fmt(c.grand):'—'}</div>
+        <div style="display:flex;gap:4px;margin-top:3px;justify-content:flex-end">
+          <span class="shi-badge shi-badge-v">${nv}: ${c.vadim>0?fmt(c.vadim):'—'}</span>
+          <span class="shi-badge shi-badge-me">${nm}: ${c.me>0?fmt(c.me):'—'}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  return`<div class="sheet-title">История оплат 💳</div><div class="sheet-subtitle">${paid.length} ${paid.length===1?'месяц':paid.length<5?'месяца':'месяцев'} оплачено</div>${streakHtml}${items}`;
+}
+
+// Открытие истории из float-bar
+function openPayHistorySheet(){openSheet('history');}
+
+/* ============================================================ PULL-TO-REFRESH (п.20) ============================================================ */
+let ptrStart=0, ptrActive=false, ptrReady=false;
+const PTR_THRESHOLD=80;
+
+document.addEventListener('touchstart',e=>{
+  if(window.scrollY===0)ptrStart=e.touches[0].clientY;
+},{passive:true});
+
+document.addEventListener('touchmove',e=>{
+  if(!ptrStart)return;
+  const dy=e.touches[0].clientY-ptrStart;
+  if(dy>20&&window.scrollY===0){
+    ptrActive=true;
+    const ind=document.getElementById('ptr-indicator');
+    if(!ind)return;
+    ind.classList.add('visible');
+    const arrow=document.getElementById('ptr-arrow');
+    const txt=document.getElementById('ptr-text');
+    if(dy>PTR_THRESHOLD){
+      ptrReady=true;
+      ind.classList.add('ready');
+      if(arrow)arrow.textContent='↑';
+      if(txt)txt.textContent='Отпусти для обновления';
+    }else{
+      ptrReady=false;ind.classList.remove('ready');
+      if(arrow)arrow.textContent='↓';
+      if(txt)txt.textContent='Потяни чтобы обновить';
+    }
+  }
+},{passive:true});
+
+document.addEventListener('touchend',()=>{
+  if(ptrActive&&ptrReady){
+    const ind=document.getElementById('ptr-indicator');
+    const arrow=document.getElementById('ptr-arrow');
+    const txt=document.getElementById('ptr-text');
+    if(ind)ind.classList.add('loading');
+    if(arrow)arrow.textContent='⟳';
+    if(txt)txt.textContent='Обновляем…';
+    haptic([50,30,50]);
+    fbLoad().then(()=>{
+      if(ind){ind.classList.remove('visible','loading','ready');}
+    });
+  }else if(ptrActive){
+    const ind=document.getElementById('ptr-indicator');
+    if(ind)ind.classList.remove('visible','ready','loading');
+  }
+  ptrStart=0;ptrActive=false;ptrReady=false;
+},{passive:true});
+
+/* ============================================================ ТЕСТ ДОСТИЖЕНИЙ (п.14) ============================================================ */
+let testAchIdx=0;
+function testAllAchs(){
+  haptic(30);
+  const ids=ACHS.map(a=>a.id);
+  if(testAchIdx>=ids.length){testAchIdx=0;showEgg('✅ Тест завершён','Все достижения показаны!');return;}
+  const a=ACHS[testAchIdx];
+  showAchToast(a);
+  haptic([30,20,60]);
+  testAchIdx++;
+}
+
+/* ============================================================ ВИБРАЦИЯ ПРИ РАЗБЛОКИРОВКЕ ДОСТИЖЕНИЯ (п.17) ============================================================ */
+// Патч unlockAch для вибрации
+const _origUnlockAch=unlockAch;
+// (переопределяем ниже через обёртку в checkAchs — вибрация уже встроена в showAchToast через haptic)
+// Добавляем haptic в showAchToast:
+const _origShowAchToast=showAchToast;
+window.showAchToast=function(a){
+  haptic([40,30,80,30,120]);
+  _origShowAchToast.call(this,a);
+};
+
 window.addEventListener('resize',()=>{});
+
+/* ============================================================
+   ВОЛНА Б — ВИЗУАЛ + ГЕЙМИФИКАЦИЯ
+   ============================================================ */
+
+/* П21: Skeleton loading — показываем до загрузки Firebase */
+(function initSkeleton(){
+  const sk=document.getElementById('skeleton-overlay');
+  if(sk){sk.classList.add('show');}
+})();
+function hideSkeleton(){
+  const sk=document.getElementById('skeleton-overlay');
+  if(sk){sk.style.opacity='0';setTimeout(()=>{sk.style.display='none';},300);}
+}
+
+/* П27: FAB иконка вращается при загрузке ⚡→🔄 */
+function fabLoading(on){
+  const fab=document.getElementById('fab');if(!fab)return;
+  if(on){fab.classList.add('loading');fab.textContent='🔄';}
+  else{fab.classList.remove('loading');fab.textContent='⚡';}
+}
+
+/* П30: тень под хедером при скролле */
+window.addEventListener('scroll',()=>{
+  const h=document.querySelector('header');
+  if(h)h.classList.toggle('scrolled',window.scrollY>4);
+},{ passive:true });
+
+/* П25: числа "тикают" при изменении — анимируем .td-sum и .ft-val */
+function tickNumber(el, newVal){
+  if(!el)return;
+  el.style.transition='none';
+  el.style.transform='translateY(-4px)';
+  el.style.opacity='0';
+  requestAnimationFrame(()=>{
+    el.textContent=newVal;
+    requestAnimationFrame(()=>{
+      el.style.transition='transform .25s cubic-bezier(.34,1.56,.64,1), opacity .2s';
+      el.style.transform='translateY(0)';
+      el.style.opacity='1';
+    });
+  });
+}
+
+/* Патч render() — добавляем tick-анимацию на итоги */
+const _origRender=render;
+render=function(){
+  _origRender();
+  // Тик на главные итоги в float-bar
+  ['ft-grand','ft-v','ft-me'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el&&el._lastVal!==el.textContent){
+      if(el._lastVal!==undefined){
+        el.style.transition='transform .2s cubic-bezier(.34,1.56,.64,1)';
+        el.style.transform='scale(1.08)';
+        setTimeout(()=>{el.style.transform='scale(1)';},200);
+      }
+      el._lastVal=el.textContent;
+    }
+  });
+  // П31: обновляем прогресс-полоску
+  updateProgressBar();
+  // П33: онбординг
+  updateOnboarding();
+  // П36: сравнение с прошлым годом
+  updateYoY();
+};
+
+/* П26: Волна-анимация при автосохранении */
+function showSaveWave(){
+  const bar=document.getElementById('float-bar');
+  if(!bar)return;
+  bar.style.transition='box-shadow .15s';
+  bar.style.boxShadow='0 0 0 3px color-mix(in srgb, var(--accent) 40%, transparent)';
+  setTimeout(()=>{bar.style.boxShadow='';},400);
+}
+
+/* Патч autoSave — добавляем волну */
+const _origAutoSave=autoSave;
+autoSave=async function(){
+  await _origAutoSave();
+  showSaveWave();
+  addXP(10,'заполнено');
+  updateHistoryBadge();
+  updateProgressBar();
+};
+
+/* П31: Прогресс-полоска под навигацией */
+function updateProgressBar(){
+  const fill=document.getElementById('month-progress-fill');
+  if(!fill)return;
+  const m=curMonth(), d=allData[m]||{};
+  const total=document.querySelectorAll('input[type=number]').length;
+  const filled=Object.keys(d).filter(k=>!k.startsWith('_')&&d[k]!==undefined&&d[k]!==null).length;
+  const pct=total>0?Math.min(100,Math.round(filled/total*100)):0;
+  const paid=d._paid;
+  // Цвет: серый < 30%, жёлтый < 80%, зелёный = 100% или оплачено
+  const color=paid||pct===100?'var(--green)':pct>=50?'var(--yellow)':'var(--accent)';
+  fill.style.width=pct+'%';
+  fill.style.background=color;
+}
+
+/* П33: Онбординг-подсказка */
+function updateOnboarding(){
+  const hint=document.getElementById('onboarding-hint');
+  if(!hint)return;
+  const m=curMonth(),d=allData[m]||{};
+  const hasData=Object.keys(d).filter(k=>!k.startsWith('_')).length>0;
+  hint.style.display=hasData?'none':'block';
+}
+
+/* П24: Stagger-анимация достижений */
+const _origRenderAchievements=renderAchievements;
+renderAchievements=function(){
+  _origRenderAchievements();
+  const grid=document.getElementById('ach-grid');if(!grid)return;
+  const cards=grid.querySelectorAll('.ach-card');
+  cards.forEach((c,i)=>{
+    c.style.opacity='0';c.style.transform='translateY(12px) scale(.95)';
+    setTimeout(()=>{
+      c.style.transition=`opacity .3s ease ${i*35}ms, transform .35s cubic-bezier(.34,1.56,.64,1) ${i*35}ms`;
+      c.style.opacity='';c.style.transform='';
+    },10);
+  });
+  updateRecordsTable();
+};
+
+/* П22: scale 0.96 при нажатии — уже в CSS, усиливаем для touch */
+document.addEventListener('touchstart',e=>{
+  const btn=e.target.closest('.btn,.hbtn,.nav-btn,.ach-card,.mp-item');
+  if(!btn)return;
+  btn.style.transition='transform .1s';
+  btn.style.transform='scale(0.96)';
+},{passive:true});
+document.addEventListener('touchend',e=>{
+  const btn=e.target.closest('.btn,.hbtn,.nav-btn,.ach-card,.mp-item');
+  if(!btn)return;
+  btn.style.transition='transform .3s cubic-bezier(.34,1.56,.64,1)';
+  btn.style.transform='scale(1)';
+},{passive:true});
+
+/* П32: "Последнее обновление в ЧЧ:ММ" — показывается под шторкой */
+function getLastUpdateTime(){
+  if(versions&&versions.length>0){
+    const d=new Date(versions[0].t);
+    return d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+  }
+  return null;
+}
+
+/* Патч buildSheetHistory — добавляем рекорды + "последнее обновление" П32, П37 */
+const _origBuildSheetHistory=buildSheetHistory;
+buildSheetHistory=function(){
+  const base=_origBuildSheetHistory();
+  const r=getRecords();
+  const recs=r?`<div style="margin-top:16px;padding:14px;background:var(--surface2);border:1px solid var(--border);border-radius:12px">
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--label);margin-bottom:10px">🏅 Рекорды</div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+      <span style="font-size:12px;color:var(--muted)">💸 Самый дорогой</span>
+      <span style="font-size:13px;font-weight:600;color:var(--red)">${MONTHS[r.maxM]} · ${fmt(r.maxV)}</span>
+    </div>
+    <div style="display:flex;justify-content:space-between">
+      <span style="font-size:12px;color:var(--muted)">💚 Самый дешёвый</span>
+      <span style="font-size:13px;font-weight:600;color:var(--green)">${MONTHS[r.minM]} · ${fmt(r.minV)}</span>
+    </div>
+  </div>`:'';
+  const t=getLastUpdateTime();
+  const footer=t?`<div style="text-align:center;padding:12px 0 4px;font-size:11px;color:var(--muted)">Последнее обновление в ${t}</div>`:'';
+  return base+recs+footer;
+};
+
+/* П37: Рекорды в шторке (самый дорогой / дешёвый месяц) */
+function getRecords(){
+  const months=MK.filter(m=>allData[m]&&Object.keys(allData[m]).filter(k=>!k.startsWith('_')).length>3);
+  if(months.length<2)return null;
+  let maxM=null,minM=null,maxV=0,minV=Infinity;
+  months.forEach(m=>{
+    const v=cfd(allData[m]).grand;
+    if(v>maxV){maxV=v;maxM=m;}
+    if(v>0&&v<minV){minV=v;minM=m;}
+  });
+  return{maxM,maxV,minM,minV};
+}
+
+/* П38: XP за действия */
+let xpTotal=parseInt(localStorage.getItem('kxp')||'0');
+function addXP(pts, reason){
+  xpTotal+=pts;
+  localStorage.setItem('kxp',xpTotal);
+  updateXPDisplay();
+  // Флотируем XP-попап
+  showXPFloat('+'+pts+' XP');
+}
+function updateXPDisplay(){
+  const el=document.getElementById('xp-count');
+  if(el)el.textContent=xpTotal;
+}
+function showXPFloat(text){
+  const el=document.createElement('div');
+  el.textContent=text;
+  el.style.cssText=`position:fixed;bottom:90px;right:80px;z-index:9999;
+    background:var(--yellow);color:#000;font-size:12px;font-weight:700;
+    padding:4px 10px;border-radius:20px;pointer-events:none;
+    animation:xpFloat .9s cubic-bezier(.4,0,.2,1) forwards`;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),900);
+}
+// CSS для xpFloat
+const xpStyle=document.createElement('style');
+xpStyle.textContent='@keyframes xpFloat{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-32px) scale(.9)}}';
+document.head.appendChild(xpStyle);
+
+// XP за оплату
+const _origConfirmPaid=confirmPaid;
+confirmPaid=function(){
+  _origConfirmPaid();
+  addXP(25,'оплачено');
+  // Стрик бонус
+  let s=0;for(let i=curIdx;i>=0;i--){if(allData[MK[i]]&&allData[MK[i]]._paid)s++;else break;}
+  if(s>=2)addXP(50,'стрик '+s);
+};
+
+/* П36: Сравнение с прошлым годом в float-bar */
+function updateYoY(){
+  const el=document.getElementById('ft-yoy');if(!el)return;
+  const m=curMonth();
+  // Ищем тот же месяц прошлого года (упрощённо — 12 позиций назад)
+  const idx=MK.indexOf(m);
+  const prevYearIdx=idx-12;
+  if(prevYearIdx<0||!allData[MK[prevYearIdx]]){el.textContent='';return;}
+  const cur=cfd(allData[m]||{}).grand;
+  const prev=cfd(allData[MK[prevYearIdx]]).grand;
+  if(!cur||!prev){el.textContent='';return;}
+  const diff=cur-prev;
+  const pct=Math.abs(diff/prev*100).toFixed(1);
+  el.textContent=(diff>0?'▲ +':'▼ ')+pct+'% vs прошлый год';
+  el.style.color=diff>0?'var(--red)':'var(--green)';
+}
+
+/* Патч render — добавляем YoY (уже встроен через предыдущий патч) */
+
+/* П40: Бейдж на вкладке История */
+function updateHistoryBadge(){
+  const badge=document.getElementById('history-badge');if(!badge)return;
+  const cnt=MK.filter(m=>allData[m]&&Object.keys(allData[m]).filter(k=>!k.startsWith('_')).length>0).length;
+  if(cnt>0){badge.textContent=cnt;badge.style.display='inline-flex';}
+  else badge.style.display='none';
+}
+
+/* П39: Таблица рекордов в достижениях */
+function updateRecordsTable(){
+  const el=document.getElementById('records-table');if(!el)return;
+  const months=MK.filter(m=>allData[m]&&Object.keys(allData[m]).filter(k=>!k.startsWith('_')).length>3);
+  if(months.length<1){el.innerHTML='<div style="color:var(--muted);font-size:13px;padding:10px 0">Нет данных для рекордов — заполни хотя бы пару месяцев</div>';return;}
+  const comps=months.map(m=>({m,c:cfd(allData[m])})).sort((a,b)=>b.c.grand-a.c.grand);
+  let html='<table class="hist-table" style="margin-top:8px"><thead><tr><th style="text-align:left">Место</th><th style="text-align:left">Месяц</th><th>Всего</th><th>Статус</th></tr></thead><tbody>';
+  comps.forEach((x,i)=>{
+    const medals=['🥇','🥈','🥉'];
+    const medal=medals[i]||'  '+(i+1)+'. ';
+    html+=`<tr><td>${medal}</td><td>${MONTHS[x.m]}</td><td class="fw7" style="text-align:right">${x.c.grand>0?fmt(x.c.grand):'—'}</td><td style="text-align:center">${allData[x.m]._paid?'✅':'⬜'}</td></tr>`;
+  });
+  el.innerHTML=html+'</tbody></table>';
+}
+
+/* П21: Патч fbLoad — показываем skeleton, скрываем после загрузки */
+const _origFbLoad=fbLoad;
+fbLoad=async function(){
+  fabLoading(true);
+  await _origFbLoad();
+  hideSkeleton();
+  fabLoading(false);
+  updateHistoryBadge();
+  updateXPDisplay();
+  updateProgressBar();
+  updateOnboarding();
+};
+
+// Инициализируем XP display сразу
+updateXPDisplay();
+
+/* ================================================================
+   ВОЛНА В — ПАСХАЛКИ + МЕЛОЧИ
+   ================================================================ */
+
+/* ── П49 + П59: 1001 цитата ─────────────────────────────────── */
+const QUOTES_BY_HOLIDAY={
+  '01-01':['🎉 С Новым годом! Пусть все счета будут маленькими!','🥂 Новый год — новые тарифы. Старые мечты.','⛄ Год начался. Счётчики — нет.'],
+  '02-14':['💝 С Днём влюблённых! Люби коммуналку, и она ответит взаимностью.','💌 Самый романтичный счёт — тот, что оплачен вовремя.'],
+  '02-23':['🎖 С 23 февраля! Защищаем Родину от задолженностей.','💪 Настоящий мужчина платит коммуналку сам.'],
+  '03-08':['🌸 С 8 марта! Лучший подарок — оплаченная квитанция.','💐 Женщины держат дом. Буквально.'],
+  '10-31':['🎃 Хэллоуин! Самый страшный счёт — за отопление.','👻 Призраки долгов за ЖКХ — самые живучие.'],
+  '12-31':['🎄 Последний день года. Всё оплачено? Молодец!','🕛 31 декабря: последний шанс закрыть год с чистой совестью.'],
+};
+const QUOTES_BY_SEASON={
+  winter:['❄️ Зима. Топим квартиру и бюджет одновременно.','🌨 Январь: счёт за отопление прилетел раньше Деда Мороза.','⛄ В мороз хочется одного — чтобы тариф на тепло не кусался.'],
+  spring:['🌱 Весна. Отопление выключили, но счёт — ещё нет.','🌷 Апрель: между зимой и летом прячется перерасчёт.','🌿 Природа просыпается. Тарифы — уже давно.'],
+  summer:['☀️ Лето. Горячая вода отключена, но дух — нет.','🌊 Жара. Счётчик ХВС крутится быстрее вентилятора.','🏖 Отпуск отпуском, а квитанция придёт сама.'],
+  autumn:['🍂 Осень. Отопительный сезон и сезон оправданий.','🍁 Листья падают. Цифры на счёте — растут.','🌧 Дождь. Самое время проверить счётчики.'],
+};
+const QUOTES_TIME={
+  night:['🌙 Ночь — лучшее время проверить показания Т2.','😴 Не спится? Введи показания. Полегчает.','🦉 Совы вводят данные ночью. Ты — сова?'],
+  morning:['☀️ Доброе утро! Начнём день с честных показаний.','🌅 Рассвет. Счётчики уже крутятся.','☕ Кофе + квитанция = продуктивное утро.'],
+};
+const QUOTES_WEEK={
+  1:['📅 Понедельник. Неделя начинается с реальности ЖКХ.','💼 Первый день недели — отличный для ввода данных.'],
+  3:['🎉 Среда! Мои чуваки! Уже полнедели позади.','🌊 Среда — экватор недели и квитанций.'],
+  5:['🎊 Пятница! Кто сказал, что коммуналка скучна?'],
+  6:['😴 Суббота. Можно заполнить в неспешном темпе.'],
+  0:['☁️ Воскресенье. Тихий день для тихих цифр.'],
+};
+const QUOTES_GENERAL=[
+  'Коммуналка — это когда ты точно знаешь, сколько стоит жизнь.',
+  'Показания сданы — совесть чиста.',
+  'Платишь вовремя? Ты — герой нашего времени.',
+  'Тариф растёт, но и ты не стоишь на месте.',
+  'Каждый кубометр воды — это маленький вклад в цивилизацию.',
+  'Счётчик не врёт. Только иногда удивляет.',
+  'Балашиха. 27 м². Полный порядок.',
+  'Экономия — это не жадность, это забота.',
+  'Поверка счётчика — это как техосмотр, только честнее.',
+  'Хорошая квартира — та, за которую не стыдно платить.',
+  'Т1 днём, Т2 ночью. Как инь и янь, только дороже.',
+  'ГВС + ХВС = тепло и уют.',
+  'Коммунальные платежи — это инвестиции в комфорт.',
+  'Правило хорошего жильца: плати и записывай.',
+  'Мосэнергосбыт сказал "плати". Мы платим.',
+  'МосОблЕИРЦ — пять букв, одна квитанция.',
+  'Пик-Комфорт: когда комфорт в самом названии.',
+  'Водоотведение — самая недооценённая коммунальная услуга.',
+  'Капремонт когда-нибудь завершится. Наверное.',
+  'Интернет оплачен — значит, смотрим этот трекер.',
+  'Каждый месяц — новая страница. Заполни её честно.',
+  'Хайку: Тариф вырос снова. / Счётчик молчит как рыба. / Плачу и молчу.',
+  'Хайку: Горячая вода. / Июль — её нет совсем. / Лето без душа.',
+  'Философия коммуналки: платишь → живёшь.',
+  'Дзен: не сопротивляйся квитанции — просто заплати.',
+  '🐉 Китайский НГ: год дракона — год горячих платежей.',
+  '🌸 Сезон цветения сакуры: красота мимолётна, тарифы — вечны.',
+  'Экономил воду? Молодец. Счётчик это заметил.',
+  'Формула счастья: доходы > коммуналка.',
+  'Лайфхак: вовремя сданные показания = вовремя посчитанный счёт.',
+  'Поговорка: береги тепло смолоду.',
+  'Важное открытие: горячая вода стоит дороже холодной. Кто бы мог подумать.',
+  'Электричество: невидимое, но незаменимое.',
+  'ТКО собирают регулярно. Данные тоже стоит вводить регулярно.',
+  'Безопасность — дороже денег. Но тоже стоит денег.',
+];
+
+function getQuoteIndex(){
+  const key='kquote_idx';
+  let idx=parseInt(localStorage.getItem(key)||'0');
+  if(idx>=QUOTES_GENERAL.length-1){
+    if(typeof unlockAch==='function')unlockAch('quote1001');
+  }
+  localStorage.setItem(key,(idx+1)%QUOTES_GENERAL.length);
+  return idx;
+}
+
+function getContextualQuote(){
+  const now=new Date();
+  const mm=(now.getMonth()+1).toString().padStart(2,'0');
+  const dd=now.getDate().toString().padStart(2,'0');
+  const h=now.getHours(),dow=now.getDay(),mo=now.getMonth();
+  const key=mm+'-'+dd;
+  if(QUOTES_BY_HOLIDAY[key]){const a=QUOTES_BY_HOLIDAY[key];return a[Math.floor(Math.random()*a.length)];}
+  if(QUOTES_BY_WEEK[dow]&&Math.random()<0.3){const a=QUOTES_BY_WEEK[dow];return a[Math.floor(Math.random()*a.length)];}
+  if(h>=0&&h<6&&Math.random()<0.5){const a=QUOTES_TIME.night;return a[Math.floor(Math.random()*a.length)];}
+  if(h>=6&&h<10&&Math.random()<0.5){const a=QUOTES_TIME.morning;return a[Math.floor(Math.random()*a.length)];}
+  const season=mo>=11||mo<=1?'winter':mo<=4?'spring':mo<=7?'summer':'autumn';
+  if(Math.random()<0.4){const a=QUOTES_BY_SEASON[season];return a[Math.floor(Math.random()*a.length)];}
+  return QUOTES_GENERAL[getQuoteIndex()%QUOTES_GENERAL.length];
+}
+
+/* П44+П59: приветствие по времени суток + цитата в сплэше */
+(function initSplashText(){
+  const h=new Date().getHours();
+  const greeting=h<6?'🌙 Доброй ночи':h<12?'☀️ Доброе утро':h<18?'👋 Добрый день':'🌆 Добрый вечер';
+  const gEl=document.getElementById('splash-greeting');
+  if(gEl)gEl.textContent=greeting;
+  const q=getContextualQuote();
+  const qEl=document.getElementById('splash-quote');
+  if(qEl){qEl.style.opacity='0';qEl.textContent=q;setTimeout(()=>{qEl.style.opacity='1';},400);}
+})();
+
+/* П41: монетка при оплате */
+function playCoin(){
+  try{
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    [[1047,0],[1319,.08],[1568,.16],[2093,.28]].forEach(([f,t])=>{
+      const o=ctx.createOscillator(),g=ctx.createGain();
+      o.connect(g);g.connect(ctx.destination);
+      o.type='sine';o.frequency.value=f;
+      g.gain.setValueAtTime(.12,ctx.currentTime+t);
+      g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+t+.25);
+      o.start(ctx.currentTime+t);o.stop(ctx.currentTime+t+.25);
+    });
+  }catch(e){}
+}
+
+/* П42: ambient при открытии */
+function playAmbient(){
+  if(!settings.sounds)return;
+  try{
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    const o=ctx.createOscillator(),g=ctx.createGain();
+    o.connect(g);g.connect(ctx.destination);
+    o.type='sine';o.frequency.setValueAtTime(440,ctx.currentTime);
+    o.frequency.exponentialRampToValueAtTime(880,ctx.currentTime+.3);
+    g.gain.setValueAtTime(.04,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.4);
+    o.start();o.stop(ctx.currentTime+.4);
+  }catch(e){}
+}
+
+/* П48: кассовый аппарат при открытии списка месяцев */
+function playCashRegister(){
+  if(!settings.sounds)return;
+  try{
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    [[800,.0],[600,.06],[400,.12],[1200,.18]].forEach(([f,t])=>{
+      const o=ctx.createOscillator(),g=ctx.createGain();
+      o.connect(g);g.connect(ctx.destination);
+      o.type='square';o.frequency.value=f;
+      g.gain.setValueAtTime(.06,ctx.currentTime+t);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+t+.06);
+      o.start(ctx.currentTime+t);o.stop(ctx.currentTime+t+.1);
+    });
+  }catch(e){}
+}
+
+/* Патч confirmPaid — монетка */
+const _cpOrig=confirmPaid;
+confirmPaid=function(){_cpOrig();playCoin();};
+
+/* Патч openMonthPicker — кассовый аппарат */
+const _ompOrig=openMonthPicker;
+openMonthPicker=function(e){playCashRegister();_ompOrig(e);};
+
+/* П45: день рождения трекера */
+(function checkTrackerBirthday(){
+  const firstRun=localStorage.getItem('kfirst_run');
+  const now=new Date();
+  if(!firstRun){localStorage.setItem('kfirst_run',now.toISOString());return;}
+  const first=new Date(firstRun);
+  const diff=(now-first)/(1000*60*60*24);
+  const sameDay=now.getDate()===first.getDate()&&now.getMonth()===first.getMonth();
+  if(diff>=365&&sameDay){
+    setTimeout(()=>{unlockAch('birthday');launchConfetti();showEgg('🎂 Годовщина трекера!','Ровно год как ты следишь за коммуналкой. Ты — легенда!');},3000);
+  }
+})();
+
+/* П46: breadcrumb "← Назад" */
+let _prevTabV='entry';
+function openSection(name){
+  _prevTabV='entry';
+  const backBtn=document.getElementById('back-btn');
+  if(backBtn)backBtn.style.display='inline-block';
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const pg=document.getElementById('page-'+name);
+  if(pg)pg.classList.add('active');
+  if(name==='achievements'){renderAchievements();updateRecordsTable();}
+  haptic(30);
+}
+function goBack(){
+  const backBtn=document.getElementById('back-btn');
+  if(backBtn)backBtn.style.display='none';
+  switchTab(_prevTabV||'entry');
+  haptic(30);
+}
+
+/* П47: shake to undo */
+let _lastSavedSnapshot=null;
+const _origAutoSaveShake=autoSave;
+autoSave=async function(){
+  _lastSavedSnapshot=JSON.stringify(allData);
+  await _origAutoSaveShake();
+};
+let _shakeAccum=0,_shakeLastT=0;
+window.addEventListener('devicemotion',e=>{
+  const a=e.accelerationIncludingGravity;if(!a)return;
+  const mag=Math.sqrt((a.x||0)*(a.x||0)+(a.y||0)*(a.y||0)+(a.z||0)*(a.z||0));
+  const now=Date.now();
+  if(now-_shakeLastT<100)_shakeAccum+=Math.abs(mag-9.8); else _shakeAccum=0;
+  _shakeLastT=now;
+  if(_shakeAccum>80){
+    _shakeAccum=0;
+    if(_lastSavedSnapshot&&confirm('↩ Отменить последнее сохранение?')){
+      allData=JSON.parse(_lastSavedSnapshot);_lastSavedSnapshot=null;
+      fbSave();loadMonth();haptic([50,30,50]);
+    }
+  }
+},{passive:true});
+
+/* П51: оффлайн-индикатор */
+function updateOnlineStatus(){
+  const badge=document.getElementById('offline-badge');
+  if(badge)badge.style.display=navigator.onLine?'none':'inline-block';
+}
+window.addEventListener('online',updateOnlineStatus);
+window.addEventListener('offline',updateOnlineStatus);
+updateOnlineStatus();
+
+/* П52: автопредложение тарифов */
+function checkTariffSuggestion(){
+  if(localStorage.getItem('ktariff_dismissed'))return;
+  const months=MK.filter(m=>allData[m]);
+  if(months.length<4)return;
+  const last3=months.slice(-3);
+  const ref=allData[last3[0]];let unchanged=true;
+  last3.slice(1).forEach(m=>{
+    TARIFF_IDS.forEach(id=>{if(allData[m][id]!==undefined&&ref[id]!==undefined&&allData[m][id]!==ref[id])unchanged=false;});
+  });
+  const row=document.getElementById('tariff-check-row');
+  if(row)row.style.display=unchanged?'flex':'none';
+}
+function dismissTariffAlert(){
+  const row=document.getElementById('tariff-check-row');
+  if(row)row.style.display='none';
+  localStorage.setItem('ktariff_dismissed',new Date().toISOString());
+}
+
+/* П53: PWA */
+let _deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault();_deferredPrompt=e;
+  const btn=document.getElementById('pwa-btn');
+  if(btn){btn.style.background='linear-gradient(135deg,var(--accent),#6d28d9)';btn.style.color='#fff';}
+});
+function showPWAInstall(){
+  const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent)&&!window.MSStream;
+  const isStandalone=window.navigator.standalone||window.matchMedia('(display-mode: standalone)').matches;
+  if(isStandalone){alert('Приложение уже установлено!');return;}
+  const toast=document.getElementById('pwa-toast');
+  const textEl=document.getElementById('pwa-toast-text');
+  const installBtn=document.getElementById('pwa-install-btn');
+  if(!toast)return;
+  if(isIOS){
+    if(textEl)textEl.innerHTML='На iPhone: нажми <strong>Поделиться</strong> (квадрат со стрелкой) → <strong>"На экран Домой"</strong>';
+    if(installBtn)installBtn.style.display='none';
+  }else{
+    if(textEl)textEl.textContent='Добавь на главный экран — работает как приложение, без браузера!';
+    if(installBtn)installBtn.style.display=_deferredPrompt?'block':'none';
+  }
+  toast.classList.add('show');
+}
+function triggerPWAInstall(){
+  if(_deferredPrompt){_deferredPrompt.prompt();_deferredPrompt.userChoice.then(r=>{if(r.outcome==='accepted')haptic([30,20,80]);_deferredPrompt=null;});}
+  closePWAToast();
+}
+function closePWAToast(){const t=document.getElementById('pwa-toast');if(t)t.classList.remove('show');}
+
+/* П55: meta theme-color */
+function updateThemeColor(){
+  const meta=document.getElementById('meta-theme-color');
+  if(meta)meta.content=document.documentElement.classList.contains('light')?'#f4f6fb':'#0f1117';
+}
+const _origApplySettingsV=applySettings;
+applySettings=function(){_origApplySettingsV();updateThemeColor();checkTariffSuggestion();};
+updateThemeColor();
+
+/* П56: долгое нажатие на сумму → копировать */
+function makeCopyable(sel){
+  document.querySelectorAll(sel).forEach(el=>{
+    if(el._cp)return;el._cp=true;el.classList.add('copyable');
+    let pt=null;
+    const start=()=>{pt=setTimeout(()=>{
+      const txt=el.textContent.trim();
+      if(navigator.clipboard){navigator.clipboard.writeText(txt).then(()=>{
+        haptic([30,20,30]);
+        const f=document.createElement('div');f.className='copy-flash';f.textContent='✓ '+txt;
+        const r=el.getBoundingClientRect();
+        f.style.cssText='position:fixed;left:50%;transform:translateX(-50%);top:'+(r.top-44+window.scrollY)+'px';
+        document.body.appendChild(f);setTimeout(()=>f.remove(),800);
+      });}
+    },600);};
+    const end=()=>clearTimeout(pt);
+    el.addEventListener('mousedown',start);el.addEventListener('mouseup',end);el.addEventListener('mouseleave',end);
+    el.addEventListener('touchstart',start,{passive:true});el.addEventListener('touchend',end,{passive:true});
+  });
+}
+const _origRenderCopyV=render;
+render=function(){_origRenderCopyV();setTimeout(()=>makeCopyable('.td-sum,.ft-val,.source-total'),60);};
+
+/* П57: двойной тап на source-head → сворачивает */
+document.querySelectorAll('.source-head').forEach(head=>{
+  let tc=0,tt=null;
+  head.style.cursor='pointer';
+  head.addEventListener('click',()=>{
+    tc++;clearTimeout(tt);
+    tt=setTimeout(()=>{
+      if(tc>=2){const b=head.closest('.source-block');if(b){b.classList.toggle('collapsed');haptic(30);}}
+      tc=0;
+    },350);
+  });
+});
+
+/* П43: сэкономленные деньги 🌱 */
+function updateSavings(){
+  const m=curMonth(),pm=prevMK(m);
+  if(!pm||!allData[pm]||!allData[m])return;
+  const cur=cfd(allData[m]).grand,prev=cfd(allData[pm]).grand;
+  const el=document.getElementById('ft-savings');if(!el)return;
+  if(cur>0&&prev>0&&prev>cur){el.style.display='block';el.textContent='🌱 сэкономлено '+fmt(prev-cur);}
+  else el.style.display='none';
+}
+const _origRenderSavV=render;
+render=function(){_origRenderSavV();updateSavings();};
+
+/* П50+П61: Достижение "Тысяча и одна ночь" — добавляем в список */
+if(!ACHS.find(a=>a.id==='quote1001')){
+  ACHS.push({id:'quote1001',icon:'🎭',name:'Тысяча и одна ночь',desc:'Прочитал все цитаты запуска'});
+}
+
+/* П60: sticker достижений — патч renderAchievements */
+const _origRAv=renderAchievements;
+renderAchievements=function(){
+  _origRAv();
+  const u=getAchs();
+  document.querySelectorAll('.ach-card:not(.unlocked)').forEach(card=>{
+    const icon=card.querySelector('.ach-icon');
+    if(icon&&!icon._stickered){icon._stickered=true;}
+  });
+};
+
+/* П58: drag-scroll в истории */
+(function initHistScroll(){
+  const el=document.getElementById('hist-scroll');
+  if(!el)return;
+  let isDown=false,startX=0,scrollLeft=0;
+  el.addEventListener('mousedown',e=>{isDown=true;startX=e.pageX-el.offsetLeft;scrollLeft=el.scrollLeft;el.style.cursor='grabbing';});
+  el.addEventListener('mouseleave',()=>{isDown=false;el.style.cursor='';});
+  el.addEventListener('mouseup',()=>{isDown=false;el.style.cursor='';});
+  el.addEventListener('mousemove',e=>{if(!isDown)return;e.preventDefault();const x=e.pageX-el.offsetLeft;el.scrollLeft=scrollLeft-(x-startX)*1.2;});
+})();
+
+/* Патч fbLoad для Волны В */
+const _origFbLoadV=fbLoad;
+fbLoad=async function(){
+  await _origFbLoadV();
+  checkTariffSuggestion();
+  setTimeout(playAmbient,1200);
+};
+
 </script>
 </body>
 </html>
