@@ -3007,35 +3007,6 @@ function lockedFieldFeedback(e){
   }
 }
 
-/* ════════ П6: Свайп по вкладкам ════════ */
-const TAB_NAMES=['entry','history','dynamics','year'];
-let swipeStartX=0,swipeStartY=0,swipeActive=false;
-
-document.addEventListener('touchstart',e=>{
-  // Не перехватываем если тащат шторку или попап
-  if(e.target.closest('#bottom-sheet,#qi-popup,#float-bar'))return;
-  swipeStartX=e.touches[0].clientX;
-  swipeStartY=e.touches[0].clientY;
-  swipeActive=true;
-},{passive:true});
-
-document.addEventListener('touchend',e=>{
-  if(!swipeActive)return;swipeActive=false;
-  if(e.target.closest('#bottom-sheet,#qi-popup,#float-bar'))return;
-  const dx=e.changedTouches[0].clientX-swipeStartX;
-  const dy=e.changedTouches[0].clientY-swipeStartY;
-  // Горизонтальный свайп: |dx|>50 и угол < 45°
-  if(Math.abs(dx)<50||Math.abs(dy)>Math.abs(dx))return;
-  // Определяем текущую активную вкладку
-  const active=document.querySelector('.page.active');
-  if(!active)return;
-  const cur=active.id.replace('page-','');
-  const idx=TAB_NAMES.indexOf(cur);
-  if(idx===-1)return;
-  if(dx<0&&idx<TAB_NAMES.length-1){switchTab(TAB_NAMES[idx+1]);haptic(20);}
-  else if(dx>0&&idx>0){switchTab(TAB_NAMES[idx-1]);haptic(20);}
-},{passive:true});
-
 /* ════════ П8: Шторка — реалтайм за пальцем ════════ */
 // initSheetDrag — iOS realtime drag с capture listeners
 function initSheetDrag(){
