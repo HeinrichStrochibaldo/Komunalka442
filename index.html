@@ -1518,41 +1518,41 @@ input.meter-locked:focus { border-color: var(--border) !important; }
 
 <script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script defer>
-/* ═══ АВАРИЙНЫЙ ОБРАБОТЧИК — показывает ошибку на сплэше ═══ */
-window.onerror = function(msg, src, line, col, err) {
+/* ═══ ДИАГНОСТИКА ═══ */
+var _log = [];
+function _dbg(msg) {
+  _log.push(msg);
   var sub = document.getElementById('splash-sub');
-  if (sub) {
-    sub.innerHTML = '<span style="color:#f87171;font-size:12px">Ошибка L'+line+': '+msg+'</span>';
-  }
-  console.error('FATAL:', msg, 'at', src, line, col, err);
+  if(sub) sub.innerHTML = '<div style="font-size:10px;color:#aaa;text-align:left;padding:0 20px;max-height:200px;overflow:auto">' + _log.slice(-8).join('<br>') + '</div>';
+}
+window.onerror = function(msg, src, line) {
+  _dbg('<span style="color:#f87171">ERR L'+line+': '+msg+'</span>');
   return false;
 };
-window.onunhandledrejection = function(e) {
-  var sub = document.getElementById('splash-sub');
-  if (sub) {
-    sub.innerHTML = '<span style="color:#f87171;font-size:12px">Promise: '+(e.reason||e)+'</span>';
-  }
-};
-/* Аварийный таймаут — если через 12 сек не загрузилось, показываем из localStorage */
+window.addEventListener('unhandledrejection', function(e) {
+  _dbg('<span style="color:#f87171">PROMISE: '+(e.reason||'unknown')+'</span>');
+});
+_dbg('▶ Script started');
+/* Аварийный таймаут */
 setTimeout(function(){
   var splash = document.getElementById('splash');
-  if (splash && splash.parentNode) {
-    var sub = document.getElementById('splash-sub');
-    if(sub) sub.innerHTML = '<span style="color:#fbbf24;font-size:12px">Таймаут — загружаем офлайн...</span>';
+  if(splash && splash.parentNode) {
+    _dbg('<span style="color:#fbbf24">⏱ Timeout — offline mode</span>');
     setTimeout(function(){
       try {
-        allData = JSON.parse(localStorage.getItem('kv5')||'{}');
-        if(!allData['2026-05']) allData['2026-05'] = MAY26;
-        if(typeof hideSplash==='function') hideSplash();
-        if(typeof loadMonth==='function') loadMonth();
-        if(typeof updateVerify==='function') updateVerify();
-        if(typeof updateStreak==='function') updateStreak();
-      } catch(e2) {
-        if(splash) splash.style.display='none';
-      }
-    }, 1500);
+        if(typeof allData !== 'undefined') {
+          var saved = localStorage.getItem('kv5');
+          if(saved) { allData = JSON.parse(saved); _dbg('✓ localStorage loaded'); }
+          if(typeof hideSplash==='function') hideSplash();
+          if(typeof loadMonth==='function') loadMonth();
+        } else {
+          _dbg('<span style="color:#f87171">allData undefined!</span>');
+          if(splash) splash.style.display='none';
+        }
+      } catch(e2) { _dbg('ERR: '+e2.message); if(splash) splash.style.display='none'; }
+    }, 2000);
   }
-}, 12000);
+}, 8000);
 
 /* ============================================================ CONSTANTS ============================================================ */
 const MONTHS={'2026-05':'Май 2026','2026-06':'Июнь 2026','2026-07':'Июль 2026','2026-08':'Август 2026','2026-09':'Сентябрь 2026','2026-10':'Октябрь 2026','2026-11':'Ноябрь 2026','2026-12':'Декабрь 2026','2027-01':'Январь 2027','2027-02':'Февраль 2027','2027-03':'Март 2027','2027-04':'Апрель 2027'};
@@ -1590,11 +1590,13 @@ let monthPickerOpen=false;
 let longPressTimer=null;
 
 /* ============================================================ FIREBASE ============================================================ */
-let db=null, DOC=null; // инициализируются в fbLoad после загрузки SDK
+let db=null, DOC=null;
+_dbg('▶ Constants OK, Firebase pending...'); // инициализируются в fbLoad после загрузки SDK
 
 async function fbLoad(){
   fabLoading(true);
   // Ждём Firebase SDK если ещё не готов (макс 5 сек)
+  _dbg('▶ fbLoad: waiting Firebase SDK...');
   if(!window._firebaseReady) {
     await new Promise(resolve => {
       window._firebaseReadyCb = resolve;
@@ -1625,6 +1627,7 @@ async function fbLoad(){
     if(!allData['2026-05']){allData['2026-05']=MAY26;fbSave();}
     if(allData._achs)localStorage.setItem('kachs',JSON.stringify(allData._achs));
   }catch(e){}
+  _dbg('▶ Firebase done, hiding splash...');
   hideSplash();
   hideSkeleton();
   fabLoading(false);
@@ -2697,21 +2700,11 @@ function updateProgressBar(){
 function updateOnboarding(){
   const hint=document.getElementById('onboarding-hint');
   if(!hint)return;
-  const m=curMonth(),d=allData[m]r:1px solid var(--border);border-radius:12px">
-    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--label);margin-bottom:10px">🏅 Рекорды</div>
-    <div style="display:flex;justify-content:space-between;margin-bottom:8px">
-      <span style="font-size:12px;color:var(--muted)">💸 Самый дорогой</span>
-      <span style="font-size:13px;font-weight:600;color:var(--red)">${MONTHS[r.maxM]} · ${fmt(r.maxV)}</span>
-    </div>
-    <div style="display:flex;justify-content:space-between">
-      <span style="font-size:12px;color:var(--muted)">💚 Самый дешёвый</span>
-      <span style="font-size:13px;font-weight:600;color:var(--green)">${MONTHS[r.minM]} · ${fmt(r.minV)}</span>
-    </div>
-  </div>`:'';
-  const t=getLastUpdateTime();
-  const footer=t?`<div style="text-align:center;padding:12px 0 4px;font-size:11px;color:var(--muted)">Последнее обновление в ${t}</div>`:'';
-  return base+recs+footer;
-};
+  const m=curMonth(),d=allData[m]||{};
+  const hasData=Object.keys(d).filter(k=>!k.startsWith('_')).length>0;
+  hint.style.display=hasData?'none':'block';
+}
+
 
 /* П37: Рекорды в шторке (самый дорогой / дешёвый месяц) */
 function getRecords(){
@@ -3619,6 +3612,7 @@ function fpApply(){
 }
 
 /* ============================================================ BOOTSTRAP — запускается после всех определений ============================================================ */
+_dbg('▶ Bootstrap start');
 (function init(){
   const ks=localStorage.getItem('ksettings');if(ks)settings={...settings,...JSON.parse(ks)};
   const km=localStorage.getItem('kmeter');if(km)meter={...meter,...JSON.parse(km)};
@@ -3626,8 +3620,11 @@ function fpApply(){
   const kt=localStorage.getItem('ktheme');
   applyTheme(kt||(window.matchMedia('(prefers-color-scheme:light)').matches?'light':'dark'));
   window.matchMedia('(prefers-color-scheme:light)').addEventListener('change',e=>{if(!localStorage.getItem('ktheme'))applyTheme(e.matches?'light':'dark');});
+  _dbg('▶ applySettings...');
   applySettings();
+  _dbg('▶ fbLoad...');
   fbLoad();
+  _dbg('▶ fbLoad called');
 })();
 
 </script>
