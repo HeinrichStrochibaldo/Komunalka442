@@ -1502,6 +1502,8 @@ input.meter-locked:focus { border-color: var(--border) !important; }
 var _log = [];
 function _dbg(msg) {
   _log.push(msg);
+  var splash = document.getElementById('splash');
+  if(!splash || splash.style.display==='none') return;
   var sub = document.getElementById('splash-sub');
   if(sub) sub.innerHTML = '<div style="font-size:10px;color:#aaa;text-align:left;padding:0 20px;max-height:200px;overflow:auto">' + _log.slice(-8).join('<br>') + '</div>';
 }
@@ -2385,7 +2387,7 @@ function applyTheme(t){document.documentElement.classList.remove('light','dark')
 function toggleTheme(){applyTheme(document.documentElement.classList.contains('light')?'dark':'light');}
 
 /* ============================================================ SPLASH ============================================================ */
-function hideSplash(){setTimeout(()=>{const s=document.getElementById('splash');if(s){s.classList.add('hide');setTimeout(()=>s.remove(),400);}hideSkeleton();},900);}
+function hideSplash(){setTimeout(()=>{const s=document.getElementById('splash');if(s){s.style.transition='opacity .4s';s.style.opacity='0';s.style.pointerEvents='none';setTimeout(()=>{s.style.display='none';s.remove&&s.remove();},450);}hideSkeleton();},600);}
 
 /* ============================================================ INIT DATA ============================================================ */
 const MAY26={'prev-gvs':94.380,'cur-gvs':95.496,'prev-hvs':150.577,'cur-hvs':153.196,'prev-t1':3407,'cur-t1':3449,'prev-t2':923,'cur-t2':937,'t-kaprem':594,'t-gvs-voda':63.26,'t-gvs-pod':0.0612684,'v-gvs-pod':2909.02,'t-otop':0.3591,'v-otop':2909.02,'t-hvs':63.26,'t-vodo':62.21,'t-soderzh':1631.88,'t-bezop':109.08,'t-tko':311.12,'t-tv':315,'t-oi-ee-d':8.24,'v-oi-ee-d':10.7118,'t-oi-ee-n':3.54,'v-oi-ee-n':5.2505,'t-oi-vo':62.21,'v-oi-vo':0.0516,'t-oi-gvs':63.26,'v-oi-gvs':0.0258,'t-oi-gvsp':2909.02,'v-oi-gvsp':0.001368,'t-oi-hvs':63.26,'v-oi-hvs':0.0258,'t-t1':8.24,'t-t2':3.54,'t-inet':800};
