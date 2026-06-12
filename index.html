@@ -1079,7 +1079,7 @@ input.meter-locked:focus { border-color: var(--border) !important; }
 <!-- TABS -->
 <div class="tabs" id="main-tabs">
   <div class="tab active" onclick="switchTab('entry')">📝 Ввод</div>
-  <div class="tab" onclick="switchTab('history')">📋 История <span class="tab-badge" id="history-badge" style="display:none">0</span></div>
+  <div class="tab" onclick="switchTab('history')">📋 История</div>
   <div class="tab" onclick="switchTab('dynamics')">📈 Динамика</div>
   <div class="tab" onclick="switchTab('year')">📅 Год</div>
 </div>
@@ -1612,7 +1612,7 @@ async function fbLoad(){
   fabLoading(false);
   try{
     loadMonth();updateVerify();updateStreak();checkEaster();
-    updateHistoryBadge();updateXPDisplay();updateProgressBar();updateOnboarding();
+    updateXPDisplay();updateProgressBar();updateOnboarding();
     checkTariffSuggestion();
     setTimeout(playAmbient,1200);
   }catch(e){console.error('Render:',e);_dbg('<span style="color:#f87171">RENDER ERR: '+e.message+'</span>');}
@@ -1907,8 +1907,7 @@ async function autoSave(){
   if(settings.sounds)playSound('save');
   showSaveWave();
   addXP(10,'заполнено');
-  updateHistoryBadge();
-  renderVersionList();checkAchs();autoArchive();
+    renderVersionList();checkAchs();autoArchive();
 }
 
 async function autoArchive(){
@@ -2786,11 +2785,6 @@ function updateYoY(){
 
 
 
-/* П40: Бейдж на вкладке История */
-function updateHistoryBadge(){
-  const badge=document.getElementById('history-badge');if(!badge)return;
-  const cnt=MK.filter(m=>allData[m]&&Object.keys(allData[m]).filter(k=>!k.startsWith('_')).length>0).length;
-  if(cnt>0){badge.textContent=cnt;badge.style.display='inline-flex';}
   else badge.style.display='none';
 }
 
