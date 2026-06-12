@@ -2107,8 +2107,9 @@ function checkAchs(){
 /* ============================================================ SETTINGS ============================================================ */
 function applySettings(){
   document.documentElement.style.setProperty('--accent',settings.accent);
-  updateThemeColor();
-  checkTariffSuggestion();
+  // updateThemeColor и checkTariffSuggestion вызываются после fbLoad
+  if(typeof updateThemeColor==='function')updateThemeColor();
+  if(typeof checkTariffSuggestion==='function')checkTariffSuggestion();
   const pats={none:'none',dots:'radial-gradient(circle,rgba(255,255,255,.07) 1px,transparent 1px) 0 0/16px 16px',lines:'repeating-linear-gradient(0deg,rgba(255,255,255,.04) 0,rgba(255,255,255,.04) 1px,transparent 0,transparent 24px)',grid:'repeating-linear-gradient(90deg,rgba(255,255,255,.03) 0,rgba(255,255,255,.03) 1px,transparent 0,transparent 24px),repeating-linear-gradient(0deg,rgba(255,255,255,.03) 0,rgba(255,255,255,.03) 1px,transparent 0,transparent 24px)'};
   document.documentElement.style.setProperty('--bg-img',pats[settings.pattern]||'none');
   const h1=document.getElementById('app-title');if(h1)h1.textContent=settings.title||'Коммуналка';
@@ -2313,17 +2314,7 @@ function hideSplash(){setTimeout(()=>{const s=document.getElementById('splash');
 /* ============================================================ INIT DATA ============================================================ */
 const MAY26={'prev-gvs':94.380,'cur-gvs':95.496,'prev-hvs':150.577,'cur-hvs':153.196,'prev-t1':3407,'cur-t1':3449,'prev-t2':923,'cur-t2':937,'t-kaprem':594,'t-gvs-voda':63.26,'t-gvs-pod':0.0612684,'v-gvs-pod':2909.02,'t-otop':0.3591,'v-otop':2909.02,'t-hvs':63.26,'t-vodo':62.21,'t-soderzh':1631.88,'t-bezop':109.08,'t-tko':311.12,'t-tv':315,'t-oi-ee-d':8.24,'v-oi-ee-d':10.7118,'t-oi-ee-n':3.54,'v-oi-ee-n':5.2505,'t-oi-vo':62.21,'v-oi-vo':0.0516,'t-oi-gvs':63.26,'v-oi-gvs':0.0258,'t-oi-gvsp':2909.02,'v-oi-gvsp':0.001368,'t-oi-hvs':63.26,'v-oi-hvs':0.0258,'t-t1':8.24,'t-t2':3.54,'t-inet':800};
 
-/* ============================================================ BOOTSTRAP ============================================================ */
-(function init(){
-  const ks=localStorage.getItem('ksettings');if(ks)settings={...settings,...JSON.parse(ks)};
-  const km=localStorage.getItem('kmeter');if(km)meter={...meter,...JSON.parse(km)};
-  const kv=localStorage.getItem('kversions');if(kv)versions=JSON.parse(kv);
-  const kt=localStorage.getItem('ktheme');
-  applyTheme(kt||(window.matchMedia('(prefers-color-scheme:light)').matches?'light':'dark'));
-  window.matchMedia('(prefers-color-scheme:light)').addEventListener('change',e=>{if(!localStorage.getItem('ktheme'))applyTheme(e.matches?'light':'dark');});
-  applySettings();
-  fbLoad();
-})();
+/* BOOTSTRAP перемещён в конец файла */
 
 /* ============================================================ HAPTIC ============================================================ */
 function haptic(pattern){
@@ -3571,6 +3562,18 @@ function fpApply(){
   closeFabPopup();
   setTimeout(()=>{autoSave().then(()=>fabSaved());},1600);
 }
+
+/* ============================================================ BOOTSTRAP — запускается после всех определений ============================================================ */
+(function init(){
+  const ks=localStorage.getItem('ksettings');if(ks)settings={...settings,...JSON.parse(ks)};
+  const km=localStorage.getItem('kmeter');if(km)meter={...meter,...JSON.parse(km)};
+  const kv=localStorage.getItem('kversions');if(kv)versions=JSON.parse(kv);
+  const kt=localStorage.getItem('ktheme');
+  applyTheme(kt||(window.matchMedia('(prefers-color-scheme:light)').matches?'light':'dark'));
+  window.matchMedia('(prefers-color-scheme:light)').addEventListener('change',e=>{if(!localStorage.getItem('ktheme'))applyTheme(e.matches?'light':'dark');});
+  applySettings();
+  fbLoad();
+})();
 
 </script>
 </body>
