@@ -1547,6 +1547,7 @@ let konamiSeq=[];
 const KONAMI=['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
 let headerTaps=0, headerTapTimer=null;
 let toastyShown=false, sessionPaidShown=false;
+let _lastSavedSnapshot=null;
 let floatBarOpen=false, floatStartY=0;
 let detailOpen=false;
 let monthPickerOpen=false;
@@ -1847,7 +1848,7 @@ function onInput(){
 }
 
 async function autoSave(){
-  _lastSavedSnapshot=JSON.stringify(allData); // для shake-to-undo
+  _lastSavedSnapshot=JSON.stringify(allData);
   const m=curMonth(),data={};
   document.querySelectorAll('input[type=number]').forEach(el=>{if(el.value!=='')data[el.id]=parseFloat(el.value);});
   if(allData[m]&&allData[m]._paid){data._paid=true;if(allData[m]._paidDate)data._paidDate=allData[m]._paidDate;}
@@ -1928,6 +1929,16 @@ function updateStreak(){
 }
 
 
+
+/* ============================================================ OVERLAY / MODAL ============================================================ */
+function openOverlay(id){const e=document.getElementById(id);if(e){e.classList.add('open');e.style.display='flex';}}
+function closeOverlay(id){const e=document.getElementById(id);if(e){e.classList.remove('open');e.style.display='none';}}
+
+/* П46: goBack */
+function goBack(){
+  haptic(20);
+  closeSectionOverlay();
+}
 
 /* ============================================================ COPY / SHARE / QR ============================================================ */
 function exportJSON(){unlockAch('export1');const blob=new Blob([JSON.stringify(allData,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='kommunalka_'+new Date().toISOString().slice(0,10)+'.json';a.click();}
