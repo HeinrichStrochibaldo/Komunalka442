@@ -1590,17 +1590,29 @@ let monthPickerOpen=false;
 let longPressTimer=null;
 
 /* ============================================================ FIREBASE ============================================================ */
-let db=null, DOC=null;
-try {
-  firebase.initializeApp({apiKey:'AIzaSyCRM9lmIqknSQ-BrYOtk6MVFlMQ9XuOcVo',authDomain:'hata442-3d94c.firebaseapp.com',projectId:'hata442-3d94c',storageBucket:'hata442-3d94c.firebasestorage.app',messagingSenderId:'33165937187',appId:'1:33165937187:web:467f554ed05123551d3f96'});
-  db=firebase.firestore();
-  DOC=db.collection('kommunalka').doc('data');
-} catch(e) {
-  console.warn('Firebase init failed:', e.message);
-}
+let db=null, DOC=null; // инициализируются в fbLoad после загрузки SDK
 
 async function fbLoad(){
   fabLoading(true);
+  // Ждём Firebase SDK если ещё не готов (макс 5 сек)
+  if(!window._firebaseReady) {
+    await new Promise(resolve => {
+      window._firebaseReadyCb = resolve;
+      setTimeout(resolve, 5000); // таймаут — идём в офлайн
+    });
+  }
+  // Инициализируем Firebase если ещё нет
+  if(!DOC) {
+    try {
+      if(typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length === 0) {
+        firebase.initializeApp({apiKey:'AIzaSyCRM9lmIqknSQ-BrYOtk6MVFlMQ9XuOcVo',authDomain:'hata442-3d94c.firebaseapp.com',projectId:'hata442-3d94c',storageBucket:'hata442-3d94c.firebasestorage.app',messagingSenderId:'33165937187',appId:'1:33165937187:web:467f554ed05123551d3f96'});
+      }
+      if(typeof firebase !== 'undefined') {
+        db = firebase.firestore();
+        DOC = db.collection('kommunalka').doc('data');
+      }
+    } catch(e2) { console.warn('Firebase late init failed:', e2.message); }
+  }
   try{
     if(!DOC) throw new Error('Firebase not available');
     const d=await Promise.race([DOC.get(),new Promise((_,r)=>setTimeout(()=>r(new Error('timeout')),6000))]);
