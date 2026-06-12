@@ -3527,28 +3527,32 @@ if(!ACHS.find(a=>a.id==='quote1001')){
 /* ── П6: Свайп по контенту меняет вкладки ── */
 (function initTabSwipe(){
   const TABS_ORDER=['entry','history','dynamics','year'];
-  let sx=0,sy=0,sa=false,sTime=0;
+  let sx=0,sy=0,tracking=false,handled=false;
+
   document.addEventListener('touchstart',e=>{
-    if(e.target.closest('#bottom-sheet,#float-bar,.overlay,#pres-overlay,#fab-popup,#qi-popup,#section-overlay'))return;
-    sx=e.touches[0].clientX;sy=e.touches[0].clientY;
-    sTime=Date.now();sa=true;
+    if(e.target.closest('#bottom-sheet,#float-bar,.overlay,#pres-overlay,#fab-popup,#section-overlay'))return;
+    sx=e.touches[0].clientX;
+    sy=e.touches[0].clientY;
+    tracking=true;
+    handled=false; // сбрасываем флаг обработки при каждом новом касании
   },{passive:true});
+
   document.addEventListener('touchend',e=>{
-    if(!sa)return;
+    if(!tracking||handled)return; // уже обработали это касание — игнорируем
+    tracking=false;
+    handled=true; // помечаем что это касание обработано
+
     const dx=e.changedTouches[0].clientX-sx;
     const dy=e.changedTouches[0].clientY-sy;
-    const dt=Date.now()-sTime;
-    if(Math.abs(dx)<65||Math.abs(dx)<Math.abs(dy)*2||dt>400){sa=false;return;}
-    if(sx<30){sa=false;return;}
+    if(Math.abs(dx)<50||Math.abs(dx)<Math.abs(dy))return;
+    if(sx<30)return; // край экрана — edge swipe
+
     const active=document.querySelector('.page.active');
     if(!active)return;
     const ci=TABS_ORDER.indexOf(active.id.replace('page-',''));
     if(ci===-1)return;
     if(dx<0&&ci<TABS_ORDER.length-1){switchTab(TABS_ORDER[ci+1]);haptic(30);}
     else if(dx>0&&ci>0){switchTab(TABS_ORDER[ci-1]);haptic(30);}
-    // Кулдаун — блокируем следующий свайп на 350мс
-    sa=false;
-    setTimeout(()=>{sa=true;},350);
   },{passive:true});
 })();
 /* ── П8: Edge swipe — назад из section-overlay ── */
