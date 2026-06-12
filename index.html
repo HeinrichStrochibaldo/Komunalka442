@@ -3148,6 +3148,16 @@ const QUOTES_GENERAL=[
   'Безопасность — дороже денег. Но тоже стоит денег.',
 ];
 
+function initSplashText(){
+  const h=new Date().getHours();
+  const greeting=h<6?'🌙 Доброй ночи':h<12?'☀️ Доброе утро':h<18?'👋 Добрый день':'🌆 Добрый вечер';
+  const gEl=document.getElementById('splash-greeting');
+  if(gEl)gEl.textContent=greeting;
+  const q=getContextualQuote();
+  const qEl=document.getElementById('splash-quote');
+  if(qEl){qEl.style.opacity='0';qEl.textContent=q;setTimeout(()=>{qEl.style.opacity='1';},400);}
+}
+
 function getQuoteIndex(){
   const key='kquote_idx';
   let idx=parseInt(localStorage.getItem(key)||'0');
@@ -3173,16 +3183,6 @@ function getContextualQuote(){
   return QUOTES_GENERAL[getQuoteIndex()%QUOTES_GENERAL.length];
 }
 
-/* П44+П59: приветствие по времени суток + цитата в сплэше */
-(function initSplashText(){
-  const h=new Date().getHours();
-  const greeting=h<6?'🌙 Доброй ночи':h<12?'☀️ Доброе утро':h<18?'👋 Добрый день':'🌆 Добрый вечер';
-  const gEl=document.getElementById('splash-greeting');
-  if(gEl)gEl.textContent=greeting;
-  const q=getContextualQuote();
-  const qEl=document.getElementById('splash-quote');
-  if(qEl){qEl.style.opacity='0';qEl.textContent=q;setTimeout(()=>{qEl.style.opacity='1';},400);}
-})();
 
 /* П41: монетка при оплате */
 function playCoin(){
@@ -3614,6 +3614,7 @@ function fpApply(){
 /* ============================================================ BOOTSTRAP — запускается после всех определений ============================================================ */
 _dbg('▶ Bootstrap start');
 (function init(){
+  initSplashText();
   const ks=localStorage.getItem('ksettings');if(ks)settings={...settings,...JSON.parse(ks)};
   const km=localStorage.getItem('kmeter');if(km)meter={...meter,...JSON.parse(km)};
   const kv=localStorage.getItem('kversions');if(kv)versions=JSON.parse(kv);
