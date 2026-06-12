@@ -1505,7 +1505,7 @@ input.meter-locked:focus { border-color: var(--border) !important; }
   </div>
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <!-- PWA Install Toast -->
 <div id="pwa-toast">
   <div class="pwa-toast-title">📱 Установить Коммуналку</div>
@@ -1516,8 +1516,44 @@ input.meter-locked:focus { border-color: var(--border) !important; }
   </div>
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-<script>
+<script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script defer>
+/* ═══ АВАРИЙНЫЙ ОБРАБОТЧИК — показывает ошибку на сплэше ═══ */
+window.onerror = function(msg, src, line, col, err) {
+  var sub = document.getElementById('splash-sub');
+  if (sub) {
+    sub.innerHTML = '<span style="color:#f87171;font-size:12px">Ошибка L'+line+': '+msg+'</span>';
+  }
+  console.error('FATAL:', msg, 'at', src, line, col, err);
+  return false;
+};
+window.onunhandledrejection = function(e) {
+  var sub = document.getElementById('splash-sub');
+  if (sub) {
+    sub.innerHTML = '<span style="color:#f87171;font-size:12px">Promise: '+(e.reason||e)+'</span>';
+  }
+};
+/* Аварийный таймаут — если через 12 сек не загрузилось, показываем из localStorage */
+setTimeout(function(){
+  var splash = document.getElementById('splash');
+  if (splash && splash.parentNode) {
+    var sub = document.getElementById('splash-sub');
+    if(sub) sub.innerHTML = '<span style="color:#fbbf24;font-size:12px">Таймаут — загружаем офлайн...</span>';
+    setTimeout(function(){
+      try {
+        allData = JSON.parse(localStorage.getItem('kv5')||'{}');
+        if(!allData['2026-05']) allData['2026-05'] = MAY26;
+        if(typeof hideSplash==='function') hideSplash();
+        if(typeof loadMonth==='function') loadMonth();
+        if(typeof updateVerify==='function') updateVerify();
+        if(typeof updateStreak==='function') updateStreak();
+      } catch(e2) {
+        if(splash) splash.style.display='none';
+      }
+    }, 1500);
+  }
+}, 12000);
+
 /* ============================================================ CONSTANTS ============================================================ */
 const MONTHS={'2026-05':'Май 2026','2026-06':'Июнь 2026','2026-07':'Июль 2026','2026-08':'Август 2026','2026-09':'Сентябрь 2026','2026-10':'Октябрь 2026','2026-11':'Ноябрь 2026','2026-12':'Декабрь 2026','2027-01':'Январь 2027','2027-02':'Февраль 2027','2027-03':'Март 2027','2027-04':'Апрель 2027'};
 const MK=Object.keys(MONTHS);
@@ -1554,16 +1590,23 @@ let monthPickerOpen=false;
 let longPressTimer=null;
 
 /* ============================================================ FIREBASE ============================================================ */
-firebase.initializeApp({apiKey:'AIzaSyCRM9lmIqknSQ-BrYOtk6MVFlMQ9XuOcVo',authDomain:'hata442-3d94c.firebaseapp.com',projectId:'hata442-3d94c',storageBucket:'hata442-3d94c.firebasestorage.app',messagingSenderId:'33165937187',appId:'1:33165937187:web:467f554ed05123551d3f96'});
-const db=firebase.firestore(), DOC=db.collection('kommunalka').doc('data');
+let db=null, DOC=null;
+try {
+  firebase.initializeApp({apiKey:'AIzaSyCRM9lmIqknSQ-BrYOtk6MVFlMQ9XuOcVo',authDomain:'hata442-3d94c.firebaseapp.com',projectId:'hata442-3d94c',storageBucket:'hata442-3d94c.firebasestorage.app',messagingSenderId:'33165937187',appId:'1:33165937187:web:467f554ed05123551d3f96'});
+  db=firebase.firestore();
+  DOC=db.collection('kommunalka').doc('data');
+} catch(e) {
+  console.warn('Firebase init failed:', e.message);
+}
 
 async function fbLoad(){
   fabLoading(true);
   try{
-    const d=await Promise.race([DOC.get(),new Promise((_,r)=>setTimeout(()=>r(new Error('timeout')),8000))]);
+    if(!DOC) throw new Error('Firebase not available');
+    const d=await Promise.race([DOC.get(),new Promise((_,r)=>setTimeout(()=>r(new Error('timeout')),6000))]);
     allData=d.exists?(d.data()||{}):{};
   }catch(e){
-    console.warn('Firebase:',e.message);
+    console.warn('Firebase fallback:', e.message);
     allData=JSON.parse(localStorage.getItem('kv5')||'{}');
   }
   try{
