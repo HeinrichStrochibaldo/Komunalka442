@@ -1605,6 +1605,7 @@ async function fbLoad(){
   }catch(e){}
   _dbg('▶ Firebase done, hiding splash...');
   hideSplash();
+  _dbg('▶ hideSplash called');
   hideSkeleton();
   fabLoading(false);
   try{
@@ -1612,7 +1613,7 @@ async function fbLoad(){
     updateHistoryBadge();updateXPDisplay();updateProgressBar();updateOnboarding();
     checkTariffSuggestion();
     setTimeout(playAmbient,1200);
-  }catch(e){console.error('Render:',e);}
+  }catch(e){console.error('Render:',e);_dbg('<span style="color:#f87171">RENDER ERR: '+e.message+'</span>');}
 }
 
 async function fbSave(){
