@@ -77,7 +77,7 @@ header {
 }
 header.scrolled { box-shadow: 0 4px 24px rgba(0,0,0,.35); }
 #app-title { font-size: 19px; font-weight: 700; letter-spacing: -.5px; cursor: default; }
-.header-sub { font-size: 12px; color: var(--muted); }
+.header-sub { font-size: 10px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
 #streak-badge {
   display: none; align-items: center; gap: 4px;
   background: rgba(251,191,36,.12); border: 1px solid rgba(251,191,36,.3);
@@ -531,9 +531,9 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
 .modal-btns .btn { flex: 1; }
 
 /* Date picker modal */
-.datepick-modal { max-width: 300px; text-align: left; }
-.datepick-modal h3 { text-align: center; }
-.datepick-modal input[type=date] { width: 100%; font-size: 15px; padding: 10px; margin-bottom: 4px; }
+.datepick-modal { max-width: 300px; text-align: center; }
+.datepick-modal h3 { text-align: center; margin-bottom: 16px; }
+.datepick-modal input[type=date] { width: 100%; font-size: 15px; padding: 12px; margin-bottom: 4px; text-align: center; border-radius: 10px; background: var(--surface2); border: 1px solid var(--border); color: var(--text); }
 
 
 
@@ -564,7 +564,7 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
   display: flex; align-items: center; gap: 0;
   overflow: hidden;
   width: 126px; height: 37px;
-  opacity: 1; pointer-events: none;
+  opacity: 0; pointer-events: none;
   box-shadow: 0 8px 40px rgba(0,0,0,.8), 0 0 0 1px rgba(255,255,255,.08);
   contain: strict;
   will-change: transform, width, height, border-radius;
@@ -573,6 +573,7 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
     width .5s cubic-bezier(.34,1.56,.64,1),
     height .4s cubic-bezier(.34,1.56,.64,1),
     border-radius .4s cubic-bezier(.34,1.56,.64,1),
+    opacity .15s,
     gap .3s;
 }
 #ach-toast.expand {
@@ -581,6 +582,7 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
   height: auto; min-height: 64px;
   border-radius: 22px;
   padding: 12px 16px; gap: 14px;
+  opacity: 1;
 }
 #ach-toast.collapse {
   transform: translateX(-50%) scaleX(0.28) scaleY(0.5);
@@ -1349,7 +1351,7 @@ input.meter-locked:focus { border-color: var(--border) !important; }
     <p class="notice" style="margin-bottom:0">По умолчанию — сегодня</p>
     <div class="modal-btns">
       <button class="btn btn-ghost" onclick="closeOverlay('datepick-overlay')">Отмена</button>
-      <button class="btn" onclick="confirmPaid()">Отметить оплаченным</button>
+      <button class="btn" onclick="confirmPaid()">Оплачено ✓</button>
     </div>
   </div>
 </div>
@@ -1450,11 +1452,7 @@ input.meter-locked:focus { border-color: var(--border) !important; }
 <button id="fab" onclick="toggleQiPopup()" title="Быстрый ввод показаний">⚡</button>
 
 <!-- FAB Quick Input Popup -->
-<div id="fab-popup" style="display:none;position:fixed;bottom:220px;right:16px;z-index:250;
-  background:var(--surface);border:1px solid var(--border);border-radius:16px;
-  padding:16px;width:min(320px,calc(100vw-32px));
-  box-shadow:0 8px 40px rgba(0,0,0,.5);
-  animation:fabPopupIn .3s cubic-bezier(.34,1.56,.64,1)">
+<div id="fab-popup" style="display:none;position:fixed;right:16px;z-index:250;background:var(--surface);border:1px solid var(--border);border-radius:16px;width:min(320px,calc(100vw-32px));box-shadow:0 8px 40px rgba(0,0,0,.5);animation:fabPopupIn .3s cubic-bezier(.34,1.56,.64,1);display:none;flex-direction:column;max-height:80vh">
 </div>
 <style>
 @keyframes fabPopupIn{from{opacity:0;transform:scale(.85) translateY(20px)}to{opacity:1;transform:none}}
@@ -1487,7 +1485,7 @@ input.meter-locked:focus { border-color: var(--border) !important; }
   </div>
 </div>
 
-<script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <!-- PWA Install Toast -->
 <div id="pwa-toast">
   <div class="pwa-toast-title">📱 Установить Коммуналку</div>
@@ -1498,8 +1496,8 @@ input.meter-locked:focus { border-color: var(--border) !important; }
   </div>
 </div>
 
-<script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-<script defer>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
 /* ═══ ДИАГНОСТИКА ═══ */
 var _log = [];
 function _dbg(msg) {
@@ -3547,20 +3545,21 @@ if(!ACHS.find(a=>a.id==='quote1001')){
     sTime=Date.now();sa=true;
   },{passive:true});
   document.addEventListener('touchend',e=>{
-    if(!sa)return;sa=false;
+    if(!sa)return;
     const dx=e.changedTouches[0].clientX-sx;
     const dy=e.changedTouches[0].clientY-sy;
     const dt=Date.now()-sTime;
-    // Строже: минимум 65px, соотношение 2:1, не слишком медленно
-    if(Math.abs(dx)<65||Math.abs(dx)<Math.abs(dy)*2||dt>400)return;
-    // Не начинать с края экрана (зарезервировано для edge swipe)
-    if(sx<30)return;
+    if(Math.abs(dx)<65||Math.abs(dx)<Math.abs(dy)*2||dt>400){sa=false;return;}
+    if(sx<30){sa=false;return;}
     const active=document.querySelector('.page.active');
     if(!active)return;
     const ci=TABS_ORDER.indexOf(active.id.replace('page-',''));
     if(ci===-1)return;
     if(dx<0&&ci<TABS_ORDER.length-1){switchTab(TABS_ORDER[ci+1]);haptic(30);}
     else if(dx>0&&ci>0){switchTab(TABS_ORDER[ci-1]);haptic(30);}
+    // Кулдаун — блокируем следующий свайп на 350мс
+    sa=false;
+    setTimeout(()=>{sa=true;},350);
   },{passive:true});
 })();
 /* ── П8: Edge swipe — назад из section-overlay ── */
@@ -3590,7 +3589,9 @@ function openFabPopup(){
     const f=document.createElement('div');
     f.className='copy-flash';
     f.textContent='🔒 Показания уже приняты';
-    f.style.cssText='position:fixed;bottom:160px;left:50%;transform:translateX(-50%);z-index:9999;white-space:nowrap';
+    const fb=document.getElementById('float-bar');
+    const fbTop=fb?fb.getBoundingClientRect().top:window.innerHeight-70;
+    f.style.cssText='position:fixed;bottom:'+(window.innerHeight-fbTop+12)+'px;left:50%;transform:translateX(-50%);z-index:9999;white-space:nowrap';
     document.body.appendChild(f);
     setTimeout(()=>f.remove(),1500);
     return;
@@ -3612,14 +3613,29 @@ function openFabPopup(){
       '</div>';
   }).join('');
   pop.innerHTML=
+    '<div style="padding:16px 16px 0">'+
     '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">'+
       '<div style="font-size:14px;font-weight:700;color:var(--text)">⚡ Быстрые показания</div>'+
       '<button onclick="closeFabPopup()" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;padding:0 4px;line-height:1;font-family:inherit">×</button>'+
     '</div>'+
+    '<div style="overflow-y:auto;-webkit-overflow-scrolling:touch">'+
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">'+rows+'</div>'+
+    '</div></div>'+
     '<button class="btn" style="width:100%;padding:12px;font-size:14px;border-radius:10px" onclick="fpApply()">✅ Применить</button>';
   ['gvs','hvs','t1','t2'].forEach(k=>fpSync(k));
-  pop.style.display='block';
+  // Динамическая позиция — выше float-bar
+  const fb=document.getElementById('float-bar');
+  const fabEl=document.getElementById('fab');
+  if(fb){
+    const fbTop=fb.getBoundingClientRect().top;
+    const popHeight=Math.min(pop.scrollHeight||500, window.innerHeight*0.75);
+    const bottomPos=window.innerHeight-fbTop+12;
+    pop.style.bottom=bottomPos+'px';
+    pop.style.top='auto';
+    pop.style.maxHeight=(fbTop-80)+'px';
+  }
+  pop.style.display='flex';
+  pop.style.flexDirection='column';
   if(bd)bd.style.display='block';
 }
 
