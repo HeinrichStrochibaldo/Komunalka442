@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Коммуналка">
@@ -1553,7 +1553,6 @@ const ACHS=[
   {id:'toasty',icon:'🔥',name:'TOASTY!',desc:'Застал пасхалку MK'},
   {id:'birthday',icon:'🎂',name:'С днём рожд.!',desc:'Открыл трекер в свой день рождения'},
   {id:'newyear',icon:'🎉',name:'С новым годом!',desc:'Открыл трекер 1 января'},
-  {id:'secret',icon:'🌙',name:'Ретро режим',desc:'Aktivoval retro-rezhim'},
 ];
 
 /* ============================================================ STATE ============================================================ */
@@ -2309,7 +2308,7 @@ let doomCtx=null,doomPlaying=false;
 document.addEventListener('keydown',e=>{
   konamiSeq.push(e.key);if(konamiSeq.length>10)konamiSeq.shift();
   if(JSON.stringify(konamiSeq)===JSON.stringify(KONAMI)){
-    unlockAch('konami');unlockAch('secret');
+    unlockAch('konami');
     document.documentElement.style.setProperty('--accent','#00ff41');
     document.documentElement.style.setProperty('--bg-img','repeating-linear-gradient(0deg,rgba(0,255,65,.04) 0,rgba(0,255,65,.04) 1px,transparent 0,transparent 4px)');
     showEgg('🎮 KONAMI CODE!','Ретро режим + музыка из Doom!');
@@ -2326,7 +2325,7 @@ if(appTitle){
     mobileTapTimer=setTimeout(()=>{
       if(mobileTapCount>=5){
         // Konami на телефоне — 5 тапов
-        unlockAch('konami');unlockAch('secret');
+        unlockAch('konami');
         showEgg('🎮 MOBILE KONAMI!','5 тапов — Doom активирован!');
         playDoom();haptic([100,50,100,50,200]);
       } else if(mobileTapCount>=3){
