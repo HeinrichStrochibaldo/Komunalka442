@@ -686,75 +686,7 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
 /* ============================================================
    QUICK INPUT POPUP (FAB → попап над float-bar)
    ============================================================ */
-#qi-popup {
-  position: fixed; left: 12px; right: 12px; bottom: 76px;
-  z-index: 250;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 16px 16px 12px;
-  box-shadow: 0 -4px 32px rgba(0,0,0,.35);
-  transform: translateY(20px) scale(.97);
-  opacity: 0; pointer-events: none;
-  transition: transform .35s cubic-bezier(.34,1.56,.64,1), opacity .25s cubic-bezier(.4,0,.2,1);
-  max-height: 70vh; overflow-y: auto;
-  -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
-}
-#qi-popup.open {
-  transform: translateY(0) scale(1);
-  opacity: 1; pointer-events: auto;
-}
-.qi-popup-header {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 12px;
-}
-.qi-popup-title { font-size: 15px; font-weight: 700; color: var(--text); }
-.qi-popup-sub { font-size: 12px; color: var(--muted); margin-top: 1px; }
-.qi-popup-close {
-  background: var(--surface2); border: none; border-radius: 50%;
-  width: 28px; height: 28px; font-size: 14px; cursor: pointer;
-  color: var(--muted); display: flex; align-items: center; justify-content: center;
-  transition: background .15s;
-}
-.qi-popup-close:hover { background: var(--border); }
 
-/* Фонарик — теперь отдельная строка над полями, не абсолютный */
-.qi-torch-row {
-  display: flex; align-items: center; gap: 8px;
-  margin-bottom: 12px; padding: 8px 10px;
-  background: var(--surface2); border-radius: 10px;
-  cursor: pointer; transition: background .15s;
-  -webkit-tap-highlight-color: transparent;
-}
-.qi-torch-row:active { background: var(--border); }
-.qi-torch-label { font-size: 12px; color: var(--muted); flex: 1; }
-.qi-torch-row.on { background: rgba(251,191,36,.12); border: 1px solid rgba(251,191,36,.3); }
-.qi-torch-row.on .qi-torch-label { color: var(--yellow); }
-
-/* Поля в попапе */
-.qi-popup-grid { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
-.qi-popup-card {
-  background: var(--surface2); border: 1px solid var(--border);
-  border-radius: 12px; padding: 12px;
-}
-.qi-popup-card-title {
-  font-size: 11px; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .5px; margin-bottom: 8px;
-}
-.qi-popup-row {
-  display: grid; grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-.qi-popup-col label { font-size: 11px; color: var(--muted); display: block; margin-bottom: 3px; }
-.qi-popup-col input {
-  width: 100%; font-size: 15px; padding: 7px 9px;
-  border-radius: 8px; text-align: right;
-}
-.qi-popup-hint { font-size: 10px; color: var(--muted); text-align: right; margin-top: 2px; }
-.qi-popup-vol { font-size: 12px; color: var(--green); font-weight: 600; margin-top: 4px; text-align: center; min-height: 16px; }
-.qi-popup-apply {
-  width: 100%; padding: 13px; font-size: 15px; border-radius: 12px;
-}
 
 /* Экранный фонарик оверлей */
 #screen-torch {
@@ -828,8 +760,6 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
   margin-top: 8px; font-size: 13px; color: var(--green);
   font-weight: 600; min-height: 18px; text-align: center;
 }
-
-.sheet-apply-btn { width: 100%; margin-top: 4px; padding: 14px; font-size: 16px; border-radius: 12px; }
 
 /* История в шторке */
 .sheet-streak { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; background: rgba(251,191,36,.08); border: 1px solid rgba(251,191,36,.2); border-radius: 10px; padding: 10px 14px; }
@@ -1393,77 +1323,10 @@ input.meter-locked:focus { border-color: var(--border) !important; }
 <!-- Global tooltip -->
 <div id="gtip"></div>
 
-<!-- Screen torch overlay -->
-<div id="screen-torch"></div>
 
-<!-- FAB Quick Input Popup -->
-<div id="qi-popup">
-  <div class="qi-popup-header">
-    <div>
-      <div class="qi-popup-title">⚡ Быстрый ввод показаний</div>
-      <div class="qi-popup-sub" id="qi-popup-sub">Введи текущие показания</div>
-    </div>
-    <button class="qi-popup-close" onclick="closeQiPopup()">✕</button>
-  </div>
-
-  <!-- Фонарик -->
-  <div class="qi-torch-row" id="qi-torch-row" onclick="toggleScreenTorch()">
-    <span id="qi-torch-icon">🔦</span>
-    <span class="qi-torch-label" id="qi-torch-label">Включить подсветку экрана</span>
-    <span style="font-size:11px;color:var(--muted)" id="qi-torch-status">выкл</span>
-  </div>
-
-  <div class="qi-popup-grid">
-    <!-- ГВС + ХВС -->
-    <div class="qi-popup-card">
-      <div class="qi-popup-card-title" style="color:#f87171">🔴 ГВС &nbsp;&nbsp; <span style="color:#60a5fa">🔵 ХВС</span></div>
-      <div class="qi-popup-row">
-        <div class="qi-popup-col">
-          <label>Пред.</label>
-          <input type="number" id="qp-pgvs" step="0.001" inputmode="decimal" oninput="qpSync('gvs')">
-          <label style="margin-top:6px">Тек.</label>
-          <input type="number" id="qp-cgvs" step="0.001" inputmode="decimal" oninput="qpSync('gvs')">
-          <div class="qi-popup-hint" id="qp-hint-gvs"></div>
-          <div class="qi-popup-vol" id="qp-vol-gvs">—</div>
-        </div>
-        <div class="qi-popup-col">
-          <label>Пред.</label>
-          <input type="number" id="qp-phvs" step="0.001" inputmode="decimal" oninput="qpSync('hvs')">
-          <label style="margin-top:6px">Тек.</label>
-          <input type="number" id="qp-chvs" step="0.001" inputmode="decimal" oninput="qpSync('hvs')">
-          <div class="qi-popup-hint" id="qp-hint-hvs"></div>
-          <div class="qi-popup-vol" id="qp-vol-hvs">—</div>
-        </div>
-      </div>
-    </div>
-    <!-- Электричество -->
-    <div class="qi-popup-card">
-      <div class="qi-popup-card-title" style="color:#fbbf24">⚡ Электричество</div>
-      <div class="qi-popup-row">
-        <div class="qi-popup-col">
-          <label>Т1 Пред.</label>
-          <input type="number" id="qp-pt1" step="1" inputmode="numeric" oninput="qpSync('t1')">
-          <label style="margin-top:6px">Т1 Тек.</label>
-          <input type="number" id="qp-ct1" step="1" inputmode="numeric" oninput="qpSync('t1')">
-          <div class="qi-popup-hint" id="qp-hint-t1"></div>
-          <div class="qi-popup-vol" id="qp-vol-t1">—</div>
-        </div>
-        <div class="qi-popup-col">
-          <label>Т2 Пред.</label>
-          <input type="number" id="qp-pt2" step="1" inputmode="numeric" oninput="qpSync('t2')">
-          <label style="margin-top:6px">Т2 Тек.</label>
-          <input type="number" id="qp-ct2" step="1" inputmode="numeric" oninput="qpSync('t2')">
-          <div class="qi-popup-hint" id="qp-hint-t2"></div>
-          <div class="qi-popup-vol" id="qp-vol-t2">—</div>
-        </div>
-      </div>
-    </div>
-  </div>
-  <button class="btn qi-popup-apply" onclick="qpApply()">✅ Применить показания</button>
-</div>
 
 <!-- FAB — быстрый ввод показаний -->
-<button id="fab" onclick="toggleQiPopup()" title="Быстрый ввод показаний">⚡</button>
+<button id="fab" onclick="openFabPopup()" title="Быстрый ввод показаний">⚡</button>
 
 <!-- FAB Quick Input Popup -->
 <div id="fab-popup" style="display:none;position:fixed;right:16px;z-index:250;background:var(--surface);border:1px solid var(--border);border-radius:16px;width:min(320px,calc(100vw-32px));box-shadow:0 8px 40px rgba(0,0,0,.5);animation:fabPopupIn .3s cubic-bezier(.34,1.56,.64,1);display:none;flex-direction:column;max-height:80vh">
@@ -1627,8 +1490,7 @@ async function fbLoad(){
     loadMonth();updateVerify();updateStreak();checkEaster();
     updateXPDisplay();updateProgressBar();updateOnboarding();
     checkTariffSuggestion();
-    setTimeout(playAmbient,1200);
-  }catch(e){console.error('Render:',e);_dbg('<span style="color:#f87171">RENDER ERR: '+e.message+'</span>');}
+      }catch(e){console.error('Render:',e);_dbg('<span style="color:#f87171">RENDER ERR: '+e.message+'</span>');}
 }
 
 async function fbSave(){
@@ -2433,11 +2295,10 @@ function openSheet(mode){
   const bd=document.getElementById('sheet-backdrop');
   const content=document.getElementById('sheet-content');
   if(!bs||!bd)return;
-  content.innerHTML=sheetMode==='input'?buildSheetInput():buildSheetHistory();
+  content.innerHTML=buildSheetHistory();
   bd.classList.add('show');
   bs.classList.add('open');
   document.body.style.overflow='hidden';
-  if(sheetMode==='input')prefillSheet();
   initSheetDrag();
 }
 
@@ -2454,114 +2315,10 @@ function closeSheet(){
 // Шторка тянется в реальном времени за пальцем
 
 // Быстрый ввод в шторке (п.7-10)
-function buildSheetInput(){
-  const m=curMonth(),d=allData[m]||{};
-  const getCur=(k)=>d[k]!==undefined?d[k]:'';
-  return `<div style="position:relative">
-    <div class="sheet-title">⚡ Быстрый ввод показаний</div>
-    <div class="sheet-subtitle">${MONTHS[m]} · Введи текущие показания</div>
 
-    <div class="qi-sheet-grid">
-      <div class="qi-sheet-cell">
-        <div class="qi-sheet-lbl" style="color:#f87171">🔴 ГВС &nbsp; <span style="color:#60a5fa">🔵 ХВС</span></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-          <div>
-            <div style="font-size:11px;color:var(--muted);margin-bottom:4px">Пред. / Тек.</div>
-            <input type="number" id="sh-pgvs" step="0.001" placeholder="${getCur('prev-gvs')||''}" style="width:100%;margin-bottom:4px;font-size:15px;padding:7px 9px" oninput="sheetSyncVol('gvs')">
-            <input type="number" id="sh-cgvs" step="0.001" placeholder="" style="width:100%;font-size:15px;padding:7px 9px" oninput="sheetSyncVol('gvs')">
-            <div class="qi-prev-hint" id="sh-hint-gvs">${getCur('cur-gvs')?'прошлое: '+getCur('cur-gvs'):''}</div>
-            <div class="qi-vol-row" id="sh-vol-gvs">—</div>
-          </div>
-          <div>
-            <div style="font-size:11px;color:var(--muted);margin-bottom:4px">Пред. / Тек.</div>
-            <input type="number" id="sh-phvs" step="0.001" placeholder="${getCur('prev-hvs')||''}" style="width:100%;margin-bottom:4px;font-size:15px;padding:7px 9px" oninput="sheetSyncVol('hvs')">
-            <input type="number" id="sh-chvs" step="0.001" placeholder="" style="width:100%;font-size:15px;padding:7px 9px" oninput="sheetSyncVol('hvs')">
-            <div class="qi-prev-hint" id="sh-hint-hvs">${getCur('cur-hvs')?'прошлое: '+getCur('cur-hvs'):''}</div>
-            <div class="qi-vol-row" id="sh-vol-hvs">—</div>
-          </div>
-        </div>
-      </div>
-      <div class="qi-sheet-cell">
-        <div class="qi-sheet-lbl" style="color:#fbbf24">⚡ Электричество</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-          <div>
-            <div style="font-size:11px;color:var(--muted);margin-bottom:4px">Т1 Пред. / Тек.</div>
-            <input type="number" id="sh-pt1" step="1" placeholder="${getCur('prev-t1')||''}" style="width:100%;margin-bottom:4px;font-size:15px;padding:7px 9px" oninput="sheetSyncVol('t1')">
-            <input type="number" id="sh-ct1" step="1" placeholder="" style="width:100%;font-size:15px;padding:7px 9px" oninput="sheetSyncVol('t1')">
-            <div class="qi-prev-hint" id="sh-hint-t1">${getCur('cur-t1')?'прошлое: '+getCur('cur-t1'):''}</div>
-            <div class="qi-vol-row" id="sh-vol-t1">—</div>
-          </div>
-          <div>
-            <div style="font-size:11px;color:var(--muted);margin-bottom:4px">Т2 Пред. / Тек.</div>
-            <input type="number" id="sh-pt2" step="1" placeholder="${getCur('prev-t2')||''}" style="width:100%;margin-bottom:4px;font-size:15px;padding:7px 9px" oninput="sheetSyncVol('t2')">
-            <input type="number" id="sh-ct2" step="1" placeholder="" style="width:100%;font-size:15px;padding:7px 9px" oninput="sheetSyncVol('t2')">
-            <div class="qi-prev-hint" id="sh-hint-t2">${getCur('cur-t2')?'прошлое: '+getCur('cur-t2'):''}</div>
-            <div class="qi-vol-row" id="sh-vol-t2">—</div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <button class="btn sheet-apply-btn" onclick="sheetApply()">✅ Применить показания</button>
-  </div>`;
-}
-
-// Предзаполнение шторки текущими значениями (п.8)
-function prefillSheet(){
-  const m=curMonth(),d=allData[m]||{};
-  ['gvs','hvs','t1','t2'].forEach(k=>{
-    const pe=document.getElementById('sh-p'+k);
-    const ce=document.getElementById('sh-c'+k);
-    if(pe&&d['prev-'+k]!==undefined)pe.value=d['prev-'+k];
-    if(ce&&d['cur-'+k]!==undefined)ce.value=d['cur-'+k];
-  });
-}
-
-function sheetSyncVol(k){
-  const p=parseFloat(document.getElementById('sh-p'+k)?.value)||0;
-  const c=parseFloat(document.getElementById('sh-c'+k)?.value)||0;
-  const v=Math.max(0,c-p);
-  const el=document.getElementById('sh-vol-'+k);
-  if(el)el.textContent=v>0?(v.toFixed(k==='gvs'||k==='hvs'?3:0)+(k==='t1'||k==='t2'?' кВт·ч':' м³')):'—';
-}
-
-function sheetApply(){
-  haptic([50,30,100]);
-  ['gvs','hvs','t1','t2'].forEach(k=>{
-    const pv=document.getElementById('sh-p'+k)?.value;
-    const cv=document.getElementById('sh-c'+k)?.value;
-    const pe=document.getElementById('prev-'+k);
-    const ce=document.getElementById('cur-'+k);
-    if(pv!==''&&pv!==undefined&&pe){pe.value=pv;pe.classList.add('changed');}
-    if(cv!==''&&cv!==undefined&&ce){ce.value=cv;ce.classList.add('changed');}
-  });
-  onInput();
-  closeSheet();
-  // Вибрация + зелёная галочка на FAB (п.16)
-  setTimeout(()=>{
-    autoSave().then(()=>{fabSaved();haptic([30,20,30,20,80]);});
-  },1600);
-}
 
 // Фонарик (п.10)
-let torchOn=false;
-async function toggleTorch(){
-  haptic(30);
-  try{
-    if(!torchOn){
-      const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
-      const track=stream.getVideoTracks()[0];
-      await track.applyConstraints({advanced:[{torch:true}]});
-      window._torchTrack=track;torchOn=true;
-      const btn=document.getElementById('torch-btn');
-      if(btn){btn.textContent='💡';btn.style.background='rgba(251,191,36,.2)';btn.style.borderColor='var(--yellow)';}
-    }else{
-      if(window._torchTrack){await window._torchTrack.applyConstraints({advanced:[{torch:false}]});window._torchTrack.stop();window._torchTrack=null;}
-      torchOn=false;
-      const btn=document.getElementById('torch-btn');
-      if(btn){btn.textContent='🔦';btn.style.background='';btn.style.borderColor='';}
-    }
-  }catch(e){alert('Фонарик недоступен на этом устройстве');}
-}
+
 
 // История оплат в шторке с разбивкой Вадимовна/Я + стрик (п.13)
 function buildSheetHistory(){
@@ -2871,89 +2628,10 @@ function playToastySound(){
 }
 
 /* ════════ П9: FAB Quick Input Popup ════════ */
-let qiPopupOpen=false;
 
-function toggleQiPopup(){
-  if(qiPopupOpen)closeQiPopup(); else openQiPopup();
-}
-function openQiPopup(){
-  qiPopupOpen=true;
-  const pop=document.getElementById('qi-popup');
-  if(!pop)return;
-  // Предзаполняем
-  const m=curMonth(),d=allData[m]||{};
-  ['gvs','hvs','t1','t2'].forEach(k=>{
-    const pe=document.getElementById('qp-p'+k);
-    const ce=document.getElementById('qp-c'+k);
-    if(pe){pe.value=d['prev-'+k]!==undefined?d['prev-'+k]:'';}
-    if(ce){ce.value=d['cur-'+k]!==undefined?d['cur-'+k]:'';}
-    const hint=document.getElementById('qp-hint-'+k);
-    if(hint&&d['cur-'+k]!==undefined)hint.textContent='прошлое: '+d['cur-'+k];
-    qpSync(k);
-  });
-  const sub=document.getElementById('qi-popup-sub');
-  if(sub)sub.textContent=(MONTHS[m]||m)+' · Введи текущие показания';
-  pop.classList.add('open');
-  haptic(40);
-}
-function closeQiPopup(){
-  qiPopupOpen=false;
-  const pop=document.getElementById('qi-popup');
-  if(pop)pop.classList.remove('open');
-  // Гасим фонарик при закрытии
-  if(screenTorchOn)toggleScreenTorch();
-}
-function qpSync(k){
-  const p=parseFloat(document.getElementById('qp-p'+k)?.value)||0;
-  const c=parseFloat(document.getElementById('qp-c'+k)?.value)||0;
-  const v=Math.max(0,c-p);
-  const el=document.getElementById('qp-vol-'+k);
-  const u=k==='gvs'||k==='hvs'?' м³':' кВт·ч';
-  if(el)el.textContent=v>0?v.toFixed(k==='t1'||k==='t2'?0:3)+u:'—';
-}
-function qpApply(){
-  haptic([50,30,100]);
-  ['gvs','hvs','t1','t2'].forEach(k=>{
-    const pv=document.getElementById('qp-p'+k)?.value;
-    const cv=document.getElementById('qp-c'+k)?.value;
-    const pe=document.getElementById('prev-'+k);
-    const ce=document.getElementById('cur-'+k);
-    if(pv!==''&&pv!==undefined&&pe&&!pe.classList.contains('meter-locked')){pe.value=pv;pe.dispatchEvent(new Event('input'));}
-    if(cv!==''&&cv!==undefined&&ce&&!ce.classList.contains('meter-locked')){ce.value=cv;ce.dispatchEvent(new Event('input'));}
-  });
-  onInput();
-  closeQiPopup();
-  // FAB зеленеет
-  setTimeout(()=>autoSave().then(()=>fabSaved()),1600);
-}
 
 /* ════════ Экранный фонарик (без камеры) ════════ */
-let screenTorchOn=false;
-function toggleScreenTorch(){
-  screenTorchOn=!screenTorchOn;
-  const ov=document.getElementById('screen-torch');
-  const row=document.getElementById('qi-torch-row');
-  const icon=document.getElementById('qi-torch-icon');
-  const label=document.getElementById('qi-torch-label');
-  const status=document.getElementById('qi-torch-status');
-  if(screenTorchOn){
-    if(ov)ov.classList.add('on');
-    if(row)row.classList.add('on');
-    if(icon)icon.textContent='💡';
-    if(label)label.textContent='Экран подсвечивает';
-    if(status)status.textContent='вкл';
-    // Тап по белому экрану гасит его
-    if(ov)ov.onclick=()=>{if(screenTorchOn)toggleScreenTorch();};
-  } else {
-    if(ov)ov.classList.remove('on');
-    if(row)row.classList.remove('on');
-    if(icon)icon.textContent='🔦';
-    if(label)label.textContent='Включить подсветку экрана';
-    if(status)status.textContent='выкл';
-    if(ov)ov.onclick=null;
-  }
-  haptic(30);
-}
+
 
 /* ════════ П7: Принять/Отменить показания ════════ */
 const METER_INPUT_IDS=['prev-gvs','cur-gvs','prev-hvs','cur-hvs','prev-t1','cur-t1','prev-t2','cur-t2'];
@@ -3190,19 +2868,7 @@ function playCoin(){
   }catch(e){}
 }
 
-/* П42: ambient при открытии */
-function playAmbient(){
-  if(!settings.sounds)return;
-  try{
-    const ctx=new(window.AudioContext||window.webkitAudioContext)();
-    const o=ctx.createOscillator(),g=ctx.createGain();
-    o.connect(g);g.connect(ctx.destination);
-    o.type='sine';o.frequency.setValueAtTime(440,ctx.currentTime);
-    o.frequency.exponentialRampToValueAtTime(880,ctx.currentTime+.3);
-    g.gain.setValueAtTime(.04,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.4);
-    o.start();o.stop(ctx.currentTime+.4);
-  }catch(e){}
-}
+
 
 /* П48: кассовый аппарат при открытии списка месяцев */
 function playCashRegister(){
@@ -3875,7 +3541,7 @@ function renderDev(){
     'fabLoading','showSaveWave','updateProgressBar','updateOnboarding','getRecords',
     'addXP','updateXPDisplay','showXPFloat','updateYoY','updateHistoryBadge',
     'updateRecordsTable','playDoom','playToastySound','toggleQiPopup','openQiPopup',
-    'closeQiPopup','qpSync','qpApply','handleAccept','confirmAccept','lockedFieldFeedback',
+    'handleAccept','confirmAccept','lockedFieldFeedback',
     'initSheetDrag','initSplashText','getQuoteIndex','getContextualQuote','playCoin',
     'playAmbient','playCashRegister','openSection','closeSectionOverlay',
     '_buildSettingsContent','soSaveSettings','soToggleDevMode','applyDevMode',
