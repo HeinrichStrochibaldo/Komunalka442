@@ -2338,7 +2338,6 @@ if(appTitle){
 function checkEaster(){
   const now=new Date();
   if(now.getMonth()===0&&now.getDate()===1){unlockAch('newyear');setTimeout(()=>{launchConfetti();showEgg('🎉 С Новым годом!','Пусть все счета будут маленькими!');},1200);}
-  if(!toastyShown&&!sessionStorage.getItem('toasty_shown')){toastyShown=true;sessionStorage.setItem('toasty_shown','1');setTimeout(showToasty,3500);}
 }
 function showEgg(title,text){
   const el=document.createElement('div');
