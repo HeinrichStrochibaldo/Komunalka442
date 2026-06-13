@@ -2362,7 +2362,6 @@ function showEgg(title,text){
 
 /* ============================================================ TABS — Telegram slide ============================================================ */
 const TABS_LIST=['dev','qa','entry','history','dynamics','year'];
-const TABS_MAIN=['entry','history','dynamics','year']; // всегда видимые
 function switchTab(name){
   const idx=TABS_LIST.indexOf(name);
   if(idx===-1)return;
@@ -3526,23 +3525,18 @@ if(!ACHS.find(a=>a.id==='quote1001')){
 (function initTabSwipe(){
   let sx=0,sy=0,tracking=false,handled=false;
 
-  function getTabsOrder(){
-    // В режиме разработчика включаем dev вкладки
-    return settings.devMode
-      ? ['dev','qa','entry','history','dynamics','year']
-      : ['entry','history','dynamics','year'];
-  }
+  // Всегда используем TABS_LIST (6 элементов)
+  // dev/qa недоступны свайпом когда devMode выключен
 
-  function springBack(){
-    // Пружина — трек немного уезжает и возвращается
+  function springBack(dir){
     const track=document.getElementById('pages-track');
     if(!track)return;
     const cur=track.style.transform;
-    const m=cur.match(/translateX\((-?\d+)%\)/);
-    const base=m?parseInt(m[1]):0;
+    const m=cur.match(/translateX\((-?\d+(?:\.\d+)?)%\)/);
+    const base=m?parseFloat(m[1]):0;
     haptic([20,15,30]);
     track.style.transition='none';
-    track.style.transform='translateX('+(base+5)+'%)';
+    track.style.transform='translateX('+(base+(dir>0?3:-3))+'%)';
     setTimeout(()=>{
       track.style.transition='transform .4s cubic-bezier(.34,1.56,.64,1)';
       track.style.transform='translateX('+base+'%)';
@@ -3567,18 +3561,23 @@ if(!ACHS.find(a=>a.id==='quote1001')){
     if(Math.abs(dx)<50||Math.abs(dx)<Math.abs(dy))return;
     if(sx<30)return;
 
-    const TABS_ORDER=getTabsOrder();
     const active=document.querySelector('.page.active');
     if(!active)return;
-    const ci=TABS_ORDER.indexOf(active.id.replace('page-',''));
+    const ci=TABS_LIST.indexOf(active.id.replace('page-',''));
     if(ci===-1)return;
 
+    // Минимальный индекс: 0 если devMode, иначе 2 (entry)
+    const minIdx=settings.devMode?0:2;
+    const maxIdx=TABS_LIST.length-1; // всегда 'year'
+
     if(dx<0){
-      if(ci<TABS_ORDER.length-1){switchTab(TABS_ORDER[ci+1]);haptic(30);}
-      else if(ci===TABS_ORDER.length-1){springBack();} // только на самой правой
+      // свайп влево — следующая вкладка
+      if(ci<maxIdx){switchTab(TABS_LIST[ci+1]);haptic(30);}
+      else{springBack(-1);} // крайняя правая (год)
     } else {
-      if(ci>0){switchTab(TABS_ORDER[ci-1]);haptic(30);}
-      else if(ci===0){springBack();} // только на самой левой
+      // свайп вправо — предыдущая вкладка
+      if(ci>minIdx){switchTab(TABS_LIST[ci-1]);haptic(30);}
+      else if(ci===minIdx){springBack(1);} // крайняя левая
     }
   },{passive:true});
 })();
