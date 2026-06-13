@@ -2785,6 +2785,10 @@ function updateYoY(){
 
 
 
+function updateHistoryBadge(){
+  const badge=document.getElementById('history-badge');if(!badge)return;
+  const cnt=MK.filter(m=>allData[m]&&Object.keys(allData[m]).filter(k=>!k.startsWith('_')).length>0).length;
+  if(cnt>0){badge.textContent=cnt;badge.style.display='inline-flex';}
   else badge.style.display='none';
 }
 
