@@ -1082,8 +1082,10 @@ input.meter-locked:focus { border-color: var(--border) !important; }
 
 <!-- TABS -->
 <div class="tabs" id="main-tabs">
+  <div class="tab dev-tab" onclick="switchTab('dev')">🛠 JS</div>
+  <div class="tab dev-tab" onclick="switchTab('qa')">🧪 Функции</div>
   <div class="tab active" onclick="switchTab('entry')">📝 Ввод</div>
-  <div class="tab" onclick="switchTab('history')">📋 История</div>
+  <div class="tab" onclick="switchTab('history')">📋 История <span class="tab-badge" id="history-badge" style="display:none">0</span></div>
   <div class="tab" onclick="switchTab('dynamics')">📈 Динамика</div>
   <div class="tab" onclick="switchTab('year')">📅 Год</div>
 </div>
@@ -1095,11 +1097,11 @@ input.meter-locked:focus { border-color: var(--border) !important; }
      PAGE: ВВОД ДАННЫХ
      ============================================================ -->
 <div id="pages-viewport"><div id="pages-track">
-<div id="page-dev" class="page" style="display:none">
+<div id="page-dev" class="page">
   <div class="sec-title">🛠 JS Диагностика</div>
   <div id="dev-list" style="font-size:12px;font-family:monospace"></div>
 </div>
-<div id="page-qa" class="page" style="display:none">
+<div id="page-qa" class="page">
   <div class="sec-title">🧪 Функции</div>
   <div id="qa-list"></div>
 </div>
@@ -3708,11 +3710,6 @@ function applyDevMode(){
   const on=settings.devMode;
   // Класс на documentElement управляет .dev-tab видимостью
   document.documentElement.classList.toggle('dev-mode', on);
-  // Показываем/скрываем страницы
-  const pqa=document.getElementById('page-qa');
-  const pdev=document.getElementById('page-dev');
-  if(pqa)pqa.style.display=on?'':'none';
-  if(pdev)pdev.style.display=on?'':'none';
   // Если выключили и стоим на dev вкладке — переходим на entry
   if(!on){
     const active=document.querySelector('.page.active');
