@@ -973,6 +973,10 @@ input.meter-locked:focus { border-color: var(--border) !important; }
   padding: 20px 20px 100px;
 }
 
+
+/* Dev tabs — скрыты по умолчанию */
+.dev-tab { display: none; }
+.dev-mode .dev-tab { display: block; }
 </style>
 </head>
 <body>
@@ -3569,10 +3573,10 @@ if(!ACHS.find(a=>a.id==='quote1001')){
 
     if(dx<0){
       if(ci<TABS_ORDER.length-1){switchTab(TABS_ORDER[ci+1]);haptic(30);}
-      else springBack(); // крайняя правая — пружина
+      else if(ci===TABS_ORDER.length-1){springBack();} // только на самой правой
     } else {
       if(ci>0){switchTab(TABS_ORDER[ci-1]);haptic(30);}
-      else springBack(); // крайняя левая — пружина
+      else if(ci===0){springBack();} // только на самой левой
     }
   },{passive:true});
 })();
@@ -3702,13 +3706,20 @@ function soToggleDevMode(){
 
 function applyDevMode(){
   const on=settings.devMode;
-  // Показываем/скрываем dev вкладки в таббаре
-  document.querySelectorAll('.dev-tab').forEach(t=>t.style.display=on?'':'none');
+  // Класс на documentElement управляет .dev-tab видимостью
+  document.documentElement.classList.toggle('dev-mode', on);
   // Показываем/скрываем страницы
   const pqa=document.getElementById('page-qa');
   const pdev=document.getElementById('page-dev');
   if(pqa)pqa.style.display=on?'':'none';
   if(pdev)pdev.style.display=on?'':'none';
+  // Если выключили и стоим на dev вкладке — переходим на entry
+  if(!on){
+    const active=document.querySelector('.page.active');
+    if(active&&(active.id==='page-dev'||active.id==='page-qa')){
+      switchTab('entry');
+    }
+  }
 }
 
 /* ── Рендер QA (56 пользовательских функций) ── */
