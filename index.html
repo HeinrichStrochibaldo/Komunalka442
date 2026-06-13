@@ -580,7 +580,7 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
 }
 #ach-toast.expand {
   transform: translateX(-50%) scaleX(1) scaleY(1);
-  width: min(290px, calc(100vw - 32px));
+  width: min(320px, calc(100vw - 24px));
   height: auto; min-height: 64px;
   border-radius: 22px;
   padding: 12px 16px; gap: 14px;
@@ -597,7 +597,7 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
   opacity: 0;
 }
 #ach-toast-icon {
-  font-size: 28px; flex-shrink: 0;
+  font-size: 22px; flex-shrink: 0;
   transform: scale(0) rotate(-20deg);
   transition: transform .35s cubic-bezier(.34,1.56,.64,1) .22s;
   line-height: 1;
@@ -609,7 +609,7 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
   transition: opacity .22s .32s, transform .22s .32s;
 }
 #ach-toast.expand #ach-toast-text { opacity: 1; transform: none; }
-#ach-toast-title { font-size: 10px; color: #fbbf24; font-weight: 700; letter-spacing: .3px; text-transform: uppercase; }
+#ach-toast-title { font-size: 10px; color: #fbbf24; font-weight: 700; letter-spacing: .3px; white-space: nowrap; }
 #ach-toast-name { font-size: 14px; color: #fff; font-weight: 700; }
 #ach-toast-desc { font-size: 11px; color: rgba(255,255,255,.55); margin-top: 1px; }
 
@@ -1551,7 +1551,7 @@ const ACHS=[
   {id:'export1',icon:'💾',name:'Архивариус',desc:'Сделал резервную копию'},
   {id:'konami',icon:'🎮',name:'Геймер',desc:'↑↑↓↓←→←→BA'},
   {id:'toasty',icon:'🔥',name:'TOASTY!',desc:'Застал пасхалку MK'},
-  {id:'birthday',icon:'🎂',name:'С днём рожд.!',desc:'Открыл трекер в свой день рождения'},
+  {id:'birthday',icon:'🎂',name:'С днём рождения!',desc:'Открыл трекер в свой день рождения'},
   {id:'newyear',icon:'🎉',name:'С новым годом!',desc:'Открыл трекер 1 января'},
 ];
 
