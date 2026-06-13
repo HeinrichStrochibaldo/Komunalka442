@@ -1571,7 +1571,7 @@ const ACHS=[
 
 /* ============================================================ STATE ============================================================ */
 let allData={}, curIdx=0;
-let settings={nameV:'Вадимовна',nameMe:'Я',area:27,title:'Коммуналка',accent:'#5b8cff',pattern:'none',sounds:false};
+let settings={nameV:'Вадимовна',nameMe:'Я',area:27,title:'Коммуналка',accent:'#5b8cff',pattern:'none',sounds:false,devMode:false};
 let meter={sgvs:'ПУЛЬСАР · 19-3097262',shvs:'ПУЛЬСАР · 19-3097272',see:'Меркурий-200.02 · 41804817',vgvs:'2026-07-13',vhvs:'2027-03-13',vee:'2036-01-01'};
 let versions=[], autoTimer=null;
 let konamiSeq=[];
@@ -3909,6 +3909,7 @@ _dbg('▶ Bootstrap start');
 (function init(){
   initSplashText();
   const ks=localStorage.getItem('ksettings');if(ks)settings={...settings,...JSON.parse(ks)};
+  settings.devMode=false; // всегда выключен при запуске
   const km=localStorage.getItem('kmeter');if(km)meter={...meter,...JSON.parse(km)};
   const kv=localStorage.getItem('kversions');if(kv)versions=JSON.parse(kv);
   const kt=localStorage.getItem('ktheme');
@@ -3917,6 +3918,7 @@ _dbg('▶ Bootstrap start');
   _dbg('▶ applySettings...');
   applySettings();
   applyDevMode();
+  switchTab('entry'); // всегда стартуем с Ввода
   _dbg('▶ fbLoad...');
   fbLoad();
   _dbg('▶ fbLoad called');
