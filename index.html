@@ -1502,13 +1502,13 @@ async function fbSave(){
 }
 
 /* ============================================================ UTILS ============================================================ */
-const gv=id=>{const e=document.getElementById(id);return e?(parseFloat(e.value)||0):0;};
-const vol=m=>Math.max(0,gv('cur-'+m)-gv('prev-'+m));
-const fmt=n=>n.toLocaleString('ru-RU',{minimumFractionDigits:2,maximumFractionDigits:2})+' ₽';
-const fvol=(n,u)=>n>0?n.toLocaleString('ru-RU',{minimumFractionDigits:3,maximumFractionDigits:3})+' '+u:'—';
-const setT=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
-const curMonth=()=>MK[curIdx];
-const prevMK=m=>{const i=MK.indexOf(m);return i>0?MK[i-1]:null;};
+function gv(id){const e=document.getElementById(id);return e?(parseFloat(e.value)||0):0;}
+function vol(m){return Math.max(0,gv('cur-'+m)-gv('prev-'+m));}
+function fmt(n){return n.toLocaleString('ru-RU',{minimumFractionDigits:2,maximumFractionDigits:2})+' ₽';}
+function fvol(n,u){return n>0?n.toLocaleString('ru-RU',{minimumFractionDigits:3,maximumFractionDigits:3})+' '+u:'—';}
+function setT(id,v){const e=document.getElementById(id);if(e)e.textContent=v;}
+function curMonth(){return MK[curIdx];}
+function prevMK(m){const i=MK.indexOf(m);return i>0?MK[i-1]:null;}
 
 /* ============================================================ COMPUTE ============================================================ */
 function compute(){
