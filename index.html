@@ -3200,6 +3200,7 @@ if(!ACHS.find(a=>a.id==='quote1001')){
   // dev/qa недоступны свайпом когда devMode выключен
 
   function springBack(dir){
+    _dbg('🌀 springBack dir='+dir+' ci='+TABS_LIST.indexOf((document.querySelector('.page.active')||{}).id||'').replace('page-',''));
     const track=document.getElementById('pages-track');
     if(!track)return;
     const cur=track.style.transform;
@@ -3244,11 +3245,11 @@ if(!ACHS.find(a=>a.id==='quote1001')){
     if(dx<0){
       // свайп влево — следующая вкладка
       if(ci<maxIdx){switchTab(TABS_LIST[ci+1]);haptic(30);}
-      else{springBack(-1);} // крайняя правая (год)
+      else{_dbg('→ край правый');springBack(-1);}
     } else {
       // свайп вправо — предыдущая вкладка
       if(ci>minIdx){switchTab(TABS_LIST[ci-1]);haptic(30);}
-      else if(ci===minIdx){springBack(1);} // крайняя левая
+      else if(ci===minIdx){_dbg('← край левый');springBack(1);}
     }
   },{passive:true});
 })();
