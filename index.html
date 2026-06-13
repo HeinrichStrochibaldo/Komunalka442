@@ -1249,8 +1249,8 @@ input.meter-locked:focus { border-color: var(--border) !important; }
   <div id="year-table" style="overflow-x:auto"></div>
 </div>
 
-    <div style="display:flex;align-items:center;gap:10px">
-      <div id="xp-display" style="background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.25);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;color:var(--yellow)">✨ <span id="xp-count">0</span> XP</div>
+    <div style="display:flex;align-items:center;gap:10px;max-width:100%;overflow:hidden">
+      <div id="xp-display" style="background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.25);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;color:var(--yellow);white-space:nowrap">✨ <span id="xp-count">0</span> XP</div>
       <button class="btn btn-ghost btn-sm" onclick="testAllAchs()">🧪 Тест</button>
     </div>
   </div>
@@ -2233,6 +2233,11 @@ function switchTab(name){
     const oc=t.getAttribute('onclick')||'';
     t.classList.toggle('active', oc.includes("'"+name+"'"));
   });
+  // Центрируем активную вкладку в таб-баре
+  const activeTab=document.querySelector('.tab.active');
+  if(activeTab){
+    activeTab.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
+  }
 
   // Активируем страницу
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -3200,13 +3205,13 @@ if(!ACHS.find(a=>a.id==='quote1001')){
     const cur=track.style.transform;
     const m=cur.match(/translateX\((-?\d+(?:\.\d+)?)%\)/);
     const base=m?parseFloat(m[1]):0;
-    haptic([20,15,30]);
+    haptic([30,20,40,20,60]);
     track.style.transition='none';
-    track.style.transform='translateX('+(base+(dir>0?3:-3))+'%)';
+    track.style.transform='translateX('+(base+(dir>0?5:-5))+'%)';
     setTimeout(()=>{
       track.style.transition='transform .4s cubic-bezier(.34,1.56,.64,1)';
       track.style.transform='translateX('+base+'%)';
-    },60);
+    },80);
   }
 
   document.addEventListener('touchstart',e=>{
