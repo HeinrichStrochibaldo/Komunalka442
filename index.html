@@ -1091,6 +1091,14 @@ input.meter-locked:focus { border-color: var(--border) !important; }
      PAGE: ВВОД ДАННЫХ
      ============================================================ -->
 <div id="pages-viewport"><div id="pages-track">
+<div id="page-dev" class="page" style="display:none">
+  <div class="sec-title">🛠 JS Диагностика</div>
+  <div id="dev-list" style="font-size:12px;font-family:monospace"></div>
+</div>
+<div id="page-qa" class="page" style="display:none">
+  <div class="sec-title">🧪 Функции</div>
+  <div id="qa-list"></div>
+</div>
 <div id="page-entry" class="page active">
 
   <!-- Month navigation -->
@@ -2347,15 +2355,19 @@ function showEgg(title,text){
 }
 
 /* ============================================================ TABS — Telegram slide ============================================================ */
-const TABS_LIST=['entry','history','dynamics','year'];
+const TABS_LIST=['dev','qa','entry','history','dynamics','year'];
+const TABS_MAIN=['entry','history','dynamics','year']; // всегда видимые
 function switchTab(name){
   const idx=TABS_LIST.indexOf(name);
   if(idx===-1)return;
 
-  // Подсвечиваем таб
-  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',TABS_LIST[i]===name));
+  // Подсвечиваем таб — ищем по onclick
+  document.querySelectorAll('.tab').forEach(t=>{
+    const oc=t.getAttribute('onclick')||'';
+    t.classList.toggle('active', oc.includes("'"+name+"'"));
+  });
 
-  // Активируем страницу (pointer-events)
+  // Активируем страницу
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   const pg=document.getElementById('page-'+name);
   if(pg)pg.classList.add('active');
@@ -2371,6 +2383,8 @@ function switchTab(name){
   if(name==='dynamics')renderDynamics();
   if(name==='year')renderYear();
   if(name==='achievements')renderAchievements();
+  if(name==='qa')renderQA();
+  if(name==='dev')renderDev();
 }
 
 /* ============================================================ THEME ============================================================ */
@@ -3325,6 +3339,15 @@ function _buildSettingsContent(content){
       </div>
     </div>
     <div class="set-section">
+      <div class="set-section-title">Разработка</div>
+      <div class="set-row"><label>🛠 Режим разработчика</label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+          <input type="checkbox" id="so-devmode" ${settings.devMode?'checked':''} onchange="soToggleDevMode()">
+          <span style="font-size:13px;color:var(--muted)">Включить</span>
+        </label>
+      </div>
+    </div>
+    <div class="set-section">
       <div class="set-section-title">Контакты поставщиков</div>
       <div class="contact-grid">
         <div class="contact-card"><div class="contact-name">🏦 МосОблЕИРЦ</div><a class="contact-phone" href="tel:+74955263600">+7 (495) 526-36-00</a></div>
@@ -3495,33 +3518,62 @@ if(!ACHS.find(a=>a.id==='quote1001')){
 
 /* ── П6: Свайп по контенту меняет вкладки ── */
 (function initTabSwipe(){
-  const TABS_ORDER=['entry','history','dynamics','year'];
   let sx=0,sy=0,tracking=false,handled=false;
+
+  function getTabsOrder(){
+    // В режиме разработчика включаем dev вкладки
+    return settings.devMode
+      ? ['dev','qa','entry','history','dynamics','year']
+      : ['entry','history','dynamics','year'];
+  }
+
+  function springBack(){
+    // Пружина — трек немного уезжает и возвращается
+    const track=document.getElementById('pages-track');
+    if(!track)return;
+    const cur=track.style.transform;
+    const m=cur.match(/translateX\((-?\d+)%\)/);
+    const base=m?parseInt(m[1]):0;
+    haptic([20,15,30]);
+    track.style.transition='none';
+    track.style.transform='translateX('+(base+5)+'%)';
+    setTimeout(()=>{
+      track.style.transition='transform .4s cubic-bezier(.34,1.56,.64,1)';
+      track.style.transform='translateX('+base+'%)';
+    },60);
+  }
 
   document.addEventListener('touchstart',e=>{
     if(e.target.closest('#bottom-sheet,#float-bar,.overlay,#pres-overlay,#fab-popup,#section-overlay'))return;
     sx=e.touches[0].clientX;
     sy=e.touches[0].clientY;
     tracking=true;
-    handled=false; // сбрасываем флаг обработки при каждом новом касании
+    handled=false;
   },{passive:true});
 
   document.addEventListener('touchend',e=>{
-    if(!tracking||handled)return; // уже обработали это касание — игнорируем
+    if(!tracking||handled)return;
     tracking=false;
-    handled=true; // помечаем что это касание обработано
+    handled=true;
 
     const dx=e.changedTouches[0].clientX-sx;
     const dy=e.changedTouches[0].clientY-sy;
     if(Math.abs(dx)<50||Math.abs(dx)<Math.abs(dy))return;
-    if(sx<30)return; // край экрана — edge swipe
+    if(sx<30)return;
 
+    const TABS_ORDER=getTabsOrder();
     const active=document.querySelector('.page.active');
     if(!active)return;
     const ci=TABS_ORDER.indexOf(active.id.replace('page-',''));
     if(ci===-1)return;
-    if(dx<0&&ci<TABS_ORDER.length-1){switchTab(TABS_ORDER[ci+1]);haptic(30);}
-    else if(dx>0&&ci>0){switchTab(TABS_ORDER[ci-1]);haptic(30);}
+
+    if(dx<0){
+      if(ci<TABS_ORDER.length-1){switchTab(TABS_ORDER[ci+1]);haptic(30);}
+      else springBack(); // крайняя правая — пружина
+    } else {
+      if(ci>0){switchTab(TABS_ORDER[ci-1]);haptic(30);}
+      else springBack(); // крайняя левая — пружина
+    }
   },{passive:true});
 })();
 /* ── П8: Edge swipe — назад из section-overlay ── */
@@ -3639,6 +3691,212 @@ function fpApply(){
   setTimeout(()=>{autoSave().then(()=>fabSaved());},1600);
 }
 
+
+/* ── Режим разработчика ── */
+function soToggleDevMode(){
+  const cb=document.getElementById('so-devmode');
+  settings.devMode=cb?cb.checked:false;
+  localStorage.setItem('ksettings',JSON.stringify(settings));
+  applyDevMode();
+}
+
+function applyDevMode(){
+  const on=settings.devMode;
+  // Показываем/скрываем dev вкладки в таббаре
+  document.querySelectorAll('.dev-tab').forEach(t=>t.style.display=on?'':'none');
+  // Показываем/скрываем страницы
+  const pqa=document.getElementById('page-qa');
+  const pdev=document.getElementById('page-dev');
+  if(pqa)pqa.style.display=on?'':'none';
+  if(pdev)pdev.style.display=on?'':'none';
+}
+
+/* ── Рендер QA (56 пользовательских функций) ── */
+const QA_FEATURES=[
+  {cat:'Основное',items:[
+    'Ввод показаний счётчиков (ГВС, ХВС, Т1, Т2)',
+    'Автоматический расчёт объёма и суммы',
+    'Быстрый ввод показаний через FAB ⚡',
+    'Принятие/отмена показаний (блокировка полей)',
+    'Навигация по месяцам (стрелки + список)',
+    'Оплата месяца с датой',
+    'Отмена оплаты',
+    'Прогресс-полоска заполненности месяца',
+  ]},
+  {cat:'История и аналитика',items:[
+    'Вкладка История — таблица по месяцам',
+    'Вкладка Динамика — разбивка по поставщикам',
+    'Вкладка Год — квартальная разбивка',
+    'Сравнение с прошлым годом (YoY)',
+    'Рекорды (самый дорогой/дешёвый месяц)',
+    'Счётчик сэкономленных денег 🌱',
+    'Стрик оплат 🔥',
+  ]},
+  {cat:'Навигация',items:[
+    'Свайп по вкладкам (влево/вправо)',
+    'Edge swipe — назад из настроек/достижений',
+    'Кнопка ← Назад в хедере',
+    'Пружина на крайних вкладках',
+  ]},
+  {cat:'Шторка и история оплат',items:[
+    'Нижняя шторка с историей оплат',
+    'Разбивка оплат Вадимовна/Я',
+    'Последнее обновление в ЧЧ:ММ',
+    'Pull-to-refresh',
+  ]},
+  {cat:'Достижения',items:[
+    'Система достижений (13 штук)',
+    'Dynamic Island тост при разблокировке',
+    'XP очки за действия',
+    'Таблица рекордов в достижениях',
+    'Тест достижений',
+    'Toasty 😈 при оплате + звук',
+    'Тест Toasty',
+    '5 тапов по заголовку → Doom E1M1',
+  ]},
+  {cat:'Настройки',items:[
+    'Смена акцентного цвета',
+    'Переключение тёмной/светлой темы',
+    'Имена плательщиков',
+    'Название трекера',
+    'Экспорт данных в JSON',
+    'Импорт данных из JSON',
+    'QR-код ссылки',
+    'Сброс данных месяца',
+    'История версий / откат данных',
+    'PWA установка на главный экран',
+    'Предупреждение о тарифах',
+    'Режим разработчика',
+  ]},
+  {cat:'Сплэш и цитаты',items:[
+    'Приветствие по времени суток ☀️🌙',
+    '1001 цитата с умной логикой',
+  ]},
+  {cat:'Пасхалки',items:[
+    'День рождения трекера 🎂',
+    'С Новым годом 🎉',
+    'Konami / 5 тапов → Doom',
+  ]},
+  {cat:'Системное',items:[
+    'Синхронизация с Firebase',
+    'Оффлайн режим через localStorage',
+    'Индикатор оффлайн в хедере 📵',
+    'Автосохранение',
+    'Skeleton loading',
+    'Долгое нажатие на сумму → копировать',
+    'Двойной тап на блок → свернуть',
+    'Вибрация (haptic feedback)',
+    'Звуки (монетка, касса, Doom, Toasty)',
+    'Диагностика на сплэше',
+  ]},
+];
+
+const QA_STORAGE_KEY='kqa_checks';
+function getQAChecks(){
+  try{return JSON.parse(localStorage.getItem(QA_STORAGE_KEY)||'{}');}catch(e){return{};}
+}
+function saveQAChecks(checks){
+  localStorage.setItem(QA_STORAGE_KEY,JSON.stringify(checks));
+}
+
+function renderQA(){
+  const el=document.getElementById('qa-list');
+  if(!el)return;
+  const checks=getQAChecks();
+  let total=0,ok=0;
+  let html='';
+  QA_FEATURES.forEach(cat=>{
+    html+=`<div style="margin-bottom:16px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--label);margin-bottom:8px">${cat.cat}</div>`;
+    cat.items.forEach(item=>{
+      total++;
+      const key=item.slice(0,20);
+      const status=checks[key]||'unknown';
+      if(status==='ok')ok++;
+      const color=status==='ok'?'var(--green)':status==='fail'?'var(--red)':'var(--muted)';
+      const icon=status==='ok'?'🟢':status==='fail'?'🔴':'🟡';
+      html+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+        <span style="font-size:16px">${icon}</span>
+        <span style="flex:1;font-size:13px;color:var(--text)">${item}</span>
+        <div style="display:flex;gap:6px">
+          <button onclick="setQA('${key}','ok')" style="background:${status==='ok'?'var(--green)':'var(--surface2)'};border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;color:${status==='ok'?'#fff':'var(--muted)'}">✓</button>
+          <button onclick="setQA('${key}','fail')" style="background:${status==='fail'?'var(--red)':'var(--surface2)'};border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;color:${status==='fail'?'#fff':'var(--muted)'}">✗</button>
+          <button onclick="setQA('${key}','unknown')" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;color:var(--muted)">?</button>
+        </div>
+      </div>`;
+    });
+    html+='</div>';
+  });
+  const pct=Math.round(ok/total*100);
+  el.innerHTML=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:16px;text-align:center">
+    <div style="font-size:24px;font-weight:700;color:var(--green)">${ok}/${total}</div>
+    <div style="font-size:12px;color:var(--muted)">${pct}% функций проверено</div>
+    <div style="height:6px;background:var(--border);border-radius:3px;margin-top:8px;overflow:hidden">
+      <div style="height:100%;width:${pct}%;background:var(--green);border-radius:3px;transition:width .5s"></div>
+    </div>
+  </div>`+html;
+}
+
+function setQA(key,status){
+  const checks=getQAChecks();
+  checks[key]=status;
+  saveQAChecks(checks);
+  renderQA();
+  haptic(20);
+}
+
+/* ── Рендер Dev (130 JS функций) ── */
+function renderDev(){
+  const el=document.getElementById('dev-list');
+  if(!el)return;
+  // Получаем все функции из window
+  const fns=[
+    '_dbg','fbLoad','fbSave','compute','cfd','render','fmt','fvol','gv','vol','setT',
+    'curMonth','prevMK','handlePaid','confirmPaid','handleUnpaid','updatePaidBtn',
+    'updatePaidUI','toggleDetail','toggleFloatBar','renderPayHistory','openMonthPicker',
+    'closePicker','prevMonth','nextMonth','jumpTo','loadMonth','onInput','autoSave',
+    'autoArchive','confirmClear','highlightTariffs','checkAnomaly','updateVerify',
+    'addToCalendar','updateStreak','openOverlay','closeOverlay','goBack','exportJSON',
+    'triggerImport','importJSON','showQR','renderHistory','renderDynamics','toggleDynMonth',
+    'renderYear','getAchs','unlockAch','showAchToast','renderAchievements','checkAchs',
+    'applySettings','saveSettings','saveMeter','setAccent','setPattern','toggleMeterEdit',
+    'renderVersionList','restoreVersion','showTip','hideTip','openPresentation',
+    'launchConfetti','showToasty','_hideToasty','testToasty','playSound','checkEaster',
+    'showEgg','switchTab','applyTheme','toggleTheme','hideSplash','haptic','fabSaved',
+    'openSheet','closeSheet','buildSheetInput','prefillSheet','sheetSyncVol','sheetApply',
+    'toggleTorch','buildSheetHistory','openPayHistorySheet','testAllAchs','hideSkeleton',
+    'fabLoading','showSaveWave','updateProgressBar','updateOnboarding','getRecords',
+    'addXP','updateXPDisplay','showXPFloat','updateYoY','updateHistoryBadge',
+    'updateRecordsTable','playDoom','playToastySound','toggleQiPopup','openQiPopup',
+    'closeQiPopup','qpSync','qpApply','handleAccept','confirmAccept','lockedFieldFeedback',
+    'initSheetDrag','initSplashText','getQuoteIndex','getContextualQuote','playCoin',
+    'playAmbient','playCashRegister','openSection','closeSectionOverlay',
+    '_buildSettingsContent','soSaveSettings','soToggleDevMode','applyDevMode',
+    'renderQA','setQA','renderDev','updateOnlineStatus','checkTariffSuggestion',
+    'dismissTariffAlert','showPWAInstall','triggerPWAInstall','closePWAToast',
+    'updateThemeColor','makeCopyable','updateSavings','openFabPopup','closeFabPopup',
+    'fpSync','fpApply','tickNumber',
+  ];
+  let html='<table style="width:100%;border-collapse:collapse;font-size:11px">';
+  html+='<tr style="color:var(--label);border-bottom:1px solid var(--border)"><th style="text-align:left;padding:4px">Функция</th><th>Статус</th></tr>';
+  fns.forEach((fn,i)=>{
+    const exists=typeof window[fn]==='function';
+    const icon=exists?'🟢':'🔴';
+    html+=`<tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:5px 4px;color:var(--text);font-family:monospace">${i+1}. ${fn}</td>
+      <td style="text-align:center">${icon}</td>
+    </tr>`;
+  });
+  html+='</table>';
+  const total=fns.length;
+  const ok=fns.filter(fn=>typeof window[fn]==='function').length;
+  el.innerHTML=`<div style="text-align:center;padding:10px;margin-bottom:12px;background:var(--surface2);border-radius:10px">
+    <span style="font-size:18px;font-weight:700;color:${ok===total?'var(--green)':'var(--yellow)'}">${ok}/${total}</span>
+    <span style="font-size:12px;color:var(--muted);margin-left:6px">функций доступно</span>
+  </div>`+html;
+}
+
+/* Применяем devMode при старте */
 /* ============================================================ BOOTSTRAP — запускается после всех определений ============================================================ */
 _dbg('▶ Bootstrap start');
 (function init(){
@@ -3651,6 +3909,7 @@ _dbg('▶ Bootstrap start');
   window.matchMedia('(prefers-color-scheme:light)').addEventListener('change',e=>{if(!localStorage.getItem('ktheme'))applyTheme(e.matches?'light':'dark');});
   _dbg('▶ applySettings...');
   applySettings();
+  applyDevMode();
   _dbg('▶ fbLoad...');
   fbLoad();
   _dbg('▶ fbLoad called');
