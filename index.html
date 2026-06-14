@@ -2944,7 +2944,7 @@ function openSection(name){
     </div>`:'';
     content.innerHTML=`
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-        <div style="font-size:13px;color:var(--muted)">${getAchs().length} из ${ACHS.length} разблокировано</div>
+        <div style="font-size:13px;color:var(--muted)">${getAchs().filter(id=>ACHS.some(a=>a.id===id)).length} из ${ACHS.length} разблокировано</div>
         <div style="background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.25);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;color:var(--yellow)">✨ ${xp} XP</div>
       </div>
       ${recsHtml}
