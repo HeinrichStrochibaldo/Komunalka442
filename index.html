@@ -2944,12 +2944,21 @@ function openSection(name){
     const grid=document.getElementById('so-ach-grid');
     if(grid){
       const u=getAchs();
-      grid.innerHTML=ACHS.map((a,i)=>`<div class="ach-card${u.includes(a.id)?' unlocked':''}"
-        style="opacity:0;transform:translateY(12px)"
-        data-tip="${u.includes(a.id)?a.name+': '+a.desc:'🔒 '+a.desc}">
-        <div class="ach-icon">${a.icon}</div>
-        <div class="ach-name">${a.name}</div>
-      </div>`).join('');
+      const achData=getAchsData();
+      grid.innerHTML=ACHS.map((a,i)=>{
+        const unlocked=u.includes(a.id);
+        const achEntry=achData.find(x=>x.id===a.id);
+        const dateStr=unlocked?(achEntry&&achEntry.date
+          ?new Date(achEntry.date).toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'})
+          :'дата неизвестна'):'';
+        return `<div class="ach-card${unlocked?' unlocked':''}"
+          style="opacity:0;transform:translateY(12px)"
+          data-tip="${unlocked?a.name+': '+a.desc:'🔒 '+a.desc}">
+          <div class="ach-icon">${a.icon}</div>
+          <div class="ach-name">${a.name}</div>
+          ${unlocked?`<div style="font-size:9px;color:var(--muted);margin-top:3px;line-height:1.2">${dateStr}</div>`:''}
+        </div>`;
+      }).join('');
       requestAnimationFrame(()=>{
         grid.querySelectorAll('.ach-card').forEach((c,i)=>{
           setTimeout(()=>{
