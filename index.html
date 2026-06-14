@@ -556,9 +556,9 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
 /* Dynamic Island Achievement Toast — вырастает из вырезы камеры */
 #ach-toast {
   position: fixed;
-  /* Позиционируем точно у вырезы Dynamic Island */
-  top: 0px; left: 50%;
-  transform: translateX(-50%) scaleX(0.28) scaleY(0.5);
+  /* Точно совпадает с Dynamic Island — top 11px, 126x37px по центру */
+  top: 11px; left: 50%;
+  transform: translateX(-50%);
   transform-origin: top center;
   background: #111; border-radius: 40px;
   z-index: 99999;
@@ -566,33 +566,34 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
   overflow: hidden;
   width: 126px; height: 37px;
   opacity: 0; pointer-events: none;
-  box-shadow: 0 8px 40px rgba(0,0,0,.8), 0 0 0 1px rgba(255,255,255,.08);
+  box-shadow: none;
   contain: strict;
-  will-change: transform, width, height, border-radius;
+  will-change: transform, width, height, border-radius, opacity;
   transition:
-    transform .5s cubic-bezier(.34,1.56,.64,1),
     width .5s cubic-bezier(.34,1.56,.64,1),
     height .4s cubic-bezier(.34,1.56,.64,1),
     border-radius .4s cubic-bezier(.34,1.56,.64,1),
-    opacity .15s,
-    gap .3s;
+    opacity .2s,
+    gap .3s,
+    box-shadow .3s,
+    padding .3s;
 }
 #ach-toast.expand {
-  transform: translateX(-50%) scaleX(1) scaleY(1);
   width: min(320px, calc(100vw - 24px));
   height: auto; min-height: 64px;
   border-radius: 22px;
   padding: 12px 16px; gap: 14px;
   opacity: 1;
+  box-shadow: 0 8px 40px rgba(0,0,0,.8), 0 0 0 1px rgba(255,255,255,.08);
 }
 #ach-toast.collapse {
-  transform: translateX(-50%) scaleX(0.28) scaleY(0.5);
   width: 126px; height: 37px;
   border-radius: 40px; padding: 0; gap: 0;
-  transition: transform .4s cubic-bezier(.4,0,.2,1),
-    width .4s cubic-bezier(.4,0,.2,1),
+  box-shadow: none;
+  transition: width .4s cubic-bezier(.4,0,.2,1),
     height .35s cubic-bezier(.4,0,.2,1),
-    border-radius .35s, opacity .3s .2s;
+    border-radius .35s, opacity .3s .2s,
+    padding .3s, gap .3s, box-shadow .2s;
   opacity: 0;
 }
 #ach-toast-icon {
