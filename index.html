@@ -847,19 +847,6 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
 /* ============================================================
    П49: Цитата в сплэше
    ============================================================ */
-#datepick-scroll::-webkit-scrollbar { display: none; }
-#datepick-days .dp-day {
-  height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  font-weight: 600;
-  color: var(--text);
-  scroll-snap-align: center;
-  cursor: pointer;
-  transition: color .15s;
-}
 #splash-quote {
   transition: opacity .5s;
   line-height: 1.5;
@@ -1299,24 +1286,13 @@ input.meter-locked:focus { border-color: var(--border) !important; }
   <div class="modal"><h3>QR-код трекера</h3><canvas id="qr-canvas" style="border-radius:8px"></canvas><div class="modal-url" id="qr-url"></div><button class="btn modal-close" onclick="closeOverlay('qr-overlay')">Закрыть</button></div>
 </div>
 
-<!-- Date picker for paid — колёсико -->
+<!-- Date picker for paid -->
 <div class="overlay" id="datepick-overlay">
   <div class="modal datepick-modal">
     <h3>Дата оплаты</h3>
-    <div id="datepick-month-label" style="text-align:center;font-size:13px;color:var(--muted);margin-bottom:12px"></div>
-    <div style="position:relative;height:180px;overflow:hidden;border-radius:12px;background:var(--surface2)">
-      <!-- Подсветка выбранного -->
-      <div style="position:absolute;top:50%;left:0;right:0;height:44px;transform:translateY(-50%);background:rgba(91,140,255,.15);border-top:1px solid var(--accent);border-bottom:1px solid var(--accent);pointer-events:none;z-index:2"></div>
-      <!-- Затемнение сверху и снизу -->
-      <div style="position:absolute;top:0;left:0;right:0;height:68px;background:linear-gradient(to bottom,var(--surface2),transparent);pointer-events:none;z-index:2"></div>
-      <div style="position:absolute;bottom:0;left:0;right:0;height:68px;background:linear-gradient(to top,var(--surface2),transparent);pointer-events:none;z-index:2"></div>
-      <!-- Список дней -->
-      <div id="datepick-scroll" style="overflow-y:scroll;height:100%;scroll-snap-type:y mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none">
-        <div id="datepick-days" style="padding:68px 0"></div>
-      </div>
-    </div>
-    <p class="notice" style="margin:12px 0 0;text-align:center">Прокрути чтобы выбрать день</p>
-    <div class="modal-btns" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px">
+    <input type="date" id="paid-date-input">
+    <p class="notice" style="margin-bottom:0">По умолчанию — сегодня</p>
+    <div class="modal-btns" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <button class="btn btn-ghost" style="width:100%" onclick="closeOverlay('datepick-overlay')">Отмена</button>
       <button class="btn" style="width:100%" onclick="confirmPaid()">Оплачено ✓</button>
     </div>
@@ -1592,49 +1568,14 @@ function render(){
 
 /* ============================================================ PAID ============================================================ */
 function handlePaid(){
-  // Инициализируем колёсико
-  const m=curMonth();
-  const [year,month]=m.split('-').map(Number);
-  const daysInMonth=new Date(year,month,0).getDate();
-  const today=new Date();
-  // Дефолтный день — сегодня если тот же месяц, иначе последний день
-  let defaultDay=daysInMonth;
-  if(today.getFullYear()===year&&today.getMonth()+1===month){
-    defaultDay=today.getDate();
-  }
-  // Подпись месяца
-  const label=document.getElementById('datepick-month-label');
-  if(label) label.textContent=MONTHS[m]||m;
-  // Строим дни
-  const container=document.getElementById('datepick-days');
-  if(container){
-    container.innerHTML='';
-    for(let d=1;d<=daysInMonth;d++){
-      const div=document.createElement('div');
-      div.className='dp-day';
-      div.textContent=d;
-      div.dataset.day=d;
-      container.appendChild(div);
-    }
-    // Скроллим к дефолтному дню
-    const scroll=document.getElementById('datepick-scroll');
-    if(scroll){
-      setTimeout(()=>{
-        scroll.scrollTop=(defaultDay-1)*44;
-      },50);
-    }
-  }
+  const inp=document.getElementById('paid-date-input');
+  if(inp) inp.value=new Date().toISOString().slice(0,10);
   openOverlay('datepick-overlay');
 }
 
 function confirmPaid(){
-  // Читаем выбранный день из колёсика
-  const scroll=document.getElementById('datepick-scroll');
-  const selectedDay=scroll?Math.round(scroll.scrollTop/44)+1:new Date().getDate();
-  const m=curMonth();
-  const [year,month]=m.split('-').map(Number);
-  const day=Math.max(1,Math.min(selectedDay,new Date(year,month,0).getDate()));
-  const dateVal=year+'-'+String(month).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+  const inp=document.getElementById('paid-date-input');
+  const dateVal=inp?inp.value:new Date().toISOString().slice(0,10);
   const m=curMonth();
   if(!allData[m])allData[m]={};
   allData[m]._paid=true;
