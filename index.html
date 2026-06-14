@@ -3036,6 +3036,11 @@ function openSection(name){
           },i*30);
         });
       });
+      // Инициализируем hold кнопки
+      setTimeout(()=>{
+        initHoldButton('btn-reset-achs',resetAchs);
+        initHoldButton('btn-reset-xp',resetXP);
+      },100);
     }
   } else if(name==='settings'){
     if(title)title.textContent='⚙️ Настройки';
