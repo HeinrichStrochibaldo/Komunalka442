@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Коммуналка">
@@ -135,9 +135,10 @@ header.scrolled { box-shadow: 0 4px 24px rgba(0,0,0,.35); }
 }
 #pages-track {
   display: flex;
-  transition: transform .32s cubic-bezier(.4,0,.2,1);
+  transition: transform .3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   will-change: transform;
   align-items: flex-start;
+  transform: translateZ(0);
 }
 .page {
   flex: 0 0 100%;
@@ -175,7 +176,7 @@ header.scrolled { box-shadow: 0 4px 24px rgba(0,0,0,.35); }
   background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 70%, #6d28d9));
   color: #fff; border: none;
   border-radius: 7px; padding: 7px 14px; font-size: 13px; font-weight: 600;
-  cursor: pointer; white-space: nowrap; transition: all .25s cubic-bezier(.34,1.56,.64,1); font-family: inherit;
+  cursor: pointer; white-space: nowrap; transition: all .2s cubic-bezier(0.25, 0.46, 0.45, 0.94); font-family: inherit;
   box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 40%, transparent);
 }
 .btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
@@ -231,7 +232,7 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
 .nav-btn {
   background: var(--surface); border: 1px solid var(--border);
   color: var(--label); border-radius: 7px; padding: 6px 13px;
-  font-size: 16px; cursor: pointer; transition: all .25s cubic-bezier(.34,1.56,.64,1); user-select: none;
+  font-size: 16px; cursor: pointer; transition: all .2s cubic-bezier(0.25, 0.46, 0.45, 0.94); user-select: none;
 }
 .nav-btn:hover { background: var(--surface2); color: var(--text); }
 .nav-btn:active { transform: scale(0.9); }
@@ -557,7 +558,7 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
 #ach-toast {
   position: fixed;
   /* Точно совпадает с Dynamic Island — top 11px, 126x37px по центру */
-  top: env(safe-area-inset-top, 11px); left: 50%;
+  top: 11px; left: 50%;
   transform: translateX(-50%);
   transform-origin: top center;
   background: #111; border-radius: 40px;
@@ -567,8 +568,9 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
   width: 126px; height: 37px;
   opacity: 0; pointer-events: none;
   box-shadow: none;
-  contain: strict;
-  will-change: transform, width, height, border-radius, opacity;
+  will-change: transform, opacity;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
   transition:
     width .5s cubic-bezier(.34,1.56,.64,1),
     height .4s cubic-bezier(.34,1.56,.64,1),
@@ -875,7 +877,7 @@ input.meter-locked:focus { border-color: var(--border) !important; }
   position: fixed; inset: 0; z-index: 400;
   background: var(--bg);
   transform: translateX(100%);
-  transition: transform .32s cubic-bezier(.4,0,.2,1);
+  transition: transform .3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   will-change: transform;
