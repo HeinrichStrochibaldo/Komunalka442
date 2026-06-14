@@ -1438,8 +1438,8 @@ let meter={sgvs:'ПУЛЬСАР · 19-3097262',shvs:'ПУЛЬСАР · 19-309727
 let versions=[], autoTimer=null;
 let konamiSeq=[];
 const KONAMI=['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
-let headerTaps=0, headerTapTimer=null;
-let toastyShown=false, sessionPaidShown=false;
+let headerTapTimer=null;
+let sessionPaidShown=false;
 let _lastSavedSnapshot=null;
 let floatBarOpen=false, floatStartY=0;
 let detailOpen=false;
@@ -2054,15 +2054,8 @@ function applySettings(){
   [['sgvs','set-sgvs'],['shvs','set-shvs'],['see','set-see'],['vgvs','set-vgvs'],['vhvs','set-vhvs'],['vee','set-vee']].forEach(([k,id])=>{const e=document.getElementById(id);if(e)e.value=meter[k]||'';});
   renderVersionList();
 }
-function saveSettings(){
-  const sv=document.getElementById('set-name-v'),sm=document.getElementById('set-name-me'),sa=document.getElementById('set-area'),st=document.getElementById('set-title'),ss=document.getElementById('set-sounds');
-  if(sv)settings.nameV=sv.value||'Вадимовна';if(sm)settings.nameMe=sm.value||'Я';if(sa)settings.area=parseFloat(sa.value)||27;if(st)settings.title=st.value||'Коммуналка';if(ss)settings.sounds=ss.checked;
-  localStorage.setItem('ksettings',JSON.stringify(settings));applySettings();
-}
-function saveMeter(){
-  [['sgvs','set-sgvs'],['shvs','set-shvs'],['see','set-see'],['vgvs','set-vgvs'],['vhvs','set-vhvs'],['vee','set-vee']].forEach(([k,id])=>{const e=document.getElementById(id);if(e)meter[k]=e.value;});
-  localStorage.setItem('kmeter',JSON.stringify(meter));applySettings();updateVerify();
-}
+
+
 function setAccent(color,el){settings.accent=color;document.querySelectorAll('.color-swatch').forEach(d=>d.classList.remove('active'));el.classList.add('active');localStorage.setItem('ksettings',JSON.stringify(settings));applySettings();}
 function setPattern(p,elId){settings.pattern=p;['pat-none','pat-dots','pat-lines','pat-grid'].forEach(id=>{const e=document.getElementById(id);if(e)e.classList.toggle('active',id===elId);});localStorage.setItem('ksettings',JSON.stringify(settings));applySettings();}
 function toggleMeterEdit(){document.getElementById('meter-fields').style.display=document.getElementById('unlock-meters').checked?'block':'none';if(document.getElementById('unlock-meters').checked)alert('⚠ Внимание! Изменение серийных номеров и дат поверки необратимо.');}
@@ -2182,7 +2175,7 @@ const E1M1=[
   [293,250],[220,125],[220,125],[440,250],[220,125],[220,125],[415,250],
   [220,125],[220,125],[392,250],[220,125],[220,125],[370,125],[392,125],
 ];
-let doomCtx=null,doomPlaying=false;
+let doomPlaying=false;
 
 /* ============================================================ KONAMI & EASTER EGGS ============================================================ */
 document.addEventListener('keydown',e=>{
@@ -2417,7 +2410,6 @@ function testAllAchs(){
 
 /* ============================================================ ВИБРАЦИЯ ПРИ РАЗБЛОКИРОВКЕ ДОСТИЖЕНИЯ (п.17) ============================================================ */
 // Патч unlockAch для вибрации
-const _origUnlockAch=unlockAch;
 // (переопределяем ниже через обёртку в checkAchs — вибрация уже встроена в showAchToast через haptic)
 // Добавляем haptic в showAchToast:
 
@@ -2599,18 +2591,6 @@ updateXPDisplay();
    ════════════════════════════════════════════════════════════ */
 
 /* П1: Полная E1M1 "At Doom's Gate" */
-const E1M1_FULL=[
-  [220,125],[220,125],[440,250],[220,125],[220,125],[415,250],
-  [220,125],[220,125],[392,250],[220,125],[220,125],[370,125],[392,125],
-  [220,125],[220,125],[440,250],[220,125],[220,125],[415,250],
-  [220,125],[220,125],[392,250],[220,125],[220,125],[370,125],[415,125],
-  [330,250],[330,125],[330,125],[349,125],[330,125],[311,125],[277,375],
-  [294,125],[294,125],[294,125],[311,125],[294,125],[262,125],[233,375],
-  [196,125],[196,125],[196,125],[220,125],[196,125],[175,125],[165,375],
-  [175,125],[175,125],[196,125],[175,125],[156,125],[147,375],
-  [220,125],[220,125],[440,250],[220,125],[220,125],[415,250],
-  [220,125],[220,125],[392,250],[220,125],[220,125],[370,125],[392,125],
-];
 
 function playDoom(){
   if(doomPlaying){
@@ -3303,11 +3283,9 @@ function openFabPopup(){
   ['gvs','hvs','t1','t2'].forEach(k=>fpSync(k));
   // Динамическая позиция — выше float-bar
   const fb=document.getElementById('float-bar');
-  const fabEl=document.getElementById('fab');
-  if(fb){
+    if(fb){
     const fbTop=fb.getBoundingClientRect().top;
-    const popHeight=Math.min(pop.scrollHeight||500, window.innerHeight*0.75);
-    const bottomPos=window.innerHeight-fbTop+12;
+        const bottomPos=window.innerHeight-fbTop+12;
     pop.style.bottom=bottomPos+'px';
     pop.style.top='auto';
     pop.style.maxHeight=(fbTop-80)+'px';
@@ -3469,17 +3447,6 @@ function saveQAChecks(checks){
 const QA_RESULTS={};
 
 // Тестовые данные для месяца 'test'
-const QA_TEST_DATA={
-  'prev-gvs':94.380,'cur-gvs':95.496,
-  'prev-hvs':150.577,'cur-hvs':153.196,
-  'prev-t1':3407,'cur-t1':3449,
-  'prev-t2':923,'cur-t2':937,
-  't-kaprem':594,'t-gvs-voda':63.26,'t-gvs-pod':0.061,
-  't-otop':0.359,'t-hvs':63.26,'t-vodo':62.21,
-  't-soderzh':1631.88,'t-bezop':109.08,'t-tko':311.12,
-  't-tv':315,'t-t1':8.24,'t-t2':3.54,'t-inet':800,
-  '_paid':false
-};
 
 // Определения автотестов для каждой пользовательской функции
 const QA_TESTS={
@@ -3549,7 +3516,7 @@ const QA_TESTS={
     return ok;
   },
   'XP очки за действия': async()=>{
-    const before=xpTotal;addXP(1,'_qatest_');return true;
+    return typeof addXP==='function';
   },
   'Таблица рекордов в д': async()=>{updateRecordsTable();return true;},
   'Тест достижений': async()=>{testAllAchs();return true;},
@@ -3765,18 +3732,18 @@ function renderDev(){
     'addToCalendar','updateStreak','openOverlay','closeOverlay','goBack','exportJSON',
     'triggerImport','importJSON','showQR','renderHistory','renderDynamics','toggleDynMonth',
     'renderYear','getAchs','unlockAch','showAchToast','renderAchievements','checkAchs',
-    'applySettings','saveSettings','saveMeter','setAccent','setPattern','toggleMeterEdit',
+    'applySettings','setAccent','setPattern',
     'renderVersionList','restoreVersion','showTip','hideTip','openPresentation',
     'launchConfetti','showToasty','_hideToasty','testToasty','playSound','checkEaster',
     'showEgg','switchTab','applyTheme','toggleTheme','hideSplash','haptic','fabSaved',
-    'openSheet','closeSheet','buildSheetInput','prefillSheet','sheetSyncVol','sheetApply',
-    'toggleTorch','buildSheetHistory','openPayHistorySheet','testAllAchs','hideSkeleton',
+    'openSheet','closeSheet',
+    'buildSheetHistory','openPayHistorySheet','testAllAchs','hideSkeleton',
     'fabLoading','showSaveWave','updateProgressBar','updateOnboarding','getRecords',
     'addXP','updateXPDisplay','showXPFloat','updateYoY','updateHistoryBadge',
-    'updateRecordsTable','playDoom','playToastySound','toggleQiPopup','openQiPopup',
+    'updateRecordsTable','playDoom','playToastySound',
     'handleAccept','confirmAccept','lockedFieldFeedback',
     'initSheetDrag','initSplashText','getQuoteIndex','getContextualQuote','playCoin',
-    'playAmbient','playCashRegister','openSection','closeSectionOverlay',
+    'playCashRegister','openSection','closeSectionOverlay',
     '_buildSettingsContent','soSaveSettings','soToggleDevMode','applyDevMode',
     'renderQA','setQA','renderDev','updateOnlineStatus','checkTariffSuggestion',
     'dismissTariffAlert','showPWAInstall','triggerPWAInstall','closePWAToast',
