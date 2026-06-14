@@ -4096,6 +4096,18 @@ _dbg('▶ Bootstrap start');
   applySettings();
   applyDevMode();
   switchTab('entry');
+  // Дебаг safe area
+  setTimeout(()=>{
+    const div=document.createElement('div');
+    div.style.cssText='position:fixed;top:0;left:0;width:1px;height:env(safe-area-inset-top,0px);background:transparent;pointer-events:none';
+    document.body.appendChild(div);
+    const safeTop=div.getBoundingClientRect().height;
+    div.remove();
+    const t=document.createElement('div');
+    t.style.cssText='position:fixed;bottom:150px;left:50%;transform:translateX(-50%);background:#000;color:#fff;padding:8px 14px;border-radius:8px;font-size:12px;z-index:99999;white-space:nowrap';
+    t.textContent='safe-area-top='+safeTop+'px';
+    document.body.appendChild(t);setTimeout(()=>t.remove(),5000);
+  },1500);
  // всегда стартуем с Ввода
   _dbg('▶ fbLoad...');
   fbLoad();
