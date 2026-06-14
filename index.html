@@ -1982,6 +1982,11 @@ function unlockAch(id){
   allData._achs=data;fbSave();
   const a=ACHS.find(x=>x.id===id);if(a)showAchToast(a);
   renderAchievements();
+  // Точечное обновление грида если оверлей открыт
+  const overlay=document.getElementById('section-overlay');
+  if(overlay&&overlay.classList.contains('open')){
+    updateAchGrid();
+  }
 }
 function showAchToast(a){
   const toast=document.getElementById('ach-toast');
@@ -2468,6 +2473,8 @@ function resetAchs(){
   if(allData._achs)delete allData._achs;
   fbSave();
   renderAchievements();
+  const overlay=document.getElementById('section-overlay');
+  if(overlay&&overlay.classList.contains('open'))updateAchGrid();
   haptic([30,20,30]);
   const f=document.createElement('div');
   f.className='copy-flash';f.textContent='✓ Достижения сброшены';
@@ -2480,6 +2487,8 @@ function resetXP(){
   localStorage.setItem('kxp','0');
   Object.keys(localStorage).filter(k=>k.startsWith('kxp_')).forEach(k=>localStorage.removeItem(k));
   updateXPDisplay();
+  const overlay2=document.getElementById('section-overlay');
+  if(overlay2&&overlay2.classList.contains('open'))updateAchGrid();
   haptic([30,20,30]);
   const f=document.createElement('div');
   f.className='copy-flash';f.textContent='✓ XP сброшен';
@@ -2980,6 +2989,62 @@ function playCashRegister(){
 })();
 
 /* П46: openSection — полноэкранный слайд-оверлей */
+
+/* ── Точечное обновление грида достижений ── */
+function updateAchGrid(){
+  const grid=document.getElementById('so-ach-grid');
+  if(!grid)return;
+  const u=getAchs();
+  const achData=getAchsData();
+  grid.querySelectorAll('.ach-card').forEach(card=>{
+    const id=card.dataset.achId;
+    if(!id)return;
+    const unlocked=u.includes(id);
+    const wasUnlocked=card.classList.contains('unlocked');
+    if(unlocked===wasUnlocked)return; // не изменилось
+    const a=ACHS.find(x=>x.id===id);
+    if(!a)return;
+    if(unlocked){
+      card.classList.add('unlocked');
+      // Обновляем иконку и дату
+      const icon=card.querySelector('.ach-icon');
+      if(icon)icon.textContent=a.icon;
+      const achEntry=achData.find(x=>x.id===id);
+      const dateStr=achEntry&&achEntry.date
+        ?new Date(achEntry.date).toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'})
+        :'дата неизвестна';
+      // Добавляем дату если нет
+      let dateEl=card.querySelector('.ach-date');
+      if(!dateEl){
+        dateEl=document.createElement('div');
+        dateEl.className='ach-date';
+        dateEl.style.cssText='font-size:9px;color:var(--muted);margin-top:3px;line-height:1.2';
+        card.appendChild(dateEl);
+      }
+      dateEl.textContent=dateStr;
+      // Анимация появления
+      card.style.transform='scale(0.8)';
+      requestAnimationFrame(()=>{
+        card.style.transition='transform .4s cubic-bezier(.34,1.56,.64,1)';
+        card.style.transform='';
+      });
+    } else {
+      card.classList.remove('unlocked');
+      const dateEl=card.querySelector('.ach-date');
+      if(dateEl)dateEl.remove();
+      const icon=card.querySelector('.ach-icon');
+      if(icon)icon.textContent=a.icon;
+    }
+  });
+  // Обновляем счётчик и XP
+  const cnt=grid.querySelectorAll('.ach-card.unlocked').length;
+  const total=ACHS.length;
+  const counter=document.querySelector('#section-overlay .ach-counter');
+  if(counter)counter.textContent=cnt+' из '+total+' разблокировано';
+  const xpEl=document.querySelector('#section-overlay .xp-badge');
+  if(xpEl)xpEl.textContent='✨ '+xpTotal+' XP';
+}
+
 function openSection(name){
   haptic(30);
   const overlay=document.getElementById('section-overlay');
@@ -2998,8 +3063,8 @@ function openSection(name){
     </div>`:'';
     content.innerHTML=`
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-        <div style="font-size:13px;color:var(--muted)">${getAchs().filter(id=>ACHS.some(a=>a.id===id)).length} из ${ACHS.length} разблокировано</div>
-        <div style="background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.25);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;color:var(--yellow)">✨ ${xp} XP</div>
+        <div class="ach-counter" style="font-size:13px;color:var(--muted)">${getAchs().filter(id=>ACHS.some(a=>a.id===id)).length} из ${ACHS.length} разблокировано</div>
+        <div class="xp-badge" style="background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.25);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;color:var(--yellow)">✨ ${xp} XP</div>
       </div>
       ${recsHtml}
       <div class="ach-grid" id="so-ach-grid" style="margin-bottom:20px"></div>
@@ -3022,6 +3087,7 @@ function openSection(name){
           :'дата неизвестна'):'';
         return `<div class="ach-card${unlocked?' unlocked':''}"
           style="opacity:0;transform:translateY(12px)"
+          data-ach-id="${a.id}"
           data-tip="${unlocked?a.name+': '+a.desc:'🔒 '+a.desc}">
           <div class="ach-icon">${a.icon}</div>
           <div class="ach-name">${a.name}</div>
