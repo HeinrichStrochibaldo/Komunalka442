@@ -2434,6 +2434,35 @@ document.addEventListener('touchend',()=>{
 /* ============================================================ ТЕСТ ДОСТИЖЕНИЙ (п.14) ============================================================ */
 let testAchIdx=0;
 
+
+/* ── Долгое удержание для кнопок сброса ── */
+function initHoldButton(btnId, action){
+  const btn=document.getElementById(btnId);
+  if(!btn)return;
+  let timer=null;
+
+  const start=()=>{
+    btn.classList.add('holding');
+    timer=setTimeout(()=>{
+      btn.classList.remove('holding');
+      haptic([50,30,80]);
+      action();
+    },1500);
+  };
+
+  const cancel=()=>{
+    clearTimeout(timer);
+    btn.classList.remove('holding');
+  };
+
+  btn.addEventListener('touchstart',e=>{e.preventDefault();start();},{passive:false});
+  btn.addEventListener('touchend',cancel,{passive:true});
+  btn.addEventListener('touchcancel',cancel,{passive:true});
+  btn.addEventListener('mousedown',start);
+  btn.addEventListener('mouseup',cancel);
+  btn.addEventListener('mouseleave',cancel);
+}
+
 function resetAchs(){
   localStorage.removeItem('kachs');
   if(allData._achs)delete allData._achs;
@@ -2977,8 +3006,8 @@ function openSection(name){
       <div style="text-align:center">
         <button class="btn btn-ghost btn-sm" onclick="testAllAchs()">🧪 Тест достижений</button>
       <button class="btn btn-ghost btn-sm" onclick="testToasty()">🔥 Тест Toasty</button>
-      <button class="btn btn-ghost btn-sm" onclick="resetAchs()" style="color:var(--red)">🗑 Сброс достижений</button>
-      <button class="btn btn-ghost btn-sm" onclick="resetXP()" style="color:var(--red)">🗑 Сброс XP</button>
+      <button class="btn btn-ghost btn-sm btn-hold" id="btn-reset-achs" style="color:var(--red)">🗑 Сброс достижений</button>
+      <button class="btn btn-ghost btn-sm btn-hold" id="btn-reset-xp" style="color:var(--red)">🗑 Сброс XP</button>
       </div>`;
     // Рендерим сетку достижений
     const grid=document.getElementById('so-ach-grid');
