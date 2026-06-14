@@ -3194,25 +3194,6 @@ if(!ACHS.find(a=>a.id==='quote1001')){
 (function initTabSwipe(){
   let sx=0,sy=0,tracking=false,handled=false;
 
-  // Всегда используем TABS_LIST (6 элементов)
-  // dev/qa недоступны свайпом когда devMode выключен
-
-  function springBack(dir){
-    _dbg('🌀 springBack dir='+dir+' ci='+TABS_LIST.indexOf((document.querySelector('.page.active')||{}).id||'').replace('page-',''));
-    const track=document.getElementById('pages-track');
-    if(!track)return;
-    const cur=track.style.transform;
-    const m=cur.match(/translateX\((-?\d+(?:\.\d+)?)%\)/);
-    const base=m?parseFloat(m[1]):0;
-    haptic([30,20,40,20,60]);
-    track.style.transition='none';
-    track.style.transform='translateX('+(base+(dir>0?5:-5))+'%)';
-    setTimeout(()=>{
-      track.style.transition='transform .4s cubic-bezier(.34,1.56,.64,1)';
-      track.style.transform='translateX('+base+'%)';
-    },80);
-  }
-
   document.addEventListener('touchstart',e=>{
     if(e.target.closest('#bottom-sheet,#float-bar,.overlay,#pres-overlay,#fab-popup,#section-overlay'))return;
     sx=e.touches[0].clientX;
@@ -3236,19 +3217,11 @@ if(!ACHS.find(a=>a.id==='quote1001')){
     const ci=TABS_LIST.indexOf(active.id.replace('page-',''));
     if(ci===-1)return;
 
-    // Минимальный индекс: 0 если devMode, иначе 2 (entry)
     const minIdx=settings.devMode?0:2;
-    const maxIdx=TABS_LIST.length-1; // всегда 'year'
+    const maxIdx=TABS_LIST.length-1;
 
-    if(dx<0){
-      // свайп влево — следующая вкладка
-      if(ci<maxIdx){switchTab(TABS_LIST[ci+1]);haptic(30);}
-      else{_dbg('→ край правый');springBack(-1);}
-    } else {
-      // свайп вправо — предыдущая вкладка
-      if(ci>minIdx){switchTab(TABS_LIST[ci-1]);haptic(30);}
-      else if(ci===minIdx){_dbg('← край левый');springBack(1);}
-    }
+    if(dx<0&&ci<maxIdx){switchTab(TABS_LIST[ci+1]);haptic(30);}
+    else if(dx>0&&ci>minIdx){switchTab(TABS_LIST[ci-1]);haptic(30);}
   },{passive:true});
 })();
 /* ── П8: Edge swipe — назад из section-overlay ── */
