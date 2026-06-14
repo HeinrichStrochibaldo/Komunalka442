@@ -1486,13 +1486,12 @@ async function fbLoad(){
   hideSkeleton();
   fabLoading(false);
   try{
-    // Показываем тост с текущим месяцем для отладки
-    setTimeout(()=>{
-      const t=document.createElement('div');
-      t.style.cssText='position:fixed;top:100px;left:50%;transform:translateX(-50%);background:#000;color:#fff;padding:8px 14px;border-radius:8px;font-size:12px;z-index:99999;white-space:nowrap';
-      t.textContent='curIdx='+curIdx+' month='+MK[curIdx];
-      document.body.appendChild(t);setTimeout(()=>t.remove(),4000);
-    },500);
+    // Автопереход на текущий месяц
+    const _now=new Date();
+    const _curMK=_now.getFullYear()+'-'+(String(_now.getMonth()+1).padStart(2,'0'));
+    const _curIdx=MK.indexOf(_curMK);
+    if(_curIdx!==-1) curIdx=_curIdx;
+    else curIdx=MK.length-1;
     loadMonth();updateVerify();updateStreak();checkEaster();
     updateXPDisplay();updateProgressBar();updateOnboarding();
     checkTariffSuggestion();
