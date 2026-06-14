@@ -2369,16 +2369,23 @@ function buildSheetHistory(){
 function openPayHistorySheet(){openSheet('history');}
 
 /* ============================================================ PULL-TO-REFRESH (п.20) ============================================================ */
-let ptrStart=0, ptrActive=false, ptrReady=false;
+let ptrStart=0, ptrActive=false, ptrReady=false, ptrLocked=false;
 const PTR_THRESHOLD=80;
 
 document.addEventListener('touchstart',e=>{
-  if(window.scrollY===0)ptrStart=e.touches[0].clientY;
+  // Сбрасываем состояние при каждом новом касании
+  ptrStart=0;ptrActive=false;ptrReady=false;
+  // Только если в самом верху и не идёт другое действие
+  if(window.scrollY===0&&!ptrLocked){
+    ptrStart=e.touches[0].clientY;
+  }
 },{passive:true});
 
 document.addEventListener('touchmove',e=>{
-  if(!ptrStart)return;
+  if(!ptrStart||ptrLocked)return;
   const dy=e.touches[0].clientY-ptrStart;
+  // Только вниз и только от верха
+  if(dy<0){ptrStart=0;return;} // свайп вверх — отменяем PTR
   if(dy>20&&window.scrollY===0){
     ptrActive=true;
     const ind=document.getElementById('ptr-indicator');
@@ -2408,8 +2415,13 @@ document.addEventListener('touchend',()=>{
     if(arrow)arrow.textContent='⟳';
     if(txt)txt.textContent='Обновляем…';
     haptic([50,30,50]);
+    ptrLocked=true; // блокируем PTR пока идёт загрузка
     fbLoad().then(()=>{
-      if(ind){ind.classList.remove('visible','loading','ready');}
+      if(ind)ind.classList.remove('visible','loading','ready');
+      ptrLocked=false;
+    }).catch(()=>{
+      if(ind)ind.classList.remove('visible','loading','ready');
+      ptrLocked=false;
     });
   }else if(ptrActive){
     const ind=document.getElementById('ptr-indicator');
