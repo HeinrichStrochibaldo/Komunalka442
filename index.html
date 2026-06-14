@@ -2433,6 +2433,31 @@ document.addEventListener('touchend',()=>{
 
 /* ============================================================ ТЕСТ ДОСТИЖЕНИЙ (п.14) ============================================================ */
 let testAchIdx=0;
+
+function resetAchs(){
+  localStorage.removeItem('kachs');
+  if(allData._achs)delete allData._achs;
+  fbSave();
+  renderAchievements();
+  haptic([30,20,30]);
+  const f=document.createElement('div');
+  f.className='copy-flash';f.textContent='✓ Достижения сброшены';
+  f.style.cssText='position:fixed;bottom:120px;left:50%;transform:translateX(-50%);z-index:9999;white-space:nowrap';
+  document.body.appendChild(f);setTimeout(()=>f.remove(),1500);
+}
+
+function resetXP(){
+  xpTotal=0;
+  localStorage.setItem('kxp','0');
+  Object.keys(localStorage).filter(k=>k.startsWith('kxp_')).forEach(k=>localStorage.removeItem(k));
+  updateXPDisplay();
+  haptic([30,20,30]);
+  const f=document.createElement('div');
+  f.className='copy-flash';f.textContent='✓ XP сброшен';
+  f.style.cssText='position:fixed;bottom:120px;left:50%;transform:translateX(-50%);z-index:9999;white-space:nowrap';
+  document.body.appendChild(f);setTimeout(()=>f.remove(),1500);
+}
+
 function testAllAchs(){
   haptic(30);
   const ids=ACHS.map(a=>a.id);
@@ -2952,6 +2977,8 @@ function openSection(name){
       <div style="text-align:center">
         <button class="btn btn-ghost btn-sm" onclick="testAllAchs()">🧪 Тест достижений</button>
       <button class="btn btn-ghost btn-sm" onclick="testToasty()">🔥 Тест Toasty</button>
+      <button class="btn btn-ghost btn-sm" onclick="resetAchs()" style="color:var(--red)">🗑 Сброс достижений</button>
+      <button class="btn btn-ghost btn-sm" onclick="resetXP()" style="color:var(--red)">🗑 Сброс XP</button>
       </div>`;
     // Рендерим сетку достижений
     const grid=document.getElementById('so-ach-grid');
