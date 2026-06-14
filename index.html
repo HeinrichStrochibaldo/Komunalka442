@@ -3140,16 +3140,27 @@ function makeCopyable(sel){
   document.querySelectorAll(sel).forEach(el=>{
     if(el._cp)return;el._cp=true;el.classList.add('copyable');
     let pt=null;
-    const start=()=>{pt=setTimeout(()=>{
+    const start=e=>{
       const txt=el.textContent.trim();
-      if(navigator.clipboard){navigator.clipboard.writeText(txt).then(()=>{
+      if(!txt||txt==='—')return;
+      // Копируем МГНОВЕННО в touchstart — iOS требует синхронного вызова
+      const cleanTxt=txt.replace(/[₽\s]/g,'');
+      try{
+        const ta=document.createElement('textarea');
+        ta.value=cleanTxt;ta.style.cssText='position:fixed;opacity:0;top:0;left:0';
+        document.body.appendChild(ta);ta.focus();ta.select();
+        document.execCommand('copy');ta.remove();
+      }catch(ex){}
+      // Тост и вибрация через 600мс — имитируем долгое нажатие
+      pt=setTimeout(()=>{
         haptic([30,20,30]);
-        const f=document.createElement('div');f.className='copy-flash';f.textContent='✓ '+txt;
+        const f=document.createElement('div');f.className='copy-flash';
+        f.textContent='✓ Скопировано';
         const r=el.getBoundingClientRect();
-        f.style.cssText='position:fixed;left:50%;transform:translateX(-50%);top:'+(r.top-44+window.scrollY)+'px';
-        document.body.appendChild(f);setTimeout(()=>f.remove(),800);
-      });}
-    },600);};
+        f.style.cssText='position:fixed;left:50%;transform:translateX(-50%);top:'+(r.top-44)+'px;z-index:9999';
+        document.body.appendChild(f);setTimeout(()=>f.remove(),1200);
+      },600);
+    };
     const end=()=>clearTimeout(pt);
     el.addEventListener('mousedown',start);el.addEventListener('mouseup',end);el.addEventListener('mouseleave',end);
     el.addEventListener('touchstart',start,{passive:true});el.addEventListener('touchend',end,{passive:true});
