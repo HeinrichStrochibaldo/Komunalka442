@@ -2044,8 +2044,8 @@ function showAchToast(a){
   let ty=0,startY=0,isDragging=false;
   // Убираем старые listeners если были
   toast.ontouchstart=null;toast.ontouchmove=null;toast.ontouchend=null;
-  const _ts=e=>{startY=e.touches[0].clientY;isDragging=true;clearTimeout(achTimer);e.stopPropagation();};
-  const _tm=e=>{if(!isDragging)return;e.preventDefault();e.stopPropagation();ty=e.touches[0].clientY-startY;};
+  function _ts(e){startY=e.touches[0].clientY;isDragging=true;clearTimeout(achTimer);e.stopPropagation();}
+  function _tm(e){if(!isDragging)return;e.preventDefault();e.stopPropagation();ty=e.touches[0].clientY-startY;}
   toast.addEventListener('touchstart',_ts,{passive:true});
   toast.addEventListener('touchmove',_tm,{passive:false});
   toast.addEventListener('touchend',e=>{
