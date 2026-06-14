@@ -2444,6 +2444,8 @@ const PTR_THRESHOLD=80;
 document.addEventListener('touchstart',e=>{
   // Сбрасываем состояние при каждом новом касании
   ptrStart=0;ptrActive=false;ptrReady=false;
+  // Не активируем PTR если касание на тосте достижений
+  if(e.target.closest('#ach-toast'))return;
   // Только если в самом верху и не идёт другое действие
   if(window.scrollY===0&&!ptrLocked){
     ptrStart=e.touches[0].clientY;
