@@ -3698,10 +3698,64 @@ function setQA(key,status){
 }
 
 /* ── Рендер Dev (130 JS функций) ── */
+/* ── Dev: недостающие функции ── */
+async function runAllDevTests(){
+  haptic(30);
+  for(const [fn,type,testFn] of DEV_FNS){
+    const result=await runDevTest(fn,type,testFn);
+    devResults[fn]=result;
+  }
+  renderDev();
+  haptic([20,20,40]);
+}
+
+async function runSingleDevTest(fnName){
+  const entry=DEV_FNS.find(([fn])=>fn===fnName);
+  if(!entry)return;
+  const [fn,type,testFn]=entry;
+  haptic(20);
+  const result=await runDevTest(fn,type,testFn);
+  devResults[fn]=result;
+  renderDev();
+}
+
+function renderDevList(ok,fail,skip){
+  renderDev();
+}
+
 function renderDev(){
   const el=document.getElementById('dev-list');
   if(!el)return;
-  // Получаем все функции из window
+  // Если есть DEV_FNS — используем автотесты
+  if(typeof DEV_FNS!=='undefined'&&DEV_FNS.length>50){
+    const ok=Object.values(devResults).filter(r=>r&&r.status==='ok').length;
+    const fail=Object.values(devResults).filter(r=>r&&r.status==='fail').length;
+    const skip=Object.values(devResults).filter(r=>r&&r.status==='skip').length;
+    const total=DEV_FNS.length;
+    let html=`<div style="text-align:center;padding:10px;margin-bottom:8px;background:var(--surface2);border-radius:10px;display:flex;justify-content:center;gap:16px">
+      <span style="color:var(--green);font-weight:700">🟢 ${ok}</span>
+      <span style="color:var(--red);font-weight:700">🔴 ${fail}</span>
+      <span style="color:var(--muted);font-weight:700">⚪ ${skip}</span>
+    </div>
+    <div style="margin-bottom:12px;text-align:center">
+      <button onclick="runAllDevTests()" class="btn" style="padding:8px 20px;font-size:13px">▶ Запустить все тесты</button>
+    </div>`;
+    html+='<table style="width:100%;border-collapse:collapse;font-size:11px">';
+    html+='<tr style="color:var(--label);border-bottom:1px solid var(--border)"><th style="text-align:left;padding:4px">Функция</th><th style="width:50px">Тест</th><th style="width:40px"></th></tr>';
+    DEV_FNS.forEach(([fn,type,testFn],i)=>{
+      const res=devResults[fn];
+      const icon=!res?'⚪':res.status==='ok'?'🟢':res.status==='skip'?'⚫':'🔴';
+      html+=`<tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:4px;color:var(--text);font-family:monospace;font-size:10px">${i+1}. ${fn}${res&&res.msg?'<br><span style="color:var(--red);font-size:9px">'+res.msg+'</span>':''}</td>
+        <td style="text-align:center;font-size:15px">${icon}</td>
+        <td style="text-align:center">${type!=='skip'?`<button onclick="runSingleDevTest('${fn}')" style="background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:2px 5px;font-size:10px;cursor:pointer">▶</button>`:''}</td>
+      </tr>`;
+    });
+    html+='</table>';
+    el.innerHTML=html;
+    return;
+  }
+  // Fallback — простой список функций из window
   const fns=[
     '_dbg','fbLoad','fbSave','compute','cfd','render','fmt','fvol','gv','vol','setT',
     'curMonth','prevMK','handlePaid','confirmPaid','handleUnpaid','updatePaidBtn',
