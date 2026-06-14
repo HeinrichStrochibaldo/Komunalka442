@@ -1959,13 +1959,26 @@ function renderYear(){
 }
 
 /* ============================================================ ACHIEVEMENTS ============================================================ */
-function getAchs(){if(allData._achs)return allData._achs;return JSON.parse(localStorage.getItem('kachs')||'[]');}
+function getAchs(){
+  // Возвращает массив id для обратной совместимости
+  const raw=allData._achs||JSON.parse(localStorage.getItem('kachs')||'[]');
+  // Поддержка старого формата (массив строк) и нового (массив объектов)
+  return raw.map(x=>typeof x==='string'?x:x.id);
+}
+function getAchsData(){
+  // Возвращает полный массив объектов {id, date}
+  const raw=allData._achs||JSON.parse(localStorage.getItem('kachs')||'[]');
+  return raw.map(x=>typeof x==='string'?{id:x,date:null}:{id:x.id,date:x.date||null});
+}
 let achTimer=null;
 function unlockAch(id){
-  const u=getAchs();if(u.includes(id))return;
-  u.push(id);localStorage.setItem('kachs',JSON.stringify(u));
+  const ids=getAchs();if(ids.includes(id))return;
+  const data=getAchsData();
+  const today=new Date().toISOString().slice(0,10);
+  data.push({id,date:today});
+  localStorage.setItem('kachs',JSON.stringify(data));
   if(!allData._achs)allData._achs=[];
-  allData._achs=u;fbSave();
+  allData._achs=data;fbSave();
   const a=ACHS.find(x=>x.id===id);if(a)showAchToast(a);
   renderAchievements();
 }
@@ -2001,12 +2014,21 @@ function showAchToast(a){
 function renderAchievements(){
   const grid=document.getElementById('ach-grid');if(!grid)return;
   const u=getAchs();
-  grid.innerHTML=ACHS.map(a=>`<div class="ach-card${u.includes(a.id)?' unlocked':''}"
-    style="opacity:0;transform:translateY(12px) scale(.95)"
-    data-tip="${u.includes(a.id)?a.name+': '+a.desc:'🔒 '+a.desc}">
-    <div class="ach-icon">${a.icon}</div>
-    <div class="ach-name">${a.name}</div>
-  </div>`).join('');
+  const achData=getAchsData();
+  grid.innerHTML=ACHS.map(a=>{
+    const unlocked=u.includes(a.id);
+    const achEntry=achData.find(x=>x.id===a.id);
+    const dateStr=unlocked?(achEntry&&achEntry.date
+      ?new Date(achEntry.date).toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'})
+      :'дата неизвестна'):'';
+    return `<div class="ach-card${unlocked?' unlocked':''}"
+      style="opacity:0;transform:translateY(12px) scale(.95)"
+      data-tip="${unlocked?a.name+': '+a.desc:'🔒 '+a.desc}">
+      <div class="ach-icon">${a.icon}</div>
+      <div class="ach-name">${a.name}</div>
+      ${unlocked?`<div style="font-size:9px;color:var(--muted);margin-top:3px;line-height:1.2">${dateStr}</div>`:''}
+    </div>`;
+  }).join('');
   // Stagger анимация
   grid.querySelectorAll('.ach-card').forEach((c,i)=>{
     setTimeout(()=>{
