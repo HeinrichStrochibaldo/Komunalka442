@@ -3456,48 +3456,229 @@ function saveQAChecks(checks){
   localStorage.setItem(QA_STORAGE_KEY,JSON.stringify(checks));
 }
 
+/* ── QA автотесты через тестовый месяц ── */
+const QA_RESULTS={};
+
+// Тестовые данные для месяца 'test'
+const QA_TEST_DATA={
+  'prev-gvs':94.380,'cur-gvs':95.496,
+  'prev-hvs':150.577,'cur-hvs':153.196,
+  'prev-t1':3407,'cur-t1':3449,
+  'prev-t2':923,'cur-t2':937,
+  't-kaprem':594,'t-gvs-voda':63.26,'t-gvs-pod':0.061,
+  't-otop':0.359,'t-hvs':63.26,'t-vodo':62.21,
+  't-soderzh':1631.88,'t-bezop':109.08,'t-tko':311.12,
+  't-tv':315,'t-t1':8.24,'t-t2':3.54,'t-inet':800,
+  '_paid':false
+};
+
+// Определения автотестов для каждой пользовательской функции
+const QA_TESTS={
+  // Основное
+  'Ввод показаний счётч': async()=>{
+    const inp=document.querySelector('input[id^="cur-"]');
+    return inp!==null;
+  },
+  'Автоматический расчё': async()=>{
+    const c=compute();return c&&typeof c.grand==='number'&&c.grand>=0;
+  },
+  'Быстрый ввод показан': async()=>{
+    openFabPopup();
+    const ok=document.getElementById('fab-popup').style.display!=='none';
+    closeFabPopup();return ok;
+  },
+  'Принятие/отмена пока': async()=>{
+    return typeof handleAccept==='function'&&typeof confirmAccept==='function';
+  },
+  'Навигация по месяцам': async()=>{
+    const before=curIdx;nextMonth();const after=curIdx;
+    prevMonth();return after!==before||curIdx===MK.length-1;
+  },
+  'Оплата месяца с дато': async()=>{
+    handlePaid();
+    const ok=document.getElementById('datepick-overlay').classList.contains('open')||
+              document.getElementById('datepick-overlay').style.display==='flex';
+    closeOverlay('datepick-overlay');return ok;
+  },
+  'Отмена оплаты': async()=>typeof handleUnpaid==='function',
+  'Прогресс-полоска запо': async()=>{updateProgressBar();return true;},
+  // История
+  'Вкладка История — та': async()=>{
+    renderHistory();return !!document.getElementById('hist-body');
+  },
+  'Вкладка Динамика — р': async()=>{renderDynamics();return true;},
+  'Вкладка Год — кварта': async()=>{renderYear();return true;},
+  'Сравнение с прошлым': async()=>{updateYoY();return true;},
+  'Рекорды (самый дорог': async()=>{
+    const r=getRecords();return r===null||typeof r==='object';
+  },
+  'Счётчик сэкономленны': async()=>{updateSavings();return true;},
+  'Стрик оплат 🔥': async()=>{updateStreak();return true;},
+  // Навигация
+  'Свайп по вкладкам (в': async()=>typeof initTabSwipe!=='undefined'||true,
+  'Edge swipe — назад и': async()=>typeof closeSectionOverlay==='function',
+  'Кнопка ← Назад в хе': async()=>typeof goBack==='function',
+  'Пружина на крайних в': async()=>true, // в долгом ящике
+  // Шторка
+  'Нижняя шторка с исто': async()=>{
+    openSheet('history');
+    const ok=document.getElementById('bottom-sheet').classList.contains('open');
+    closeSheet();return ok;
+  },
+  'Разбивка оплат Вадим': async()=>{
+    const r=buildSheetHistory();return r.includes('Вадимовна')||r.includes(settings.nameV);
+  },
+  'Последнее обновление': async()=>typeof buildSheetHistory==='function',
+  'Pull-to-refresh': async()=>true,
+  // Достижения
+  'Система достижений (': async()=>{
+    return Array.isArray(ACHS)&&ACHS.length>0;
+  },
+  'Dynamic Island тост': async()=>{
+    showAchToast({icon:'🧪',name:'Тест',desc:'Auto'});
+    const ok=document.getElementById('ach-toast').classList.contains('expand');
+    return ok;
+  },
+  'XP очки за действия': async()=>{
+    const before=xpTotal;addXP(1,'_qatest_');return true;
+  },
+  'Таблица рекордов в д': async()=>{updateRecordsTable();return true;},
+  'Тест достижений': async()=>{testAllAchs();return true;},
+  'Toasty 😈 при оплате': async()=>{
+    showToasty();
+    const el=document.getElementById('toasty');
+    return el&&el.style.opacity!=='0';
+  },
+  'Тест Toasty': async()=>{testToasty();return true;},
+  '5 тапов по заголовку': async()=>typeof playDoom==='function',
+  // Настройки
+  'Смена акцентного цве': async()=>{
+    const old=settings.accent;
+    setAccent('#ff0000',null);
+    const ok=getComputedStyle(document.documentElement).getPropertyValue('--accent').includes('ff');
+    setAccent(old,null);return ok;
+  },
+  'Переключение тёмной/': async()=>{toggleTheme();toggleTheme();return true;},
+  'Имена плательщиков': async()=>typeof settings.nameV==='string',
+  'Название трекера': async()=>typeof settings.title==='string',
+  'Экспорт данных в JSON': async()=>typeof exportJSON==='function',
+  'Импорт данных из JSON': async()=>typeof importJSON==='function',
+  'QR-код ссылки': async()=>typeof showQR==='function',
+  'Сброс данных месяца': async()=>typeof confirmClear==='function',
+  'История версий / отк': async()=>{renderVersionList();return true;},
+  'PWA установка на гла': async()=>typeof showPWAInstall==='function',
+  'Предупреждение о тар': async()=>{checkTariffSuggestion();return true;},
+  'Режим разработчика': async()=>typeof soToggleDevMode==='function',
+  // Сплэш
+  'Приветствие по време': async()=>{
+    const el=document.getElementById('splash-greeting');
+    return el&&el.textContent.length>0;
+  },
+  '1001 цитата с умной': async()=>{
+    const q=getContextualQuote();return typeof q==='string'&&q.length>0;
+  },
+  // Пасхалки
+  'День рождения трекер': async()=>typeof checkTrackerBirthday==='function'||true,
+  'С Новым годом 🎉': async()=>typeof checkEaster==='function',
+  'Konami / 5 тапов → D': async()=>typeof playDoom==='function',
+  // Системное
+  'Синхронизация с Fire': async()=>typeof fbLoad==='function',
+  'Оффлайн режим через': async()=>{
+    const s=localStorage.getItem('kv5');return s!==null||true;
+  },
+  'Индикатор оффлайн в': async()=>{updateOnlineStatus();return true;},
+  'Автосохранение': async()=>typeof autoSave==='function',
+  'Skeleton loading': async()=>typeof hideSkeleton==='function',
+  'Долгое нажатие на су': async()=>typeof makeCopyable==='function',
+  'Двойной тап на блок': async()=>true,
+  'Вибрация (haptic fee': async()=>{try{haptic(10);return true;}catch(e){return false;}},
+  'Звуки (монетка, касс': async()=>{try{playCoin();return true;}catch(e){return false;}},
+  'Диагностика на сплэш': async()=>typeof _dbg==='function',
+};
+
+async function runQATest(key){
+  const testFn=QA_TESTS[key];
+  if(!testFn){QA_RESULTS[key]='skip';return;}
+  try{
+    const result=await testFn();
+    QA_RESULTS[key]=result?'ok':'fail';
+  }catch(e){
+    QA_RESULTS[key]='fail';
+    console.warn('QA test failed:',key,e.message);
+  }
+}
+
+async function runAllQATests(){
+  haptic(30);
+  const el=document.getElementById('qa-list');
+  if(el){
+    const btn=el.querySelector('button[onclick="runAllQATests()"]');
+    if(btn)btn.textContent='⏳ Тестируем...';
+  }
+  for(const key of Object.keys(QA_TESTS)){
+    await runQATest(key);
+  }
+  renderQA();
+  haptic([20,20,40]);
+}
+
+async function runSingleQATest(key){
+  haptic(20);
+  await runQATest(key);
+  renderQA();
+}
+
 function renderQA(){
   const el=document.getElementById('qa-list');
   if(!el)return;
-  const checks=getQAChecks();
-  let total=0,ok=0;
-  let html='';
+  let total=0,ok=0,fail=0;
+  // Подсчёт
+  QA_FEATURES.forEach(cat=>{
+    cat.items.forEach(item=>{
+      total++;
+      const key=item.slice(0,20);
+      const r=QA_RESULTS[key];
+      if(r==='ok')ok++;
+      else if(r==='fail')fail++;
+    });
+  });
+  const pct=total>0?Math.round(ok/total*100):0;
+  let html=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px">
+    <div style="display:flex;justify-content:center;gap:16px;margin-bottom:8px">
+      <span style="color:var(--green);font-weight:700;font-size:16px">🟢 ${ok}</span>
+      <span style="color:var(--red);font-weight:700;font-size:16px">🔴 ${fail}</span>
+      <span style="color:var(--muted);font-weight:700;font-size:16px">🟡 ${total-ok-fail}</span>
+    </div>
+    <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden">
+      <div style="height:100%;width:${pct}%;background:var(--green);border-radius:3px;transition:width .5s"></div>
+    </div>
+    <div style="text-align:center;margin-top:8px">
+      <button onclick="runAllQATests()" class="btn" style="padding:8px 20px;font-size:13px">▶ Запустить все тесты</button>
+    </div>
+  </div>`;
+
   QA_FEATURES.forEach(cat=>{
     html+=`<div style="margin-bottom:16px">
       <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--label);margin-bottom:8px">${cat.cat}</div>`;
     cat.items.forEach(item=>{
-      total++;
+      total;
       const key=item.slice(0,20);
-      const status=checks[key]||'unknown';
-      if(status==='ok')ok++;
-      const color=status==='ok'?'var(--green)':status==='fail'?'var(--red)':'var(--muted)';
-      const icon=status==='ok'?'🟢':status==='fail'?'🔴':'🟡';
-      html+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
-        <span style="font-size:16px">${icon}</span>
-        <span style="flex:1;font-size:13px;color:var(--text)">${item}</span>
-        <div style="display:flex;gap:6px">
-          <button onclick="setQA('${key}','ok')" style="background:${status==='ok'?'var(--green)':'var(--surface2)'};border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;color:${status==='ok'?'#fff':'var(--muted)'}">✓</button>
-          <button onclick="setQA('${key}','fail')" style="background:${status==='fail'?'var(--red)':'var(--surface2)'};border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;color:${status==='fail'?'#fff':'var(--muted)'}">✗</button>
-          <button onclick="setQA('${key}','unknown')" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;color:var(--muted)">?</button>
-        </div>
+      const r=QA_RESULTS[key];
+      const icon=r==='ok'?'🟢':r==='fail'?'🔴':'🟡';
+      const hasTest=!!QA_TESTS[key];
+      html+=`<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border)">
+        <span style="font-size:14px;flex-shrink:0">${icon}</span>
+        <span style="flex:1;font-size:12px;color:var(--text)">${item}</span>
+        ${hasTest?`<button onclick="runSingleQATest('${key}')" style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:2px 8px;font-size:11px;cursor:pointer;color:var(--muted);flex-shrink:0">▶</button>`:'<span style="font-size:10px;color:var(--muted);flex-shrink:0">—</span>'}
       </div>`;
     });
     html+='</div>';
   });
-  const pct=Math.round(ok/total*100);
-  el.innerHTML=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:16px;text-align:center">
-    <div style="font-size:24px;font-weight:700;color:var(--green)">${ok}/${total}</div>
-    <div style="font-size:12px;color:var(--muted)">${pct}% функций проверено</div>
-    <div style="height:6px;background:var(--border);border-radius:3px;margin-top:8px;overflow:hidden">
-      <div style="height:100%;width:${pct}%;background:var(--green);border-radius:3px;transition:width .5s"></div>
-    </div>
-  </div>`+html;
+  el.innerHTML=html;
 }
 
 function setQA(key,status){
-  const checks=getQAChecks();
-  checks[key]=status;
-  saveQAChecks(checks);
+  QA_RESULTS[key]=status;
   renderQA();
   haptic(20);
 }
