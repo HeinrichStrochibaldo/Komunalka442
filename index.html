@@ -145,9 +145,10 @@ header.scrolled { box-shadow: 0 4px 24px rgba(0,0,0,.35); }
   padding: 20px 24px 100px;
   max-width: 960px;
   box-sizing: border-box;
-  /* всегда в потоке — скрываем pointer-events на неактивных */
   pointer-events: none;
-  min-height: 1px;
+  /* Высота по содержимому, не по соседям */
+  align-self: flex-start;
+  min-height: 0;
 }
 .page.active {
   pointer-events: auto;
