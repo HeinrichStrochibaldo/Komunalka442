@@ -1363,7 +1363,7 @@ input.meter-locked:focus { border-color: var(--border) !important; }
   </div>
 </div>
 
-<script async src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <!-- PWA Install Toast -->
 <div id="pwa-toast">
   <div class="pwa-toast-title">📱 Установить Коммуналку</div>
@@ -1374,7 +1374,7 @@ input.meter-locked:focus { border-color: var(--border) !important; }
   </div>
 </div>
 
-<script async src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script>
 /* ═══ ДИАГНОСТИКА ═══ */
 var _log = [];
@@ -1990,80 +1990,34 @@ function unlockAch(id){
     updateAchGrid();
   }
 }
-function _closeAchToast(){
-  const toast=document.getElementById('ach-toast');
-  if(!toast)return;
-  clearTimeout(achTimer);
-  toast.classList.remove('expand','expand-extra');
-  toast.classList.add('collapse');
-  setTimeout(()=>toast.classList.remove('collapse'),700);
-}
-
 function showAchToast(a){
   const toast=document.getElementById('ach-toast');
   const icon=document.getElementById('ach-toast-icon');
   const name=document.getElementById('ach-toast-name');
   const desc=document.getElementById('ach-toast-desc');
-  const extra=document.getElementById('ach-toast-extra');
-  const dateEl=document.getElementById('ach-toast-date');
-  const xpEl=document.getElementById('ach-toast-xp');
   if(!toast)return;
   clearTimeout(achTimer);
-  toast.classList.remove('expand','collapse','expand-extra');
+  // Сбрасываем в начальное состояние (капсула DI)
+  toast.classList.remove('expand','collapse');
   icon.style.transform='';
   haptic([15,10,40,10,15]);
-
-  // Текущее достижение для жестов
-  toast._achData=a;
-
+  // Небольшая пауза — визуально "вырастает" из DI
   setTimeout(()=>{
     if(icon)icon.textContent=a.icon;
     if(name)name.textContent=a.name;
     if(desc)desc.textContent=a.desc||'';
-    if(extra)extra.style.display='none';
     requestAnimationFrame(()=>requestAnimationFrame(()=>{
       toast.classList.add('expand');
     }));
     if(settings.sounds)playSound('ach');
-    achTimer=setTimeout(()=>_closeAchToast(),4000);
+    // Висит 4 сек, потом схлопывается обратно в DI
+    achTimer=setTimeout(()=>{
+      toast.classList.remove('expand');
+      toast.classList.add('collapse');
+      // После анимации сворачивания — убираем collapse класс
+      setTimeout(()=>toast.classList.remove('collapse'), 700);
+    },4000);
   },80);
-
-  // Жесты на тосте
-  let ty=0,startY=0,isDragging=false;
-  // Убираем старые listeners если были
-  toast.ontouchstart=null;toast.ontouchmove=null;toast.ontouchend=null;
-  const achTs=e=>{startY=e.touches[0].clientY;isDragging=true;clearTimeout(achTimer);e.stopPropagation();};
-  const achTm=e=>{if(!isDragging)return;e.preventDefault();e.stopPropagation();ty=e.touches[0].clientY-startY;};
-  toast.addEventListener('touchstart',achTs,{passive:true});
-  toast.addEventListener('touchmove',achTm,{passive:false});
-  toast.addEventListener('touchend',e=>{
-    if(!isDragging)return;
-    isDragging=false;
-    if(Math.abs(ty)<10){
-      // Тап — открываем достижения
-      _closeAchToast();
-      setTimeout(()=>openSection('achievements'),300);
-    } else if(ty<-40){
-      // Свайп вверх — закрываем
-      haptic(20);
-      _closeAchToast();
-    } else if(ty>40){
-      // Свайп вниз — показываем детали
-      haptic([10,10,20]);
-      const achEntry=getAchsData().find(x=>x.id===a.id);
-      const dateStr=achEntry&&achEntry.date
-        ?new Date(achEntry.date).toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'})
-        :'дата неизвестна';
-      if(dateEl)dateEl.textContent='📅 '+dateStr;
-      if(xpEl)xpEl.textContent='✨ +'+(a.xp||50)+' XP за это достижение';
-      toast.classList.add('expand-extra');
-      // Продлеваем таймер
-      achTimer=setTimeout(()=>_closeAchToast(),6000);
-    } else {
-      achTimer=setTimeout(()=>_closeAchToast(),4000);
-    }
-    ty=0;
-  };
 }
 function renderAchievements(){
   const grid=document.getElementById('ach-grid');if(!grid)return;
@@ -2429,8 +2383,6 @@ const PTR_THRESHOLD=80;
 document.addEventListener('touchstart',e=>{
   // Сбрасываем состояние при каждом новом касании
   ptrStart=0;ptrActive=false;ptrReady=false;
-  // Не активируем PTR если касание на тосте достижений
-  if(e.target.closest('#ach-toast'))return;
   // Только если в самом верху и не идёт другое действие
   if(window.scrollY===0&&!ptrLocked){
     ptrStart=e.touches[0].clientY;
