@@ -1695,14 +1695,6 @@ function confirmPaid(){
 }
 
 function handleUnpaid(){
-  // Разблокируем поля
-  METER_INPUT_IDS.forEach(id=>{
-    const el=document.getElementById(id);
-    if(el){el.classList.remove('meter-locked');el.removeAttribute('readonly');}
-  });
-  metersAccepted=false;
-  const acceptBtn=document.getElementById('accept-btn');
-  if(acceptBtn){acceptBtn.disabled=false;acceptBtn.style.opacity='';acceptBtn.textContent='Принять';acceptBtn.className='btn btn-ghost btn-sm';}
   const m=curMonth();
   const d=allData[m]&&allData[m]._paidDate;
   const dateStr=d?new Date(d).toLocaleDateString('ru-RU',{day:'numeric',month:'long'}):'';
@@ -3143,31 +3135,60 @@ function confirmAccept(){
   autoSave();
 }
 
+function showBtnToast(btn, msg){
+  // Тост рядом с кнопкой
+  if(!btn)return;
+  const r=btn.getBoundingClientRect();
+  const f=document.createElement('div');
+  f.className='copy-flash';
+  f.textContent=msg;
+  f.style.cssText='position:fixed;left:'+(r.left+r.width/2)+'px;top:'+(r.top-8)+'px;transform:translate(-50%,-100%);z-index:9999;white-space:nowrap;pointer-events:none';
+  document.body.appendChild(f);
+  setTimeout(()=>f.remove(),1800);
+}
+
 function updateMonthBarState(){
   const m=curMonth();
   const accepted=!!(allData[m]&&allData[m]._accepted);
   const paid=!!(allData[m]&&allData[m]._paid);
   const acceptBtn=document.getElementById('accept-btn');
   const paidBtn=document.getElementById('paid-btn');
+  const fabBtn=document.getElementById('fab');
+
   if(acceptBtn){
-    if(accepted){
-      acceptBtn.textContent='Заново';
-      acceptBtn.className='btn btn-ghost btn-sm';
-      acceptBtn.style.opacity='';
-      acceptBtn.onclick=null;
-      // удержание
-      let _holdTimer=null;
-      acceptBtn.onpointerdown=()=>{_holdTimer=setTimeout(()=>{haptic([30,20,80]);fpRedoConfirm();},850);};
-      acceptBtn.onpointerup=()=>{if(_holdTimer){clearTimeout(_holdTimer);_holdTimer=null;haptic([20,10,20]);fpRedoUnlock();}};
-      acceptBtn.onpointerleave=()=>{if(_holdTimer){clearTimeout(_holdTimer);_holdTimer=null;}};
-    } else {
+    if(paid){
+      // Оплачено — заново заблокирован
       acceptBtn.textContent='Заново';
       acceptBtn.className='btn btn-ghost btn-sm';
       acceptBtn.style.opacity='0.55';
       acceptBtn.onpointerdown=null;acceptBtn.onpointerup=null;acceptBtn.onpointerleave=null;
-      acceptBtn.onclick=()=>{haptic([10,10,10,10,10]);showFabToast('Сначала введите показания');};
+      acceptBtn.onclick=()=>{haptic([10,10,10,10,10]);showBtnToast(acceptBtn,'Месяц уже оплачен');};
+    } else if(accepted){
+      // Зафиксировано — заново активен с удержанием
+      acceptBtn.textContent='Заново';
+      acceptBtn.className='btn btn-ghost btn-sm';
+      acceptBtn.style.opacity='';
+      acceptBtn.onclick=null;
+      let _holdTimer=null,_holdFired=false;
+      acceptBtn.onpointerdown=()=>{
+        _holdFired=false;
+        _holdTimer=setTimeout(()=>{_holdFired=true;haptic([30,20,80]);fpRedoConfirm();},850);
+      };
+      acceptBtn.onpointerup=()=>{
+        if(_holdTimer){clearTimeout(_holdTimer);_holdTimer=null;}
+        if(!_holdFired){haptic([20,10,20]);fpRedoUnlock();}
+      };
+      acceptBtn.onpointerleave=()=>{if(_holdTimer){clearTimeout(_holdTimer);_holdTimer=null;}};
+    } else {
+      // Не зафиксировано — заново заблокирован
+      acceptBtn.textContent='Заново';
+      acceptBtn.className='btn btn-ghost btn-sm';
+      acceptBtn.style.opacity='0.55';
+      acceptBtn.onpointerdown=null;acceptBtn.onpointerup=null;acceptBtn.onpointerleave=null;
+      acceptBtn.onclick=()=>{haptic([10,10,10,10,10]);showBtnToast(acceptBtn,'Сначала введите показания');};
     }
   }
+
   if(paidBtn){
     if(paid){
       paidBtn.textContent='✅ Оплачено';
@@ -3183,7 +3204,21 @@ function updateMonthBarState(){
       paidBtn.textContent='Оплатить';
       paidBtn.className='btn btn-ghost btn-sm';
       paidBtn.style.opacity='0.55';
-      paidBtn.onclick=()=>{haptic([10,10,10,10,10]);showFabToast('Сначала введите показания');};
+      paidBtn.onclick=()=>{haptic([10,10,10,10,10]);showBtnToast(paidBtn,'Сначала введите показания');};
+    }
+  }
+
+  // FAB — блокируем при оплачено или зафиксировано
+  if(fabBtn){
+    if(paid){
+      fabBtn.style.opacity='0.55';
+      fabBtn.title='Месяц уже оплачен';
+    } else if(accepted){
+      fabBtn.style.opacity='0.55';
+      fabBtn.title='Показания зафиксированы';
+    } else {
+      fabBtn.style.opacity='';
+      fabBtn.title='Быстрый ввод показаний';
     }
   }
 }
@@ -4008,9 +4043,16 @@ function showFabToast(msg){
 
 function openFabPopup(){
   haptic(40);
+  const m=curMonth();
+  const paid=!!(allData[m]&&allData[m]._paid);
+  if(paid){
+    haptic([10,10,10,10,10]);
+    showBtnToast(document.getElementById('fab'),'Месяц уже оплачен');
+    return;
+  }
   if(typeof metersAccepted!=='undefined'&&metersAccepted){
     haptic([10,10,10,10,10]);
-    showFabToast('Показания зафиксированы');
+    showBtnToast(document.getElementById('fab'),'Показания зафиксированы');
     return;
   }
   const pop=document.getElementById('fab-popup');
