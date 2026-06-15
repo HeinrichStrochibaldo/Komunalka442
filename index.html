@@ -118,10 +118,21 @@ header.scrolled { box-shadow: 0 4px 24px rgba(0,0,0,.35); }
 .tab.active { color: var(--text); font-weight:600; }
 .tab.active::after { transform: translateX(-50%) scaleX(1); }
 .tab-badge {
-  display:inline-flex; align-items:center; justify-content:center;
-  background:var(--accent); color:#fff; font-size:9px; font-weight:700;
-  border-radius:10px; padding:1px 5px; margin-left:4px; min-width:16px;
-  line-height:1.4;
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent);
+  color: #fff;
+  font-size: 8px;
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 1px 4px;
+  min-width: 14px;
+  line-height: 1.4;
+  pointer-events: none;
 }
 
 /* ============================================================
