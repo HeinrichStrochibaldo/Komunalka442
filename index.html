@@ -1777,6 +1777,22 @@ function loadMonth(){
   }
   // Reset detail view state for new month
   detailOpen=!(allData[m]&&allData[m]._paid);
+  // Восстанавливаем состояние принятия показаний из данных месяца
+  const isAccepted=!!(allData[m]&&allData[m]._accepted);
+  metersAccepted=isAccepted;
+  METER_INPUT_IDS.forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){
+      if(isAccepted){el.classList.add('meter-locked');el.setAttribute('readonly','');}
+      else{el.classList.remove('meter-locked');el.removeAttribute('readonly');}
+    }
+  });
+  const acceptBtn=document.getElementById('accept-btn');
+  if(acceptBtn){
+    acceptBtn.textContent=isAccepted?'Отменить':'Принять';
+    acceptBtn.className=isAccepted?'btn btn-danger btn-sm':'btn btn-ghost btn-sm';
+    acceptBtn.disabled=false;acceptBtn.style.opacity='';
+  }
   updatePaidBtn();render();
 }
 
@@ -1790,6 +1806,7 @@ async function autoSave(){
   document.querySelectorAll('input[type=number]').forEach(el=>{if(el.value!=='')data[el.id]=parseFloat(el.value);});
   if(allData[m]&&allData[m]._paid){data._paid=true;if(allData[m]._paidDate)data._paidDate=allData[m]._paidDate;}
   if(allData[m]&&allData[m]._achs)data._achs=allData[m]._achs;
+  if(allData[m]&&allData[m]._accepted)data._accepted=true;
   allData[m]=data;
   await fbSave();
   const lbl=document.getElementById('autosave-lbl');
@@ -2834,6 +2851,8 @@ function handleAccept(){
   if(metersAccepted){
     // Режим "Отменить" — снимаем блокировку
     metersAccepted=false;
+    const _m=curMonth();
+    if(allData[_m])delete allData[_m]._accepted;
     METER_INPUT_IDS.forEach(id=>{
       const el=document.getElementById(id);
       if(el){el.classList.remove('meter-locked');el.removeAttribute('readonly');}
@@ -2841,6 +2860,7 @@ function handleAccept(){
     const btn=document.getElementById('accept-btn');
     if(btn){btn.textContent='Принять';btn.className='btn btn-ghost btn-sm';}
     haptic([30,20,30]);
+    autoSave();
     return;
   }
   // Режим "Принять" — показываем подтверждение
@@ -2873,12 +2893,14 @@ function confirmAccept(){
   const modal=document.getElementById('accept-modal');
   if(modal)modal.remove();
   metersAccepted=true;
+  const m=curMonth();
+  if(!allData[m])allData[m]={};
+  allData[m]._accepted=true;
   METER_INPUT_IDS.forEach(id=>{
     const el=document.getElementById(id);
     if(el){
       el.classList.add('meter-locked');
       el.setAttribute('readonly','');
-      // Тактильный отклик при попытке нажать
       el.addEventListener('click',lockedFieldFeedback,{passive:true});
       el.addEventListener('touchstart',lockedFieldFeedback,{passive:true});
     }
