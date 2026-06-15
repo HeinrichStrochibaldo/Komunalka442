@@ -1507,7 +1507,7 @@ async function fbLoad(){
     else curIdx=MK.length-1;
     loadMonth();updateVerify();updateStreak();checkEaster();
     updateXPDisplay();updateProgressBar();updateOnboarding();
-    checkTariffSuggestion();
+    updateHistoryBadge();checkTariffSuggestion();
       }catch(e){console.error('Render:',e);_dbg('<span style="color:#f87171">RENDER ERR: '+e.message+'</span>');}
 }
 
@@ -1915,6 +1915,22 @@ function renderHistory(){
     html+='</tr>';
   });
   body.innerHTML=html;
+  // Подсвечиваем новые месяцы и помечаем просмотренными
+  const newMonths=getNewMonths();
+  if(newMonths.length>0){
+    // Находим колонки новых месяцев и подсвечиваем все строки
+    const allRows=body.querySelectorAll('tr');
+    months.forEach((m,colIdx)=>{
+      if(newMonths.includes(m)){
+        allRows.forEach(row=>{
+          const cells=row.querySelectorAll('td');
+          if(cells[colIdx+1]) cells[colIdx+1].style.animation='histHighlight .8s ease forwards';
+        });
+      }
+    });
+    setTimeout(()=>markMonthsSeen(newMonths),100);
+    setTimeout(()=>updateHistoryBadge(),200);
+  }
 }
 
 /* ============================================================ DYNAMICS ACCORDION ============================================================ */
@@ -2724,10 +2740,22 @@ function updateYoY(){
 
 
 
+function getSeenMonths(){
+  return JSON.parse(localStorage.getItem('khist_seen')||'[]');
+}
+function markMonthsSeen(months){
+  const seen=getSeenMonths();
+  const updated=[...new Set([...seen,...months])];
+  localStorage.setItem('khist_seen',JSON.stringify(updated));
+}
+function getNewMonths(){
+  const seen=getSeenMonths();
+  return MK.filter(m=>allData[m]&&Object.keys(allData[m]).filter(k=>!k.startsWith('_')).length>0&&!seen.includes(m));
+}
 function updateHistoryBadge(){
   const badge=document.getElementById('history-badge');if(!badge)return;
-  const cnt=MK.filter(m=>allData[m]&&Object.keys(allData[m]).filter(k=>!k.startsWith('_')).length>0).length;
-  if(cnt>0){badge.textContent=cnt;badge.style.display='inline-flex';}
+  const newMonths=getNewMonths();
+  if(newMonths.length>0){badge.textContent=newMonths.length;badge.style.display='inline-flex';}
   else badge.style.display='none';
 }
 
