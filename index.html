@@ -628,9 +628,11 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
 .modal-btns .btn { flex: 1; }
 
 /* Date picker modal */
-.datepick-modal { max-width: 300px; text-align: center; }
-.datepick-modal h3 { text-align: center; margin-bottom: 16px; }
-.datepick-modal input[type=date] { width: 100%; font-size: 15px; padding: 12px; margin-bottom: 4px; text-align: center; border-radius: 10px; background: var(--surface2); border: 1px solid var(--border); color: var(--text); }
+/* datepick-modal — заменён на кастомный календарь */
+@keyframes dpModalIn{from{opacity:0;transform:translateY(16px) scale(.95)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes dpOverlayIn{from{opacity:0}to{opacity:1}}
+#datepick-overlay.open{animation:dpOverlayIn .2s ease forwards}
+#datepick-overlay.open .modal{animation:dpModalIn .25s cubic-bezier(.32,1,.52,1) forwards}
 
 
 
@@ -1401,13 +1403,15 @@ input.meter-locked:focus { border-color: var(--border) !important; }
 
 <!-- Date picker for paid -->
 <div class="overlay" id="datepick-overlay">
-  <div class="modal datepick-modal">
-    <h3>Дата оплаты</h3>
-    <input type="date" id="paid-date-input">
-    <p class="notice" style="margin-bottom:0">По умолчанию — сегодня</p>
-    <div class="modal-btns" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      <button class="btn btn-ghost" style="width:100%" onclick="closeOverlay('datepick-overlay')">Отмена</button>
-      <button class="btn" style="width:100%" onclick="confirmPaid()">Оплачено ✓</button>
+  <div class="modal" style="max-width:320px;padding:20px;width:calc(100vw - 48px)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div style="font-size:15px;font-weight:700;color:var(--text)">Дата оплаты</div>
+      <button onclick="closeOverlay('datepick-overlay')" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;padding:0 4px;line-height:1;font-family:inherit">×</button>
+    </div>
+    <div id="datepick-cal"></div>
+    <div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <button class="btn btn-ghost" onclick="closeOverlay('datepick-overlay')">Отмена</button>
+      <button class="btn" onclick="confirmPaid()">Оплачено ✓</button>
     </div>
   </div>
 </div>
@@ -1672,14 +1676,87 @@ function render(){
 
 /* ============================================================ PAID ============================================================ */
 function handlePaid(){
-  const inp=document.getElementById('paid-date-input');
-  if(inp) inp.value=new Date().toISOString().slice(0,10);
+  // Открываем кастомный календарь
+  const today = new Date();
+  _dpSelected = today.toISOString().slice(0,10);
+  _dpYear = today.getFullYear();
+  _dpMonth = today.getMonth();
+  renderDatepickCal();
   openOverlay('datepick-overlay');
 }
 
+let _dpSelected = null;
+let _dpYear = new Date().getFullYear();
+let _dpMonth = new Date().getMonth();
+
+function renderDatepickCal(){
+  const cal = document.getElementById('datepick-cal');
+  if(!cal) return;
+  const now = new Date();
+  const year = _dpYear, month = _dpMonth;
+  const monthNames = ['Январь','Февраль','Март','Апрель','Май','Июнь',
+                      'Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+  const firstDay = new Date(year, month, 1).getDay();
+  const startOffset = (firstDay === 0 ? 6 : firstDay - 1); // пн=0
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const todayStr = now.toISOString().slice(0,10);
+
+  // Навигация
+  const prevMonth = month === 0 ? {y:year-1,m:11} : {y:year,m:month-1};
+  const nextMonth = month === 11 ? {y:year+1,m:0} : {y:year,m:month+1};
+  // Ограничение — не дальше текущего месяца вперёд
+  const isNextDisabled = (year > now.getFullYear()) || (year === now.getFullYear() && month >= now.getMonth());
+
+  let html = `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+    <button onclick="_dpYear=${prevMonth.y};_dpMonth=${prevMonth.m};renderDatepickCal()"
+      style="background:none;border:none;color:var(--accent);font-size:20px;cursor:pointer;padding:4px 8px;font-family:inherit">‹</button>
+    <div style="font-size:14px;font-weight:700;color:var(--text)">${monthNames[month]} ${year}</div>
+    <button onclick="_dpYear=${nextMonth.y};_dpMonth=${nextMonth.m};renderDatepickCal()"
+      style="background:none;border:none;color:${isNextDisabled?'var(--border)':'var(--accent)'};font-size:20px;cursor:pointer;padding:4px 8px;font-family:inherit"
+      ${isNextDisabled?'disabled':''}>›</button>
+  </div>`;
+
+  // Дни недели
+  const dayNames = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+  html += `<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:4px">`;
+  dayNames.forEach(d => {
+    html += `<div style="text-align:center;font-size:10px;font-weight:600;color:var(--muted);padding:4px 0">${d}</div>`;
+  });
+  html += `</div>`;
+
+  // Дни
+  html += `<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px">`;
+  // Пустые ячейки до первого дня
+  for(let i=0;i<startOffset;i++){
+    html += `<div></div>`;
+  }
+  for(let day=1;day<=daysInMonth;day++){
+    const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const isSelected = dateStr === _dpSelected;
+    const isToday = dateStr === todayStr;
+    const isFuture = dateStr > todayStr;
+    const bg = isSelected?'var(--accent)':isToday?'rgba(99,102,241,.12)':'transparent';
+    const clr = isSelected?'#fff':isFuture?'var(--border)':isToday?'var(--accent)':'var(--text)';
+    const fw = (isToday||isSelected)?'700':'400';
+    const onclick = isFuture?'':`_dpSelected='${dateStr}';renderDatepickCal()`;
+    html += `<button onclick="${onclick}"
+      style="aspect-ratio:1;border:none;border-radius:50%;cursor:${isFuture?'default':'pointer'};font-size:13px;font-weight:${fw};background:${bg};color:${clr};font-family:inherit;"
+      >${day}</button>`;
+  }
+  html += `</div>`;
+
+  // Выбранная дата
+  if(_dpSelected){
+    const d = new Date(_dpSelected+'T12:00:00');
+    const ds = d.toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'});
+    html += `<div style="text-align:center;margin-top:12px;font-size:13px;color:var(--muted)">Выбрано: <span style="font-weight:600;color:var(--text)">${ds}</span></div>`;
+  }
+
+  cal.innerHTML = html;
+}
+
 function confirmPaid(){
-  const inp=document.getElementById('paid-date-input');
-  const dateVal=inp?inp.value:new Date().toISOString().slice(0,10);
+  const dateVal = _dpSelected || new Date().toISOString().slice(0,10);
   const m=curMonth();
   if(!allData[m])allData[m]={};
   allData[m]._paid=true;
