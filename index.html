@@ -1917,11 +1917,6 @@ function renderHistory(){
   body.innerHTML=html;
   // Подсвечиваем новые месяцы и помечаем просмотренными
   const newMonths=getNewMonths();
-  // Дебаг тост
-  const _dt=document.createElement('div');
-  _dt.style.cssText='position:fixed;bottom:150px;left:50%;transform:translateX(-50%);background:#000;color:#fff;padding:8px 14px;border-radius:8px;font-size:11px;z-index:9999;white-space:nowrap';
-  _dt.textContent='newMonths='+newMonths.length+' months='+months.length+' rows='+body.querySelectorAll('tr').length;
-  document.body.appendChild(_dt);setTimeout(()=>_dt.remove(),5000);
   if(newMonths.length>0){
     const allRows=body.querySelectorAll('tr');
     months.forEach((m,colIdx)=>{
