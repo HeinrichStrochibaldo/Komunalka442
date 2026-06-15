@@ -1441,7 +1441,7 @@ input.meter-locked:focus { border-color: var(--border) !important; }
 <button id="fab" onclick="openFabPopup()" title="Быстрый ввод показаний">⚡</button>
 
 <!-- FAB Quick Input Popup -->
-<div id="fab-popup" style="display:none;position:fixed;right:16px;z-index:250;background:var(--surface);border:1px solid var(--border);border-radius:16px;width:min(320px,calc(100vw-32px));box-shadow:0 8px 40px rgba(0,0,0,.5);animation:fabPopupIn .3s cubic-bezier(.34,1.56,.64,1);display:none;flex-direction:column;max-height:80vh">
+<div id="fab-popup" style="display:none;position:fixed;left:50%;transform:translateX(-50%);z-index:250;background:var(--surface);border:1px solid var(--border);border-radius:16px;width:min(360px,calc(100vw-24px));box-shadow:0 8px 40px rgba(0,0,0,.5);animation:fabPopupIn .3s cubic-bezier(.34,1.56,.64,1);display:none;flex-direction:column;max-height:80vh">
 </div>
 <style>
 @keyframes fabPopupIn{from{opacity:0;transform:scale(.85) translateY(20px)}to{opacity:1;transform:none}}
@@ -1699,9 +1699,10 @@ function handleUnpaid(){
   const m=curMonth();
   const d=allData[m]&&allData[m]._paidDate;
   const dateStr=d?new Date(d).toLocaleDateString('ru-RU',{day:'numeric',month:'long'}):'';
-  if(!confirm('Снять отметку об оплате'+(dateStr?' ('+dateStr+')':'')+' ? Дата будет удалена.'))return;
-  if(allData[m]){allData[m]._paid=false;delete allData[m]._paidDate;}
-  fbSave();updatePaidBtn();updatePaidUI(compute());updateStreak();renderPayHistory();
+  showConfirm('Снять отметку об оплате'+(dateStr?' ('+dateStr+')':'')+' ? Дата будет удалена.',()=>{
+    if(allData[m]){allData[m]._paid=false;delete allData[m]._paidDate;}
+    fbSave();updatePaidBtn();updatePaidUI(compute());updateStreak();renderPayHistory();
+  });
 }
 
 function updatePaidBtn(){
@@ -3136,6 +3137,24 @@ function confirmAccept(){
   autoSave();
 }
 
+function showConfirm(msg, onYes, onNo){
+  const existing=document.getElementById('app-confirm');
+  if(existing)existing.remove();
+  const overlay=document.createElement('div');
+  overlay.id='app-confirm';
+  overlay.className='overlay open';
+  overlay.innerHTML=`<div class="modal" style="text-align:left;max-width:300px">
+    <p style="font-size:14px;color:var(--text);line-height:1.5;margin-bottom:20px">${msg}</p>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" id="app-confirm-no">Отмена</button>
+      <button class="btn btn-danger" id="app-confirm-yes">Да</button>
+    </div>
+  </div>`;
+  document.body.appendChild(overlay);
+  document.getElementById('app-confirm-yes').onclick=()=>{overlay.remove();if(onYes)onYes();};
+  document.getElementById('app-confirm-no').onclick=()=>{overlay.remove();if(onNo)onNo();};
+}
+
 function showBtnToast(btn, msg){
   // Тост рядом с кнопкой
   if(!btn)return;
@@ -3246,22 +3265,23 @@ function fpRedoUnlock(){
 
 function fpRedoConfirm(){
   // Удержание — предупреждение, сброс cur-* полей
-  if(!confirm('Сбросить текущие показания? Предыдущие не изменятся.'))return;
-  metersAccepted=false;
-  const m=curMonth();
-  if(allData[m])delete allData[m]._accepted;
-  ['cur-gvs','cur-hvs','cur-t1','cur-t2'].forEach(id=>{
-    const el=document.getElementById(id);
-    if(el){el.value='';el.classList.remove('meter-locked');el.removeAttribute('readonly');}
+  showConfirm('Сбросить текущие показания? Предыдущие не изменятся.',()=>{
+    metersAccepted=false;
+    const m=curMonth();
+    if(allData[m])delete allData[m]._accepted;
+    ['cur-gvs','cur-hvs','cur-t1','cur-t2'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el){el.value='';el.classList.remove('meter-locked');el.removeAttribute('readonly');}
+    });
+    ['prev-gvs','prev-hvs','prev-t1','prev-t2'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el){el.classList.remove('meter-locked');el.removeAttribute('readonly');}
+    });
+    onInput();
+    updateMonthBarState();
+    autoSave();
+    showFabToast('Показания сброшены');
   });
-  ['prev-gvs','prev-hvs','prev-t1','prev-t2'].forEach(id=>{
-    const el=document.getElementById(id);
-    if(el){el.classList.remove('meter-locked');el.removeAttribute('readonly');}
-  });
-  onInput();
-  updateMonthBarState();
-  autoSave();
-  showFabToast('Показания сброшены');
 }
 
 function lockedFieldFeedback(e){
@@ -4072,6 +4092,8 @@ function openFabPopup(){
     pop.style.bottom=(window.innerHeight-fbTop+12)+'px';
     pop.style.top='auto';
     pop.style.maxHeight=(fbTop-80)+'px';
+    pop.style.left='50%';
+    pop.style.transform='translateX(-50%)';
   }
   pop.style.display='flex';
   pop.style.flexDirection='column';
@@ -4084,32 +4106,59 @@ function fpShowScreen1(){
   const pop=document.getElementById('fab-popup');
   if(!pop)return;
   const m=curMonth(),d=allData[m]||{};
-  const rows=['gvs','hvs','t1','t2'].map(k=>{
-    const labels={gvs:'🔴 ГВС',hvs:'🔵 ХВС',t1:'⚡ Т1',t2:'⚡ Т2'};
-    const step=(k==='t1'||k==='t2')?'1':'0.001';
-    const isEE=(k==='t1'||k==='t2');
+
+  const waterBlocks=['gvs','hvs'].map(k=>{
+    const labels={gvs:'🔴 ГВС',hvs:'🔵 ХВС'};
+    const serials={gvs:meter.sgvs||'',hvs:meter.shvs||''};
     const pv=d['prev-'+k]!==undefined?d['prev-'+k]:'—';
-    // При возврате с экрана подтверждения — берём из черновика
     const cv=_fpDraft[k]!==undefined?_fpDraft[k]:(d['cur-'+k]!==undefined?d['cur-'+k]:'');
     return '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px">'+
-      '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;color:var(--label)">'+labels[k]+'</div>'+
-      '<div style="font-size:11px;color:var(--muted);margin-bottom:4px">Пред.: <span style="font-weight:600;color:var(--text)">'+pv+(pv!=='—'?(isEE?' кВт·ч':' м³'):'')+'</span></div>'+
-      '<input type="number" id="fp-c'+k+'" step="'+step+'" value="'+cv+'" placeholder="Текущее" style="width:100%;font-size:14px;padding:6px 8px;border-radius:6px" oninput="fpSync(\''+k+'\')">'+
-      '<div id="fp-v'+k+'" style="font-size:11px;color:var(--green);font-weight:600;text-align:center;margin-top:4px;min-height:16px">—</div>'+
+      '<div style="font-size:11px;font-weight:700;color:var(--label);margin-bottom:2px">'+labels[k]+'</div>'+
+      '<div style="font-size:9px;color:var(--muted);margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+serials[k]+'</div>'+
+      '<div style="font-size:10px;color:var(--muted);margin-bottom:4px">Пред.: <span style="font-weight:600;color:var(--text)">'+pv+(pv!=='—'?' м³':'')+'</span></div>'+
+      '<input type="number" id="fp-c'+k+'" step="0.001" value="'+cv+'" placeholder="Текущее" style="width:100%;font-size:13px;padding:5px 7px;border-radius:6px;box-sizing:border-box" oninput="fpSync(\''+k+'\')">'+
+      '<div id="fp-v'+k+'" style="font-size:11px;color:var(--green);font-weight:600;text-align:center;margin-top:4px;min-height:14px">—</div>'+
       '</div>';
   }).join('');
+
+  const pvT1=d['prev-t1']!==undefined?d['prev-t1']:'—';
+  const pvT2=d['prev-t2']!==undefined?d['prev-t2']:'—';
+  const cvT1=_fpDraft['t1']!==undefined?_fpDraft['t1']:(d['cur-t1']!==undefined?d['cur-t1']:'');
+  const cvT2=_fpDraft['t2']!==undefined?_fpDraft['t2']:(d['cur-t2']!==undefined?d['cur-t2']:'');
+
+  const eeBlock=
+    '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px;margin-top:8px">'+
+      '<div style="font-size:11px;font-weight:700;color:var(--label);margin-bottom:2px">⚡ Электричество</div>'+
+      '<div style="font-size:9px;color:var(--muted);margin-bottom:8px">'+(meter.see||'')+'</div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
+        '<div>'+
+          '<div style="font-size:10px;font-weight:600;color:var(--muted);margin-bottom:4px">Т1 — ДЕНЬ</div>'+
+          '<div style="font-size:10px;color:var(--muted);margin-bottom:4px">Пред.: <span style="font-weight:600;color:var(--text)">'+pvT1+(pvT1!=='—'?' кВт·ч':'')+'</span></div>'+
+          '<input type="number" id="fp-ct1" step="1" value="'+cvT1+'" placeholder="Текущее" style="width:100%;font-size:13px;padding:5px 7px;border-radius:6px;box-sizing:border-box" oninput="fpSync(\'t1\')">'+
+          '<div id="fp-vt1" style="font-size:11px;color:var(--green);font-weight:600;text-align:center;margin-top:4px;min-height:14px">—</div>'+
+        '</div>'+
+        '<div>'+
+          '<div style="font-size:10px;font-weight:600;color:var(--muted);margin-bottom:4px">Т2 — НОЧЬ</div>'+
+          '<div style="font-size:10px;color:var(--muted);margin-bottom:4px">Пред.: <span style="font-weight:600;color:var(--text)">'+pvT2+(pvT2!=='—'?' кВт·ч':'')+'</span></div>'+
+          '<input type="number" id="fp-ct2" step="1" value="'+cvT2+'" placeholder="Текущее" style="width:100%;font-size:13px;padding:5px 7px;border-radius:6px;box-sizing:border-box" oninput="fpSync(\'t2\')">'+
+          '<div id="fp-vt2" style="font-size:11px;color:var(--green);font-weight:600;text-align:center;margin-top:4px;min-height:14px">—</div>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+
   pop.innerHTML=
-    '<div style="padding:16px 16px 0;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch">'+
+    '<div style="padding:14px 14px 0;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch">'+
     '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">'+
       '<div style="font-size:14px;font-weight:700;color:var(--text)">⚡ Показания</div>'+
       '<button onclick="closeFabPopup()" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;padding:0 4px;line-height:1;font-family:inherit">×</button>'+
     '</div>'+
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">'+rows+'</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+waterBlocks+'</div>'+
+    eeBlock+
     '</div>'+
-    '<button class="btn" style="width:calc(100% - 32px);margin:0 16px 12px;padding:10px;font-size:13px;border-radius:10px" onclick="fpGoConfirm()">Далее →</button>';
+    '<button class="btn" style="width:calc(100% - 28px);margin:10px 14px 12px;padding:10px;font-size:13px;border-radius:10px" onclick="fpGoConfirm()">Далее →</button>';
+
   ['gvs','hvs','t1','t2'].forEach(k=>fpSync(k));
 }
-
 function fpSync(k){
   const m=curMonth(),d=allData[m]||{};
   const pv=d['prev-'+k]!==undefined?parseFloat(d['prev-'+k]):0;
@@ -4132,35 +4181,39 @@ function fpGoConfirm(){
   });
   const m=curMonth(),d=allData[m]||{};
   const keys=['gvs','hvs','t1','t2'];
-  const labels={gvs:'🔴 ГВС',hvs:'🔵 ХВС',t1:'⚡ Т1',t2:'⚡ Т2'};
+  const labels={gvs:'🔴 ГВС',hvs:'🔵 ХВС',t1:'⚡ Т1 День',t2:'⚡ Т2 Ночь'};
+  const units={gvs:' м³',hvs:' м³',t1:' кВт·ч',t2:' кВт·ч'};
   const rows=keys.map(k=>{
-    const isEE=(k==='t1'||k==='t2');
-    const unit=isEE?' кВт·ч':' м³';
+    const unit=units[k];
     const pv=d['prev-'+k]!==undefined?parseFloat(d['prev-'+k]):0;
     const cel=document.getElementById('fp-c'+k);
     const cv=cel?parseFloat(cel.value)||0:0;
     const diff=Math.max(0,cv-pv);
-    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border)">'+
+    const isEE=(k==='t1'||k==='t2');
+    return '<div style="display:grid;grid-template-columns:80px 1fr auto;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);gap:4px">'+
       '<span style="font-size:12px;color:var(--muted)">'+labels[k]+'</span>'+
-      '<span style="font-size:12px">'+
+      '<span style="font-size:12px;text-align:right">'+
         '<span style="color:var(--muted)">'+pv+'</span>'+
-        '<span style="color:var(--label);margin:0 4px">→</span>'+
+        '<span style="color:var(--label);margin:0 5px">→</span>'+
         '<span style="font-weight:700;color:var(--text)">'+cv+'</span>'+
-        (diff>0?'<span style="color:var(--green);margin-left:6px">+'+diff.toFixed(isEE?0:3)+unit+'</span>':'')+
+      '</span>'+
+      '<span style="font-size:11px;color:var(--green);font-weight:600;white-space:nowrap;text-align:right;min-width:64px">'+
+        (diff>0?'+'+diff.toFixed(isEE?0:3)+unit:'')+
       '</span>'+
     '</div>';
   }).join('');
   pop.innerHTML=
-    '<div style="padding:16px 16px 0;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch">'+
-    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">'+
-      '<button onclick="fpShowScreen1()" style="background:none;border:none;color:var(--accent);font-size:13px;cursor:pointer;padding:0;font-family:inherit">← Назад</button>'+
+    '<div style="padding:14px 14px 0;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch">'+
+    '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">'+
+      '<button onclick="fpShowScreen1()" style="background:none;border:none;color:var(--accent);font-size:13px;cursor:pointer;padding:0;font-family:inherit;white-space:nowrap">← Назад</button>'+
       '<div style="font-size:14px;font-weight:700;color:var(--text)">Подтверждение</div>'+
     '</div>'+
-    '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:14px">'+
+    '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:14px">'+
     rows+
+    '<div style="padding-top:4px"></div>'+
     '</div>'+
     '</div>'+
-    '<div style="display:flex;gap:8px;padding:0 16px 12px">'+
+    '<div style="display:flex;gap:8px;padding:0 14px 14px">'+
       '<button class="btn btn-ghost" style="flex:1;padding:10px;font-size:13px" onclick="fpShowScreen1()">Нет</button>'+
       '<button class="btn" style="flex:1;padding:10px;font-size:13px" onclick="fpApply()">Да</button>'+
     '</div>';
