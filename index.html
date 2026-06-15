@@ -2019,10 +2019,31 @@ function showAchToast(a){
     if(settings.sounds)playSound('ach');
     achTimer=setTimeout(()=>_closeAchToast(),4000);
   },80);
-  // Тап — открываем достижения
-  toast.ontouchend=()=>{
-    _closeAchToast();
-    setTimeout(()=>openSection('achievements'),300);
+  // Жесты: тап → достижения, свайп вверх → закрыть
+  let achStartY=0, achMoved=false;
+  toast.ontouchstart=e=>{
+    achStartY=e.touches[0].clientY;
+    achMoved=false;
+    e.stopPropagation();
+  };
+  // passive:false нужен для preventDefault в touchmove
+  if(toast._achTmHandler) toast.removeEventListener('touchmove',toast._achTmHandler);
+  toast._achTmHandler=e=>{
+    const dy=e.touches[0].clientY-achStartY;
+    if(Math.abs(dy)>10) achMoved=true;
+    if(dy<0){e.preventDefault();e.stopPropagation();}
+  };
+  toast.addEventListener('touchmove',toast._achTmHandler,{passive:false});
+  toast.ontouchend=e=>{
+    e.stopPropagation();
+    const dy=e.changedTouches[0].clientY-achStartY;
+    if(achMoved && dy<-30){
+      haptic(20);
+      _closeAchToast();
+    } else if(!achMoved){
+      _closeAchToast();
+      setTimeout(()=>openSection('achievements'),300);
+    }
   };
 }
 function renderAchievements(){
