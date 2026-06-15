@@ -1098,7 +1098,7 @@ input.meter-locked:focus { border-color: var(--border) !important; }
   <div class="tab dev-tab" onclick="switchTab('qa')">🧪 Функции</div>
   <div class="tab active" onclick="switchTab('entry')">📝 Ввод</div>
   <div class="tab" onclick="switchTab('history')">📋 История <span class="tab-badge" id="history-badge" style="display:none">0</span></div>
-  <div class="tab" onclick="switchTab('dynamics')">📈 Динамика</div>
+  <div class="tab" onclick="switchTab('dynamics')">📈 Динамика <span class="tab-badge" id="dynamics-badge" style="display:none">0</span></div>
   <div class="tab" onclick="switchTab('year')">📅 Год</div>
 </div>
 
@@ -1568,7 +1568,7 @@ async function fbLoad(){
     else curIdx=MK.length-1;
     loadMonth();updateVerify();updateStreak();checkEaster();
     updateXPDisplay();updateProgressBar();updateOnboarding();
-    updateHistoryBadge();checkTariffSuggestion();
+    updateHistoryBadge();updateDynamicsBadge();checkTariffSuggestion();
       }catch(e){console.error('Render:',e);_dbg('<span style="color:#f87171">RENDER ERR: '+e.message+'</span>');}
 }
 
@@ -2069,7 +2069,7 @@ function renderDynamics(){
       return `<tr class="${rowCls}"><td>${lbl}</td><td>${cur!==undefined?cur.toLocaleString('ru-RU',{minimumFractionDigits:2,maximumFractionDigits:6}):'—'}</td><td class="${cls}">${dr}</td><td class="${cls}">${dp}</td></tr>`;
     }).join('');
     return `<div class="dyn-month">
-      <div class="dyn-month-head${mi===0?' open':''}" onclick="toggleDynMonth(this)">
+      <div class="dyn-month-head" onclick="toggleDynMonth(this)">
         <span class="dyn-month-name">${MONTHS[m]}</span>
         <span class="dyn-month-arrow">▼</span>
       </div>
@@ -2081,6 +2081,11 @@ function renderDynamics(){
       </div>
     </div>`;
   }).join('');
+  // Помечаем просмотренными и обновляем бейдж
+  const newDynMonths=getNewDynMonths();
+  if(newDynMonths.length>0){
+    setTimeout(()=>{markDynMonthsSeen(newDynMonths);updateDynamicsBadge();},300);
+  }
 }
 function toggleDynMonth(head){
   head.classList.toggle('open');
@@ -2874,6 +2879,25 @@ function updateHistoryBadge(){
   if(newMonths.length>0){badge.textContent=newMonths.length;badge.style.display='inline-flex';}
   else badge.style.display='none';
 }
+// Динамика — отдельный список просмотренных
+function getSeenDynMonths(){
+  return JSON.parse(localStorage.getItem('kdyn_seen')||'[]');
+}
+function markDynMonthsSeen(months){
+  const seen=getSeenDynMonths();
+  const updated=[...new Set([...seen,...months])];
+  localStorage.setItem('kdyn_seen',JSON.stringify(updated));
+}
+function getNewDynMonths(){
+  const seen=getSeenDynMonths();
+  return MK.filter(m=>allData[m]&&Object.keys(allData[m]).filter(k=>!k.startsWith('_')).length>0&&!seen.includes(m));
+}
+function updateDynamicsBadge(){
+  const badge=document.getElementById('dynamics-badge');if(!badge)return;
+  const newMonths=getNewDynMonths();
+  if(newMonths.length>0){badge.textContent=newMonths.length;badge.style.display='inline-flex';}
+  else badge.style.display='none';
+}
 
 /* П39: Таблица рекордов в достижениях */
 function updateRecordsTable(){
@@ -3288,7 +3312,8 @@ function openSection(name){
       <button class="btn btn-ghost btn-sm" onclick="testToasty()">🔥 Тест Toasty</button>
       <button class="btn btn-ghost btn-sm btn-hold" id="btn-reset-achs" style="color:var(--red)">🗑 Сброс достижений</button>
       <button class="btn btn-ghost btn-sm btn-hold" id="btn-reset-xp" style="color:var(--red)">🗑 Сброс XP</button>
-      <button class="btn btn-ghost btn-sm" onclick="localStorage.removeItem('khist_seen');updateHistoryBadge();" style="color:var(--muted)">🔄 Сброс истории просмотров</button>
+      <button class="btn btn-ghost btn-sm" onclick="localStorage.removeItem('khist_seen');updateHistoryBadge();" style="color:var(--muted)">🔄 Сброс истории</button>
+      <button class="btn btn-ghost btn-sm" onclick="localStorage.removeItem('kdyn_seen');updateDynamicsBadge();" style="color:var(--muted)">🔄 Сброс динамики</button>
       </div>`;
     // Рендерим сетку достижений
     const grid=document.getElementById('so-ach-grid');
