@@ -2069,11 +2069,11 @@ function renderDynamics(){
       return `<tr class="${rowCls}"><td>${lbl}</td><td>${cur!==undefined?cur.toLocaleString('ru-RU',{minimumFractionDigits:2,maximumFractionDigits:6}):'—'}</td><td class="${cls}">${dr}</td><td class="${cls}">${dp}</td></tr>`;
     }).join('');
     return `<div class="dyn-month">
-      <div class="dyn-month-head" onclick="toggleDynMonth(this)">
+      <div class="dyn-month-head" onclick="toggleDynMonth(this)" data-month="${m}">
         <span class="dyn-month-name">${MONTHS[m]}</span>
         <span class="dyn-month-arrow">▼</span>
       </div>
-      <div class="dyn-month-body${mi===0?' show':''}">
+      <div class="dyn-month-body">
         <table class="dyn-table">
           <thead><tr><th>Услуга</th><th>Тариф</th><th>Δ ₽</th><th>Δ %</th></tr></thead>
           <tbody>${rows}</tbody>
@@ -2081,10 +2081,36 @@ function renderDynamics(){
       </div>
     </div>`;
   }).join('');
-  // Помечаем просмотренными и обновляем бейдж
+  // Дебаг + подсветка новых месяцев
   const newDynMonths=getNewDynMonths();
   if(newDynMonths.length>0){
-    setTimeout(()=>{markDynMonthsSeen(newDynMonths);updateDynamicsBadge();},300);
+    setTimeout(()=>{
+      newDynMonths.forEach(m=>{
+        const head=wrap.querySelector('[data-month="'+m+'"]');
+        if(head){
+          head.style.transition='border-color .3s, box-shadow .3s';
+          head.style.border='1px solid var(--accent)';
+          head.style.boxShadow='0 0 0 2px rgba(91,140,255,.2)';
+          head.style.borderRadius='12px';
+          const name=head.querySelector('.dyn-month-name');
+          if(name&&!name.querySelector('.dyn-new-badge')){
+            const badge=document.createElement('span');
+            badge.className='dyn-new-badge';
+            badge.style.cssText='font-size:10px;background:var(--accent);color:#fff;padding:2px 6px;border-radius:10px;margin-left:8px';
+            badge.textContent='NEW';
+            name.appendChild(badge);
+          }
+          setTimeout(()=>{
+            head.style.border='';head.style.boxShadow='';
+            head.style.borderRadius='';head.style.transition='';
+            const b=head.querySelector('.dyn-new-badge');
+            if(b)b.remove();
+          },3000);
+        }
+      });
+      markDynMonthsSeen(newDynMonths);
+      updateDynamicsBadge();
+    },300);
   }
 }
 function toggleDynMonth(head){
