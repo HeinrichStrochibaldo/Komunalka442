@@ -1373,18 +1373,7 @@ input.meter-locked:focus { border-color: var(--border) !important; }
   <div id="year-table" style="overflow-x:auto"></div>
 </div>
 
-    <div style="display:flex;align-items:center;gap:10px;max-width:100%;overflow:hidden">
-      <div id="xp-display" style="background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.25);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;color:var(--yellow);white-space:nowrap">✨ <span id="xp-count">0</span> XP</div>
-      <button class="btn btn-ghost btn-sm" onclick="testAllAchs()">🧪 Тест</button>
-    </div>
-  </div>
-  <div class="ach-grid" id="ach-grid"></div>
 
-  <!-- П39: Таблица рекордов -->
-  <div style="margin-top:24px">
-    
-  </div>
-</div>
 
 
 <!-- FLOATING BOTTOM BAR -->
@@ -2408,7 +2397,7 @@ function showAchToast(a){
   };
 }
 function renderAchievements(){
-  const grid=document.getElementById('ach-grid');if(!grid)return;
+  const grid=document.getElementById('so-ach-grid')||document.getElementById('ach-grid');if(!grid)return;
   const u=getAchs();
   const achData=getAchsData();
   grid.innerHTML=ACHS.map(a=>{
@@ -3180,7 +3169,7 @@ function handleAccept(){
     </div>
     <div class="modal-btns">
       <button class="btn btn-ghost" onclick="document.getElementById('accept-modal').remove()">Нет</button>
-      <button class="btn" onclick="confirmAccept()">Да, принять</button>
+      <button class="btn" onclick="confirmAccept()">Да</button>
     </div>
   </div>`;
   document.body.appendChild(modal);
@@ -4021,7 +4010,7 @@ function openFabPopup(){
     '<div style="overflow-y:auto;-webkit-overflow-scrolling:touch">'+
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">'+rows+'</div>'+
     '</div></div>'+
-    '<button class="btn" style="width:100%;padding:12px;font-size:14px;border-radius:10px" onclick="fpApply()">✅ Применить</button>';
+    '<button class="btn" style="width:calc(100% - 32px);margin:0 16px 12px;padding:10px;font-size:13px;border-radius:10px" onclick="fpApply()">✅ Применить</button>';
   ['gvs','hvs','t1','t2'].forEach(k=>fpSync(k));
   // Динамическая позиция — выше float-bar
   const fb=document.getElementById('float-bar');
