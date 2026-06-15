@@ -2037,7 +2037,7 @@ function openStreakPopup(){
     const cellW=72; // px на ячейку
     const popW=cols*cellW+32; // +padding
     fires.style.cssText='display:grid;grid-template-columns:repeat('+cols+','+cellW+'px);gap:8px 0;justify-content:center';
-    fires.innerHTML=streak.map(m=>{
+    fires.innerHTML=[...streak].reverse().map(m=>{
       // Короткое название: "Май", "Июнь" и т.д.
       const full=MONTHS[m]||m;
       const short=full.replace(/ \d{4}$/,'');
