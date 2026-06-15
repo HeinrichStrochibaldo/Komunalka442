@@ -1441,10 +1441,10 @@ input.meter-locked:focus { border-color: var(--border) !important; }
 <button id="fab" onclick="openFabPopup()" title="Быстрый ввод показаний">⚡</button>
 
 <!-- FAB Quick Input Popup -->
-<div id="fab-popup" style="display:none;position:fixed;left:50%;transform:translateX(-50%);z-index:250;background:var(--surface);border:1px solid var(--border);border-radius:16px;width:min(360px,calc(100vw-24px));box-shadow:0 8px 40px rgba(0,0,0,.5);animation:fabPopupIn .3s cubic-bezier(.34,1.56,.64,1);display:none;flex-direction:column;max-height:80vh">
+<div id="fab-popup" style="display:none;position:fixed;left:50%;transform:translateX(-50%);z-index:250;background:var(--surface);border:1px solid var(--border);border-radius:16px;width:min(360px,calc(100vw-24px));box-shadow:0 8px 40px rgba(0,0,0,.5);flex-direction:column;max-height:80vh">
 </div>
 <style>
-@keyframes fabPopupIn{from{opacity:0;transform:scale(.85) translateY(20px)}to{opacity:1;transform:none}}
+@keyframes fabPopupIn{from{opacity:0;transform:translateX(-50%) translateY(24px) scale(.93)}to{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}}
 #fab-popup-backdrop{position:fixed;inset:0;z-index:249;background:transparent;}
 </style>
 <div id="fab-popup-backdrop" style="display:none" onclick="closeFabPopup()"></div>
@@ -1699,10 +1699,21 @@ function handleUnpaid(){
   const m=curMonth();
   const d=allData[m]&&allData[m]._paidDate;
   const dateStr=d?new Date(d).toLocaleDateString('ru-RU',{day:'numeric',month:'long'}):'';
-  showConfirm('Снять отметку об оплате'+(dateStr?' ('+dateStr+')':'')+' ? Дата будет удалена.',()=>{
-    if(allData[m]){allData[m]._paid=false;delete allData[m]._paidDate;}
-    fbSave();updatePaidBtn();updatePaidUI(compute());updateStreak();renderPayHistory();
-  });
+  showConfirm(
+    'Снять отметку об оплате'+(dateStr?' ('+dateStr+')':'')+' ? Дата будет удалена.',
+    ()=>{
+      // Да — снимаем оплату
+      if(allData[m]){allData[m]._paid=false;delete allData[m]._paidDate;}
+      fbSave();
+      // Восстанавливаем metersAccepted из данных
+      metersAccepted=!!(allData[m]&&allData[m]._accepted);
+      updatePaidBtn();updatePaidUI(compute());updateStreak();renderPayHistory();
+    },
+    ()=>{
+      // Отмена — ничего не меняем, просто обновляем UI на случай рассинхрона
+      updateMonthBarState();
+    }
+  );
 }
 
 function updatePaidBtn(){
@@ -3153,17 +3164,32 @@ function showConfirm(msg, onYes, onNo){
   document.body.appendChild(overlay);
   document.getElementById('app-confirm-yes').onclick=()=>{overlay.remove();if(onYes)onYes();};
   document.getElementById('app-confirm-no').onclick=()=>{overlay.remove();if(onNo)onNo();};
+  // Клик на backdrop (фон вне модалки) — закрывает без действия
+  overlay.onclick=(e)=>{if(e.target===overlay){overlay.remove();if(onNo)onNo();}};
 }
 
 function showBtnToast(btn, msg){
-  // Тост рядом с кнопкой
   if(!btn)return;
   const r=btn.getBoundingClientRect();
   const f=document.createElement('div');
   f.className='copy-flash';
   f.textContent=msg;
-  f.style.cssText='position:fixed;left:'+(r.left+r.width/2)+'px;top:'+(r.top-8)+'px;transform:translate(-50%,-100%);z-index:9999;white-space:nowrap;pointer-events:none';
+  // Сначала добавляем невидимо чтобы измерить размер
+  f.style.cssText='position:fixed;left:-9999px;top:-9999px;z-index:9999;white-space:nowrap;pointer-events:none';
   document.body.appendChild(f);
+  const fw=f.offsetWidth;
+  const fh=f.offsetHeight;
+  // Позиция над кнопкой
+  let left=r.left+r.width/2-fw/2;
+  let top=r.top-fh-8;
+  // Защита от выхода за края
+  const margin=8;
+  left=Math.max(margin, Math.min(left, window.innerWidth-fw-margin));
+  // Если нет места сверху — показываем снизу
+  if(top<margin) top=r.bottom+8;
+  f.style.left=left+'px';
+  f.style.top=top+'px';
+  f.style.transform='none';
   setTimeout(()=>f.remove(),1800);
 }
 
@@ -4097,6 +4123,10 @@ function openFabPopup(){
   }
   pop.style.display='flex';
   pop.style.flexDirection='column';
+  // iOS-стиль анимация — запускаем после display:flex
+  pop.style.animation='none';
+  pop.offsetHeight; // reflow
+  pop.style.animation='fabPopupIn .28s cubic-bezier(.32,1,.52,1) forwards';
   if(bd)bd.style.display='block';
 }
 
