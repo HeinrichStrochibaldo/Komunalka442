@@ -218,8 +218,9 @@ header.scrolled { box-shadow: 0 4px 24px rgba(0,0,0,.35); }
 .btn-ghost:hover { background: var(--surface2); opacity: 1; }
 .btn-danger { background: transparent; border: 1px solid var(--red); color: var(--red); }
 .btn-danger:hover { background: rgba(248,113,113,.1); opacity: 1; }
-.btn-paid { background: rgba(52,211,153,.15); border: 1px solid var(--green); color: var(--green); }
-.btn-paid:hover { background: rgba(52,211,153,.25); opacity: 1; }
+.btn-paid { background: rgba(52,211,153,.15); border: 1px solid var(--green); color: var(--green); cursor: default; user-select: none; }
+.btn-paid:hover { background: rgba(52,211,153,.15); }
+.btn-paid:active { transform: none; }
 .btn-sm { padding: 3px 9px; font-size: 11px; border-radius: 5px; }
 
 /* ============================================================
@@ -3194,16 +3195,22 @@ function updateMonthBarState(){
       paidBtn.textContent='✅ Оплачено';
       paidBtn.className='btn btn-paid btn-sm';
       paidBtn.style.opacity='';
-      paidBtn.onclick=handleUnpaid;
+      paidBtn.style.pointerEvents='none';
+      paidBtn.style.cursor='default';
+      paidBtn.onclick=null;
     } else if(accepted){
       paidBtn.textContent='Оплатить';
       paidBtn.className='btn btn-ghost btn-sm';
       paidBtn.style.opacity='';
+      paidBtn.style.pointerEvents='';
+      paidBtn.style.cursor='';
       paidBtn.onclick=handlePaid;
     } else {
       paidBtn.textContent='Оплатить';
       paidBtn.className='btn btn-ghost btn-sm';
       paidBtn.style.opacity='0.55';
+      paidBtn.style.pointerEvents='';
+      paidBtn.style.cursor='';
       paidBtn.onclick=()=>{haptic([10,10,10,10,10]);showBtnToast(paidBtn,'Сначала введите показания');};
     }
   }
