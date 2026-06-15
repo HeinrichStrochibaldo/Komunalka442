@@ -1990,6 +1990,15 @@ function unlockAch(id){
     updateAchGrid();
   }
 }
+function _closeAchToast(){
+  const toast=document.getElementById('ach-toast');
+  if(!toast)return;
+  clearTimeout(achTimer);
+  toast.classList.remove('expand');
+  toast.classList.add('collapse');
+  setTimeout(()=>toast.classList.remove('collapse'),700);
+}
+
 function showAchToast(a){
   const toast=document.getElementById('ach-toast');
   const icon=document.getElementById('ach-toast-icon');
@@ -1997,11 +2006,9 @@ function showAchToast(a){
   const desc=document.getElementById('ach-toast-desc');
   if(!toast)return;
   clearTimeout(achTimer);
-  // Сбрасываем в начальное состояние (капсула DI)
   toast.classList.remove('expand','collapse');
   icon.style.transform='';
   haptic([15,10,40,10,15]);
-  // Небольшая пауза — визуально "вырастает" из DI
   setTimeout(()=>{
     if(icon)icon.textContent=a.icon;
     if(name)name.textContent=a.name;
@@ -2010,14 +2017,13 @@ function showAchToast(a){
       toast.classList.add('expand');
     }));
     if(settings.sounds)playSound('ach');
-    // Висит 4 сек, потом схлопывается обратно в DI
-    achTimer=setTimeout(()=>{
-      toast.classList.remove('expand');
-      toast.classList.add('collapse');
-      // После анимации сворачивания — убираем collapse класс
-      setTimeout(()=>toast.classList.remove('collapse'), 700);
-    },4000);
+    achTimer=setTimeout(()=>_closeAchToast(),4000);
   },80);
+  // Тап — открываем достижения
+  toast.ontouchend=()=>{
+    _closeAchToast();
+    setTimeout(()=>openSection('achievements'),300);
+  };
 }
 function renderAchievements(){
   const grid=document.getElementById('ach-grid');if(!grid)return;
