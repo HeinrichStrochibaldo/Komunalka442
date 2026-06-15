@@ -433,6 +433,67 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
 .hist-table td:first-child { text-align: left; color: var(--label); }
 .hist-table tr:last-child td { border-bottom: none; }
 .hist-table tr:hover td { background: var(--surface2); }
+/* История — аккордеон */
+.hist-month-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 10px;
+  overflow: hidden;
+  background: var(--surface);
+  transition: border-color .3s, box-shadow .3s;
+}
+.hist-month-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+.hist-month-head:active { background: var(--surface2); }
+.hist-month-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.hist-month-total {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.hist-month-arrow {
+  font-size: 11px;
+  color: var(--muted);
+  transition: transform .3s cubic-bezier(0.25,0.46,0.45,0.94);
+  margin-left: 10px;
+  flex-shrink: 0;
+}
+.hist-month-card.open .hist-month-arrow { transform: rotate(180deg); }
+.hist-month-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height .35s cubic-bezier(0.25,0.46,0.45,0.94);
+}
+.hist-month-card.open .hist-month-body { max-height: 400px; }
+.hist-month-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+}
+.hist-month-row.total {
+  font-weight: 700;
+  background: var(--surface2);
+}
+.hist-month-row-label { color: var(--muted); }
+.hist-month-row-val { color: var(--text); font-weight: 500; }
+.hist-month-row.total .hist-month-row-val { color: var(--accent); font-weight: 700; }
 .fw7 { font-weight: 700; }
 
 /* ============================================================
@@ -1253,7 +1314,7 @@ input.meter-locked:focus { border-color: var(--border) !important; }
 <!-- ИСТОРИЯ -->
 <div id="page-history" class="page">
   <div class="sec-title">История по месяцам</div>
-  <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory" id="hist-scroll"><table class="hist-table"><thead id="hist-head"></thead><tbody id="hist-body"></tbody></table></div>
+  <div id="hist-accordion"></div>
 </div>
 
 <!-- ДИНАМИКА -->
@@ -1916,49 +1977,75 @@ function showQR(){
 }
 
 /* ============================================================ HISTORY ============================================================ */
+function toggleHistMonth(card){
+  const isOpen=card.classList.contains('open');
+  card.classList.toggle('open',!isOpen);
+}
+
 function renderHistory(){
   const months=MK.filter(m=>allData[m]);
-  const head=document.getElementById('hist-head'),body=document.getElementById('hist-body');
-  if(!months.length){head.innerHTML='';body.innerHTML='<tr><td colspan="2"><div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">Нет данных</div></div></td></tr>';return;}
+  const acc=document.getElementById('hist-accordion');
+  if(!acc)return;
+  if(!months.length){acc.innerHTML='<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">Нет данных</div></div>';return;}
   const nv=settings.nameV||'Вадимовна',nm=settings.nameMe||'Я';
-  head.innerHTML='<tr><th>Статья</th>'+months.map(m=>'<th>'+(allData[m]._paid?'✅ ':'')+MONTHS[m].replace(' ','<br>')+'</th>').join('')+'</tr>';
-  const comp=months.map(m=>cfd(allData[m]));
-  const rows=[{l:'Всего',k:'grand',b:true},{l:nv,k:'vadim'},{l:nm,k:'me'},null,{l:'МосОблЕИРЦ',k:'mosob'},{l:'Пик-Комфорт',k:'pik'},{l:'Мосэнергосбыт',k:'ee'},{l:'Интернет',k:'inet'}];
-  let html='';
-  rows.forEach(row=>{
-    if(!row){html+='<tr><td colspan="'+(months.length+1)+'" style="height:6px;border:none"></td></tr>';return;}
-    html+='<tr><td>'+(row.b?'<b>'+row.l+'</b>':row.l)+'</td>';
-    comp.forEach((c,i)=>{const v=c[row.k]||0;let cls=row.b?'fw7':'';if(i>0){const d=v-(comp[i-1][row.k]||0);if(d>0)cls+=' cup';else if(d<0)cls+=' cdn';}html+='<td class="'+cls+'">'+(v>0?fmt(v):'—')+'</td>';});
-    html+='</tr>';
-  });
-  body.innerHTML=html;
-  // Подсвечиваем новые месяцы и помечаем просмотренными
   const newMonths=getNewMonths();
+  let html='';
+  // Показываем месяцы от новых к старым
+  const sorted=[...months].reverse();
+  sorted.forEach(m=>{
+    const d=allData[m]||{};
+    const c=cfd(d);
+    const isNew=newMonths.includes(m);
+    const isPaid=d._paid;
+    const rows=[
+      {l:'Всего',k:'grand',total:true},
+      {l:nv,k:'vadim'},
+      {l:nm,k:'me'},
+      {l:'МосОблЕИРЦ',k:'mosob'},
+      {l:'Пик-Комфорт',k:'pik'},
+      {l:'Мосэнергосбыт',k:'ee'},
+      {l:'Интернет',k:'inet'},
+    ];
+    html+=`<div class="hist-month-card${isNew?' hist-new':''}" data-month="${m}">
+      <div class="hist-month-head" onclick="toggleHistMonth(this.closest('.hist-month-card'))">
+        <div class="hist-month-title">
+          ${isPaid?'✅':''} ${MONTHS[m]}${isNew?' <span style="font-size:10px;background:var(--accent);color:#fff;padding:2px 6px;border-radius:10px">NEW</span>':''}
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="hist-month-total">${c.grand>0?fmt(c.grand):'—'}</div>
+          <div class="hist-month-arrow">▼</div>
+        </div>
+      </div>
+      <div class="hist-month-body">
+        ${rows.map(row=>{
+          const v=c[row.k]||0;
+          return `<div class="hist-month-row${row.total?' total':''}">
+            <span class="hist-month-row-label">${row.l}</span>
+            <span class="hist-month-row-val">${v>0?fmt(v):'—'}</span>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  });
+  acc.innerHTML=html;
+  // Подсвечиваем новые карточки и помечаем просмотренными
   if(newMonths.length>0){
-    const allRows=body.querySelectorAll('tr');
-    months.forEach((m,colIdx)=>{
-      if(newMonths.includes(m)){
-        allRows.forEach(row=>{
-          const cells=row.querySelectorAll('td');
-          if(cells[colIdx+1]){
-            const cell=cells[colIdx+1];
-            cell.style.setProperty('transition','background .3s ease');
-            cell.style.setProperty('border-radius','6px');
-            cell.style.setProperty('background','rgba(91,140,255,.25)');
-            setTimeout(()=>{
-              cell.style.setProperty('background','transparent');
-              setTimeout(()=>{
-                cell.style.removeProperty('background');
-                cell.style.removeProperty('border-radius');
-                cell.style.removeProperty('transition');
-              },300);
-            },700);
-          }
-        });
-      }
-    });
-    setTimeout(()=>markMonthsSeen(newMonths),100);
-    setTimeout(()=>updateHistoryBadge(),200);
+    setTimeout(()=>{
+      newMonths.forEach(m=>{
+        const card=acc.querySelector(`[data-month="${m}"]`);
+        if(card){
+          card.style.setProperty('transition','box-shadow .3s ease, border-color .3s ease');
+          card.style.setProperty('border-color','var(--accent)');
+          card.style.setProperty('box-shadow','0 0 0 2px rgba(91,140,255,.2)');
+          setTimeout(()=>{
+            card.style.removeProperty('border-color');
+            card.style.removeProperty('box-shadow');
+          },2000);
+        }
+      });
+      markMonthsSeen(newMonths);
+      setTimeout(()=>updateHistoryBadge(),200);
+    },300);
   }
 }
 
@@ -3631,6 +3718,9 @@ if(!ACHS.find(a=>a.id==='quote1001')){
 
   document.addEventListener('touchstart',e=>{
     if(e.target.closest('#bottom-sheet,#float-bar,.overlay,#pres-overlay,#fab-popup,#section-overlay'))return;
+    // Не перехватываем если касание внутри горизонтально скроллируемого контейнера
+    const scrollEl=e.target.closest('#hist-scroll,#year-table,[style*="overflow-x:auto"],[style*="overflow-x: auto"]');
+    if(scrollEl&&scrollEl.scrollWidth>scrollEl.clientWidth)return;
     sx=e.touches[0].clientX;
     sy=e.touches[0].clientY;
     tracking=true;
