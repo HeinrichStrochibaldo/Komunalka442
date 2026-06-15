@@ -1917,14 +1917,31 @@ function renderHistory(){
   body.innerHTML=html;
   // Подсвечиваем новые месяцы и помечаем просмотренными
   const newMonths=getNewMonths();
+  // Дебаг тост
+  const _dt=document.createElement('div');
+  _dt.style.cssText='position:fixed;bottom:150px;left:50%;transform:translateX(-50%);background:#000;color:#fff;padding:8px 14px;border-radius:8px;font-size:11px;z-index:9999;white-space:nowrap';
+  _dt.textContent='newMonths='+newMonths.length+' months='+months.length+' rows='+body.querySelectorAll('tr').length;
+  document.body.appendChild(_dt);setTimeout(()=>_dt.remove(),5000);
   if(newMonths.length>0){
-    // Находим колонки новых месяцев и подсвечиваем все строки
     const allRows=body.querySelectorAll('tr');
     months.forEach((m,colIdx)=>{
       if(newMonths.includes(m)){
         allRows.forEach(row=>{
           const cells=row.querySelectorAll('td');
-          if(cells[colIdx+1]) cells[colIdx+1].style.animation='histHighlight .8s ease forwards';
+          if(cells[colIdx+1]){
+            const cell=cells[colIdx+1];
+            cell.style.setProperty('transition','background .3s ease');
+            cell.style.setProperty('border-radius','6px');
+            cell.style.setProperty('background','rgba(91,140,255,.25)');
+            setTimeout(()=>{
+              cell.style.setProperty('background','transparent');
+              setTimeout(()=>{
+                cell.style.removeProperty('background');
+                cell.style.removeProperty('border-radius');
+                cell.style.removeProperty('transition');
+              },300);
+            },700);
+          }
         });
       }
     });
@@ -3167,6 +3184,7 @@ function openSection(name){
       <button class="btn btn-ghost btn-sm" onclick="testToasty()">🔥 Тест Toasty</button>
       <button class="btn btn-ghost btn-sm btn-hold" id="btn-reset-achs" style="color:var(--red)">🗑 Сброс достижений</button>
       <button class="btn btn-ghost btn-sm btn-hold" id="btn-reset-xp" style="color:var(--red)">🗑 Сброс XP</button>
+      <button class="btn btn-ghost btn-sm" onclick="localStorage.removeItem('khist_seen');updateHistoryBadge();" style="color:var(--muted)">🔄 Сброс истории просмотров</button>
       </div>`;
     // Рендерим сетку достижений
     const grid=document.getElementById('so-ach-grid');
