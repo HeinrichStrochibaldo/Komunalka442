@@ -825,6 +825,9 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
 @keyframes fabCheck{0%{opacity:0;transform:scale(.5)}40%{opacity:1;transform:scale(1.2)}100%{opacity:1;transform:scale(1)}}
 #fab.loading { animation: fabSpin 1s linear infinite; }
 @keyframes fabSpin{to{transform:rotate(360deg)}}
+/* П13: пульсация FAB — визуальный зов когда месяц пустой */
+#fab.pulse { animation: fabIn .5s cubic-bezier(.34,1.56,.64,1) .3s both, fabPulse 2.5s ease-out 1s infinite; }
+@keyframes fabPulse{0%{box-shadow:0 4px 20px rgba(0,0,0,.4),0 0 0 0 color-mix(in srgb,var(--accent) 60%,transparent)}70%{box-shadow:0 4px 20px rgba(0,0,0,.4),0 0 0 14px color-mix(in srgb,var(--accent) 0%,transparent)}100%{box-shadow:0 4px 20px rgba(0,0,0,.4),0 0 0 0 color-mix(in srgb,var(--accent) 0%,transparent)}}
 
 /* ============================================================
    QUICK INPUT POPUP (FAB → попап над float-bar)
@@ -2871,10 +2874,12 @@ document.addEventListener('click',e=>{
 /* ============================================================ FAB ============================================================ */
 function fabSaved(){
   const fab=document.getElementById('fab');if(!fab)return;
+  fab.classList.remove('pulse'); // убираем пульс на время анимации
   fab.classList.add('saved');
   fab.textContent='';
   haptic([50,30,80]);
   setTimeout(()=>{fab.classList.remove('saved');fab.textContent='⚡';},1500);
+  // pulse не возвращаем — после fabSaved показания зафиксированы
 }
 
 /* ============================================================ BOTTOM SHEET ============================================================ */
@@ -3551,17 +3556,20 @@ function updateMonthBarState(){
     }
   }
 
-  // FAB — блокируем при оплачено или зафиксировано
+  // FAB — блокируем при оплачено или зафиксировано, пульс когда пустой
   if(fabBtn){
     if(paid){
       fabBtn.style.opacity='0.55';
       fabBtn.title='Месяц уже оплачен';
+      fabBtn.classList.remove('pulse');
     } else if(accepted){
       fabBtn.style.opacity='0.55';
       fabBtn.title='Показания зафиксированы';
+      fabBtn.classList.remove('pulse');
     } else {
       fabBtn.style.opacity='';
       fabBtn.title='Быстрый ввод показаний';
+      fabBtn.classList.add('pulse');
     }
   }
 }
