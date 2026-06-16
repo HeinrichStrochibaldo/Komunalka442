@@ -2238,8 +2238,29 @@ function closeStreakPopup(){
 }
 
 /* ============================================================ OVERLAY / MODAL ============================================================ */
-function openOverlay(id){const e=document.getElementById(id);if(e){e.classList.add('open');e.style.display='flex';}}
-function closeOverlay(id){const e=document.getElementById(id);if(e){e.classList.remove('open');e.style.display='none';}}
+function openOverlay(id){
+  const e=document.getElementById(id);
+  if(!e)return;
+  e.classList.add('open');
+  e.style.display='flex';
+  // Блокируем PTR пока оверлей открыт
+  ptrLocked=true;
+  // Закрытие по клику на backdrop (если нет своего обработчика)
+  if(!e._overlayBackdropSet){
+    e._overlayBackdropSet=true;
+    e.addEventListener('click',ev=>{if(ev.target===e)closeOverlay(id);});
+  }
+}
+function closeOverlay(id){
+  const e=document.getElementById(id);
+  if(!e)return;
+  e.classList.remove('open');
+  e.style.display='none';
+  // Разблокируем PTR только если нет других открытых оверлеев
+  const anyOpen=['qr-overlay','datepick-overlay','pres-overlay','app-confirm']
+    .some(oid=>oid!==id&&document.getElementById(oid)?.classList.contains('open'));
+  if(!anyOpen)ptrLocked=false;
+}
 
 /* П46: goBack */
 function goBack(){
