@@ -1520,6 +1520,18 @@ setTimeout(function(){
 }, 8000);
 
 /* ============================================================ CONSTANTS ============================================================ */
+// C-008: магические числа → именованные константы
+const MS_PER_DAY = 864e5;          // мс в сутках
+const AUTOSAVE_DELAY = 1500;       // мс до автосохранения
+const FIREBASE_TIMEOUT = 6000;     // мс таймаут Firebase
+const ANOMALY_THRESHOLD = 2;       // ×N от среднего = аномалия
+const HOLD_DELAY_REDO = 850;       // мс удержание кнопки "Заново"
+const LONGPRESS_DELAY = 400;       // мс длинное нажатие
+const TOAST_DURATION = 1800;       // мс показ тостов
+const TOOLTIP_DURATION = 3000;     // мс показ подсказок
+const VERSIONS_MAX = 10;           // макс. версий в истории
+const DOOM_DURATION = 30000;       // мс длительность Doom музыки
+
 const MONTHS={'2026-05':'Май 2026','2026-06':'Июнь 2026','2026-07':'Июль 2026','2026-08':'Август 2026','2026-09':'Сентябрь 2026','2026-10':'Октябрь 2026','2026-11':'Ноябрь 2026','2026-12':'Декабрь 2026','2027-01':'Январь 2027','2027-02':'Февраль 2027','2027-03':'Март 2027','2027-04':'Апрель 2027'};
 const MK=Object.keys(MONTHS);
 const TARIFF_IDS=['t-kaprem','t-gvs-voda','t-gvs-pod','t-otop','t-hvs','t-vodo','t-soderzh','t-bezop','t-tko','t-tv','t-oi-ee-d','t-oi-ee-n','t-oi-vo','t-oi-gvs','t-oi-gvsp','t-oi-hvs','t-t1','t-t2','t-inet'];
@@ -1577,7 +1589,7 @@ async function fbLoad(){
   }
   try{
     if(!DOC) throw new Error('Firebase not available');
-    const d=await Promise.race([DOC.get(),new Promise((_,r)=>setTimeout(()=>r(new Error('timeout')),6000))]);
+    const d=await Promise.race([DOC.get(),new Promise((_,r)=>setTimeout(()=>r(new Error('timeout')),FIREBASE_TIMEOUT))]);
     allData=d.exists?(d.data()||{}):{};
   }catch(e){
     console.warn('Firebase fallback:', e.message);
@@ -1612,7 +1624,7 @@ let _fbPending=false;
 async function fbSave(){
   // Сохраняем версию и локально — всегда немедленно
   versions.unshift({t:new Date().toISOString(),d:JSON.stringify(allData)});
-  if(versions.length>10)versions=versions.slice(0,10);
+  if(versions.length>VERSIONS_MAX)versions=versions.slice(0,VERSIONS_MAX);
   localStorage.setItem('kversions',JSON.stringify(versions));
   localStorage.setItem('kv5',JSON.stringify(allData));
 
@@ -1852,7 +1864,7 @@ function updatePaidUI(c){
     if(pd){
       const next=new Date(pd);next.setDate(next.getDate()+30);
       const today=new Date();
-      const days=Math.ceil((next-today)/864e5);
+      const days=Math.ceil((next-today)/MS_PER_DAY);
       const nextStr=next.toLocaleDateString('ru-RU',{day:'numeric',month:'long'});
       if(days>0){const txt='Следующий платёж ориентировочно '+nextStr+' · через '+days+' дн.';setT('paid-next-txt',txt);}
       else setT('paid-next-txt','Пора оплачивать! Следующий платёж был '+nextStr);
@@ -1867,7 +1879,7 @@ function updatePaidUI(c){
     if(paidMonths.length>0&&np){
       const lastPaid=new Date(allData[paidMonths[paidMonths.length-1]]._paidDate);
       const next=new Date(lastPaid);next.setDate(next.getDate()+30);
-      const days=Math.ceil((next-new Date())/864e5);
+      const days=Math.ceil((next-new Date())/MS_PER_DAY);
       const daysEl=document.getElementById('np-days');
       if(daysEl){
         daysEl.textContent=days>0?'через '+days+' дн.':'Пора платить!';
@@ -1950,17 +1962,30 @@ document.addEventListener('click',e=>{
 });
 
 /* ============================================================ NAVIGATION ============================================================ */
-function prevMonth(){if(curIdx>0){curIdx--;loadMonth();}}
-function nextMonth(){if(curIdx<MK.length-1){curIdx++;loadMonth();}}
-function jumpTo(idx){curIdx=idx;loadMonth();}
+// UX-002: предупреждение при потере черновика FAB
+function hasFpDraft(){
+  return fpDraft&&Object.keys(fpDraft).length>0;
+}
+function guardMonthSwitch(action){
+  if(!hasFpDraft()){action();return;}
+  showConfirm(
+    'Вы вводили показания. Перейти к другому месяцу? Введённые данные будут потеряны.',
+    ()=>{fpDraft={};action();},
+    null
+  );
+}
+
+function prevMonth(){if(curIdx>0){guardMonthSwitch(()=>{curIdx--;loadMonth();});}}
+function nextMonth(){if(curIdx<MK.length-1){guardMonthSwitch(()=>{curIdx++;loadMonth();});}}
+function jumpTo(idx){guardMonthSwitch(()=>{curIdx=idx;loadMonth();});}
 
 // Long press on month label
 const mlabel=document.getElementById('month-label');
 if(mlabel){
-  mlabel.addEventListener('mousedown',()=>{longPressTimer=setTimeout(()=>openMonthPicker(),400);});
+  mlabel.addEventListener('mousedown',()=>{longPressTimer=setTimeout(()=>openMonthPicker(),LONGPRESS_DELAY);});
   mlabel.addEventListener('mouseup',()=>clearTimeout(longPressTimer));
   mlabel.addEventListener('mouseleave',()=>clearTimeout(longPressTimer));
-  mlabel.addEventListener('touchstart',e=>{longPressTimer=setTimeout(()=>openMonthPicker(e),400);},{passive:true});
+  mlabel.addEventListener('touchstart',e=>{longPressTimer=setTimeout(()=>openMonthPicker(e),LONGPRESS_DELAY);},{passive:true});
   mlabel.addEventListener('touchend',()=>clearTimeout(longPressTimer));
   mlabel.addEventListener('click',openMonthPicker);
 }
@@ -1996,7 +2021,7 @@ function loadMonth(){
 }
 
 function onInput(){
-  render();clearTimeout(autoTimer);autoTimer=setTimeout(autoSave,1500);
+  render();clearTimeout(autoTimer);autoTimer=setTimeout(autoSave,AUTOSAVE_DELAY);
 }
 
 async function autoSave(){
@@ -2047,7 +2072,7 @@ function checkAnomaly(c){
   months.slice(0,-1).forEach(m=>{const d=allData[m];Object.keys(avgs).forEach(k=>avgs[k]+=Math.max(0,(d['cur-'+k]||0)-(d['prev-'+k]||0)));});
   Object.keys(avgs).forEach(k=>avgs[k]/=(months.length-1));
   const cur={gvs:c.vg,hvs:c.vh,t1:vol('t1'),t2:vol('t2')},names={gvs:'ГВС',hvs:'ХВС',t1:'ЭЭ Т1',t2:'ЭЭ Т2'};
-  const anom=[];Object.keys(avgs).forEach(k=>{if(avgs[k]>0&&cur[k]>avgs[k]*2)anom.push(names[k]);});
+  const anom=[];Object.keys(avgs).forEach(k=>{if(avgs[k]>0&&cur[k]>avgs[k]*ANOMALY_THRESHOLD)anom.push(names[k]);});
   // Could show a banner here if needed
 }
 
@@ -2058,7 +2083,7 @@ function updateVerify(){
   const names={gvs:'ГВС',hvs:'ХВС',ee:'Электричество'};
   Object.entries(dates).forEach(([k,exp])=>{
     const badge=document.getElementById('vbadge-'+k),btn=document.getElementById('vcal-'+k);if(!badge)return;
-    const days=Math.ceil((exp-now)/864e5),ds=exp.toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit',year:'numeric'});
+    const days=Math.ceil((exp-now)/MS_PER_DAY),ds=exp.toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit',year:'numeric'});
     if(days<=0){badge.className='mc-badge danger';badge.textContent='⚠ Просрочена!';if(btn)btn.style.display='inline-block';}
     else if(days<=90){badge.className='mc-badge warn';badge.textContent='⚠ до '+ds;if(btn)btn.style.display='inline-block';}
     else{badge.className='mc-badge ok';badge.textContent='до '+ds;if(btn)btn.style.display='none';}
@@ -3328,7 +3353,7 @@ function playDoom(){
     window._doomAudio=audio;
     doomPlaying=true;
     // Автостоп через 30 сек если не остановили вручную
-    setTimeout(()=>{if(doomPlaying){audio.pause();doomPlaying=false;}},30000);
+    setTimeout(()=>{if(doomPlaying){audio.pause();doomPlaying=false;}},DOOM_DURATION);
   }catch(e){doomPlaying=false;}
 }
 
@@ -3439,7 +3464,7 @@ function updateMonthBarState(){
       let _holdTimer=null,_holdFired=false;
       acceptBtn.onpointerdown=()=>{
         _holdFired=false;
-        _holdTimer=setTimeout(()=>{_holdFired=true;haptic([30,20,80]);fpRedoConfirm();},850);
+        _holdTimer=setTimeout(()=>{_holdFired=true;haptic([30,20,80]);fpRedoConfirm();},HOLD_DELAY_REDO);
       };
       acceptBtn.onpointerup=()=>{
         if(_holdTimer){clearTimeout(_holdTimer);_holdTimer=null;}
@@ -4351,7 +4376,7 @@ function openFabPopup(){
   if(bd)bd.style.display='block';
 }
 
-let _fpDraft={};
+let fpDraft={};
 
 function fpShowScreen1(){
   const pop=document.getElementById('fab-popup');
@@ -4362,7 +4387,7 @@ function fpShowScreen1(){
     const labels={gvs:'🔴 ГВС',hvs:'🔵 ХВС'};
     const serials={gvs:meter.sgvs||'',hvs:meter.shvs||''};
     const pv=d['prev-'+k]!==undefined?d['prev-'+k]:'—';
-    const cv=_fpDraft[k]!==undefined?_fpDraft[k]:(d['cur-'+k]!==undefined?d['cur-'+k]:'');
+    const cv=fpDraft[k]!==undefined?fpDraft[k]:(d['cur-'+k]!==undefined?d['cur-'+k]:'');
     return '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px">'+
       '<div style="font-size:11px;font-weight:700;color:var(--label);margin-bottom:2px">'+labels[k]+'</div>'+
       '<div style="font-size:9px;color:var(--muted);margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+serials[k]+'</div>'+
@@ -4374,8 +4399,8 @@ function fpShowScreen1(){
 
   const pvT1=d['prev-t1']!==undefined?d['prev-t1']:'—';
   const pvT2=d['prev-t2']!==undefined?d['prev-t2']:'—';
-  const cvT1=_fpDraft['t1']!==undefined?_fpDraft['t1']:(d['cur-t1']!==undefined?d['cur-t1']:'');
-  const cvT2=_fpDraft['t2']!==undefined?_fpDraft['t2']:(d['cur-t2']!==undefined?d['cur-t2']:'');
+  const cvT1=fpDraft['t1']!==undefined?fpDraft['t1']:(d['cur-t1']!==undefined?d['cur-t1']:'');
+  const cvT2=fpDraft['t2']!==undefined?fpDraft['t2']:(d['cur-t2']!==undefined?d['cur-t2']:'');
 
   const eeBlock=
     '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px;margin-top:8px">'+
@@ -4485,8 +4510,8 @@ function fpGoConfirm(){
   // Сохраняем введённые значения в черновик
   ['gvs','hvs','t1','t2'].forEach(k=>{
     const cel=document.getElementById('fp-c'+k);
-    if(cel&&cel.value!=='')_fpDraft[k]=parseFloat(cel.value);
-    else delete _fpDraft[k];
+    if(cel&&cel.value!=='')fpDraft[k]=parseFloat(cel.value);
+    else delete fpDraft[k];
   });
   const m=curMonth(),d=allData[m]||{};
   const keys=['gvs','hvs','t1','t2'];
@@ -4504,7 +4529,7 @@ function fpGoConfirm(){
     const diff=Math.max(0,cv-pv);
     diffs[k]=diff;
     const isEE=(k==='t1'||k==='t2');
-    const isAnom=avgs&&avgs[k]>0&&diff>avgs[k]*2;
+    const isAnom=avgs&&avgs[k]>0&&diff>avgs[k]*ANOMALY_THRESHOLD;
     return '<div style="display:grid;grid-template-columns:80px 1fr auto;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);gap:4px">'+
       '<span style="font-size:12px;color:var(--muted)">'+labels[k]+'</span>'+
       '<span style="font-size:12px;text-align:right">'+
@@ -4588,7 +4613,7 @@ function closeFabPopup(){
     pop.style.opacity='';pop.style.transform='';pop.style.transition='';
   },150);
   if(bd)bd.style.display='none';
-  _fpDraft={};
+  fpDraft={};
 }
 
 /* fpSync и fpApply перенесены выше */
