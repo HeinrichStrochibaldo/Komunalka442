@@ -1631,6 +1631,8 @@ async function fbLoad(){
   try{
     if(!allData['2026-05']){allData['2026-05']=MAY26;fbSave();}
     if(allData._achs)localStorage.setItem('kachs',JSON.stringify(allData._achs));
+    // Одноразовая очистка мусорных cur-* в несозданных месяцах
+    cleanOrphanData();
   }catch(e){appError(e,'fbLoad:postprocess');}
   _dbg('▶ Firebase done, hiding splash...');
   hideSplash();
@@ -1710,9 +1712,22 @@ function hasPrevMeters(d){
 function isCreatedMonth(m){
   return !!allData[m]&&hasPrevMeters(allData[m]);
 }
+// Проверяем непрерывность цепочки — все предыдущие месяцы должны быть оплачены
+// Исключение: первый месяц (май) не требует предыдущей оплаты
+function isChainValid(m){
+  const idx=monthIdx(m);
+  if(idx===0)return true; // май — стартовая точка, исключение
+  // Каждый предыдущий месяц должен существовать И быть оплачен
+  for(let i=0;i<idx;i++){
+    const mk=MK[i];
+    if(!allData[mk]||!allData[mk]._paid)return false;
+  }
+  return true;
+}
 // Закон 8: guard для DEV-призрака — блокирует все изменяющие действия
 function isGhostMonth(){
-  return !!(settings.devMode&&!isCreatedMonth(curMonth()));
+  const m=curMonth();
+  return !!(settings.devMode&&(!isCreatedMonth(m)||!isChainValid(m)));
 }
 function ghostGuard(){
   if(!isGhostMonth())return false;
@@ -1720,6 +1735,28 @@ function ghostGuard(){
   showFabToast('👻 DEV PREVIEW · Действие недоступно');
   return true;
 }
+// Чистит cur-* в месяцах после следующего (не трогает prev-*, _paid, тарифы)
+function cleanFutureMonths(paidMK){
+  const paidIdx=monthIdx(paidMK);
+  const nextIdx=paidIdx+1; // только что созданный — не трогаем
+  for(let i=nextIdx+1;i<MK.length;i++){
+    const mk=MK[i];
+    if(allData[mk]){
+      ['gvs','hvs','t1','t2'].forEach(k=>{delete allData[mk]['cur-'+k];});
+    }
+  }
+}
+// Одноразовая очистка — чистит cur-* во всех месяцах за пределами цепочки
+function cleanOrphanData(){
+  if(localStorage.getItem('k_cleaned_v2'))return; // уже чистили
+  MK.forEach(mk=>{
+    if(allData[mk]&&!isChainValid(mk)){
+      ['gvs','hvs','t1','t2'].forEach(k=>{delete allData[mk]['cur-'+k];});
+    }
+  });
+  localStorage.setItem('k_cleaned_v2','1');
+}
+
 // Создаём следующий месяц из текущего (Закон 5)
 function createNextMonth(currentMK){
   const nextMk=nextMK(currentMK);
@@ -1879,6 +1916,8 @@ function confirmPaid(){
   allData[m]._paidDate=dateVal;
   // Закон 5: атомарно создаём следующий месяц с prev-* = текущий cur-*
   createNextMonth(m);
+  // Чистим мусорные cur-* в будущих месяцах
+  cleanFutureMonths(m);
   closeOverlay('datepick-overlay');
   fbSave();updatePaidBtn();updatePaidUI(compute());
   launchConfetti();unlockAch('paid1');
@@ -2052,7 +2091,7 @@ function nextMonth(){
   if(curIdx>=MK.length-1)return;
   const nextMk=MK[curIdx+1];
   // Закон В: в PROD нельзя переходить в несозданный месяц
-  if(!settings.devMode&&!isCreatedMonth(nextMk)){
+  if(!settings.devMode&&(!isCreatedMonth(nextMk)||!isChainValid(nextMk))){
     showConfirm(
       'Месяц ещё не открыт.\nЗавершите '+MONTHS[MK[curIdx]]+' чтобы продолжить.',
       null, null
@@ -2071,7 +2110,7 @@ function nextMonth(){
 function jumpTo(idx){
   // Закон В: в PROD нельзя прыгать в несозданный месяц
   const targetMk=MK[idx];
-  if(!settings.devMode&&targetMk&&!isCreatedMonth(targetMk)&&idx>curIdx){
+  if(!settings.devMode&&targetMk&&(!isCreatedMonth(targetMk)||!isChainValid(targetMk))&&idx>curIdx){
     showConfirm(
       'Месяц ещё не открыт.\nЗавершите предыдущий месяц чтобы продолжить.',
       null, null
@@ -2192,6 +2231,43 @@ function confirmClear(){
   if(!confirm('Сбросить все данные за '+MONTHS[curMonth()]+'?\nОтменить нельзя.'))return;
   document.querySelectorAll('input[type=number]').forEach(el=>el.value='');
   delete allData[curMonth()];fbSave();updatePaidBtn();render();
+}
+
+function fullWipe(){
+  showConfirm(
+    'Полный сброс всего после мая 2026?\nМай останется. XP, достижения, стрик — будут удалены. Отменить нельзя.',
+    ()=>{
+      // Удаляем все месяцы кроме мая
+      const mayKey='2026-05';
+      const mayData=allData[mayKey];
+      Object.keys(allData).forEach(k=>{if(k!==mayKey)delete allData[k];});
+      if(mayData)allData[mayKey]=mayData;
+      // Сбрасываем XP
+      xpTotal=0;
+      localStorage.setItem('kxp','0');
+      localStorage.removeItem('kxp_log');
+      Object.keys(localStorage).filter(k=>k.startsWith('kxp_')).forEach(k=>localStorage.removeItem(k));
+      // Сбрасываем достижения
+      localStorage.removeItem('kachs');
+      if(allData[mayKey])delete allData[mayKey]._achs;
+      // Сбрасываем стрик
+      localStorage.removeItem('kstreak');
+      localStorage.removeItem('kstreakDate');
+      // Сбрасываем флаг очистки чтобы cleanOrphanData запустилась снова
+      localStorage.removeItem('k_cleaned_v2');
+      // Сбрасываем sessionPaidShown
+      sessionPaidShown=false;
+      // Переходим на май
+      curIdx=0;
+      fbSave();
+      loadMonth();
+      updateStreak();
+      updateXPDisplay();
+      renderAchievements();
+      haptic([50,30,80,30,120]);
+      showFabToast('Сброс выполнен');
+    }
+  );
 }
 
 /* ============================================================ TARIFF HIGHLIGHT & ANOMALY ============================================================ */
@@ -4259,6 +4335,9 @@ function _buildSettingsContent(content){
       </div>
       <div class="set-row"><label style="color:var(--red)">Сбросить данные месяца</label>
         <button class="btn btn-danger btn-sm" onclick="confirmClear()">🗑 Сбросить</button>
+      </div>
+      <div class="set-row"><label style="color:var(--red)">Полный сброс после мая</label>
+        <button class="btn btn-danger btn-sm" onclick="fullWipe()">💣 Вайп</button>
       </div>
       <div class="set-row" style="flex-direction:column;align-items:stretch;gap:8px">
         <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--label);margin-bottom:4px">🛡 Состояние системы</div>
