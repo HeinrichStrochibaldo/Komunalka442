@@ -1586,7 +1586,7 @@ async function fbLoad(){
   try{
     if(!allData['2026-05']){allData['2026-05']=MAY26;fbSave();}
     if(allData._achs)localStorage.setItem('kachs',JSON.stringify(allData._achs));
-  }catch(e){}
+  }catch(e){appError(e,'fbLoad:postprocess');}
   _dbg('▶ Firebase done, hiding splash...');
   hideSplash();
   _dbg('▶ hideSplash called');
@@ -1605,15 +1605,43 @@ async function fbLoad(){
       }catch(e){console.error('Render:',e);_dbg('<span style="color:#f87171">RENDER ERR: '+e.message+'</span>');}
 }
 
+// C-006: защита от гонок состояния Firebase
+let _fbSaving=false;
+let _fbPending=false;
+
 async function fbSave(){
+  // Сохраняем версию и локально — всегда немедленно
   versions.unshift({t:new Date().toISOString(),d:JSON.stringify(allData)});
   if(versions.length>10)versions=versions.slice(0,10);
   localStorage.setItem('kversions',JSON.stringify(versions));
-  try{await DOC.set(allData);localStorage.setItem('kv5',JSON.stringify(allData));}
-  catch(e){localStorage.setItem('kv5',JSON.stringify(allData));}
+  localStorage.setItem('kv5',JSON.stringify(allData));
+
+  // Если уже идёт сохранение — помечаем что нужен ещё один проход
+  if(_fbSaving){_fbPending=true;return;}
+  _fbSaving=true;
+  try{
+    do{
+      _fbPending=false;
+      const snapshot=JSON.stringify(allData);
+      await DOC.set(allData);
+      // Если данные изменились пока шло сохранение — повторяем
+    }while(_fbPending);
+  }catch(e){
+    // Firebase недоступен — данные уже в localStorage
+  }finally{
+    _fbSaving=false;
+  }
 }
 
 /* ============================================================ UTILS ============================================================ */
+// C-007: централизованная обработка ошибок
+function appError(e, context){
+  if(settings&&settings.devMode){
+    _dbg('❌ ['+context+'] '+(e&&e.message?e.message:String(e)));
+  }
+  // В prod — тихо, не пугаем пользователя
+}
+
 function gv(id){const e=document.getElementById(id);return e?(parseFloat(e.value)||0):0;}
 function vol(m){return Math.max(0,gv('cur-'+m)-gv('prev-'+m));}
 function fmt(n){return n.toLocaleString('ru-RU',{minimumFractionDigits:2,maximumFractionDigits:2})+' ₽';}
@@ -1994,7 +2022,7 @@ async function autoArchive(){
   const now=new Date(),k='last_arch',last=localStorage.getItem(k);
   if(!last||new Date(last).getMonth()!==now.getMonth()){
     const ak='arch_'+now.getFullYear()+'_'+(now.getMonth()+1);
-    try{await db.collection('karchives').doc(ak).set({d:allData,t:now.toISOString()});localStorage.setItem(k,now.toISOString());}catch(e){}
+    try{await db.collection('karchives').doc(ak).set({d:allData,t:now.toISOString()});localStorage.setItem(k,now.toISOString());}catch(e){appError(e,'autoArchive');}
   }
 }
 
@@ -2189,7 +2217,7 @@ function triggerImport(){document.getElementById('import-file').click();}
 function importJSON(e){
   const f=e.target.files[0];if(!f)return;
   const r=new FileReader();
-  r.onload=async ev=>{try{const d=JSON.parse(ev.target.result);if(confirm('Импортировать? Текущие данные будут перезаписаны.')){allData=d;await fbSave();loadMonth();}}catch(err){alert('Ошибка импорта');}};
+  r.onload=async ev=>{try{const d=JSON.parse(ev.target.result);if(confirm('Импортировать? Текущие данные будут перезаписаны.')){allData=d;await fbSave();loadMonth();}}catch(err){appError(err,'importJSON');showFabToast('Ошибка импорта');}};
   r.readAsText(f);e.target.value='';
 }
 function showQR(){
@@ -5054,7 +5082,7 @@ _dbg('▶ Bootstrap start');
   const ks=localStorage.getItem('ksettings');if(ks)settings={...settings,...JSON.parse(ks)};
   settings.devMode=false; // всегда выключен при запуске
   const km=localStorage.getItem('kmeter');if(km)meter={...meter,...JSON.parse(km)};
-  const kv=localStorage.getItem('kversions');if(kv)versions=JSON.parse(kv);
+  try{const kv=localStorage.getItem('kversions');if(kv)versions=JSON.parse(kv);}catch(e){appError(e,'init:versions');}
   const kt=localStorage.getItem('ktheme');
   applyTheme(kt||(window.matchMedia('(prefers-color-scheme:light)').matches?'light':'dark'));
   window.matchMedia('(prefers-color-scheme:light)').addEventListener('change',e=>{if(!localStorage.getItem('ktheme'))applyTheme(e.matches?'light':'dark');});
