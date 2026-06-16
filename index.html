@@ -16,6 +16,19 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
+  /* D-006: цветовая семантика
+     --bg        фон страницы
+     --surface   фон карточек, попапов
+     --surface2  фон вложенных блоков, инпутов
+     --border    разделители, рамки
+     --accent    интерактивные элементы, фокус, активное состояние
+     --green     успех, оплачено, расход счётчиков, экономия
+     --red       опасность, удаление, просрочено, ошибка
+     --yellow    предупреждение, скоро истечёт, изменённые поля
+     --text      основной текст
+     --muted     вторичный текст, подсказки, метаданные
+     --label     заголовки секций, метки полей
+  */
   --bg:       #0f1117;
   --surface:  #1a1d27;
   --surface2: #22263a;
@@ -120,7 +133,7 @@ header.scrolled { box-shadow: 0 4px 24px rgba(0,0,0,.35); }
 .header-btns { margin-left: auto; display: flex; align-items: center; gap: 6px; }
 .hbtn {
   background: transparent; border: 1px solid var(--border); color: var(--label);
-  border-radius: var(--radius-sm); padding: 5px 10px; font-size: 15px; cursor: pointer;
+  border-radius: var(--radius-sm); padding: 5px 9px; font-size: 17px; cursor: pointer;
   transition: background .15s, color .15s; line-height: 1;
 }
 .hbtn:hover { background: var(--surface2); color: var(--text); }
@@ -1123,9 +1136,9 @@ input.meter-locked:focus { border-color: var(--border) !important; }
   <div class="header-btns">
     <button class="hbtn" id="back-btn" onclick="goBack()" style="display:none;font-size:13px;padding:5px 9px">← Назад</button>
     <div id="offline-badge" style="display:none;background:rgba(248,113,113,.15);border:1px solid rgba(248,113,113,.3);border-radius:20px;padding:3px 8px;font-size:11px;font-weight:600;color:var(--red)">📵</div>
-    <button class="hbtn" onclick="openSection('achievements')" style="font-size:17px;padding:5px 9px" title="Достижения">🏆</button>
-    <button class="hbtn" onclick="openSection('settings')" style="font-size:17px;padding:5px 9px" title="Настройки">⚙️</button>
-    <button class="hbtn" id="theme-btn" onclick="toggleTheme()" style="font-size:17px;padding:5px 9px" title="Тема">🌙</button>
+    <button class="hbtn" onclick="openSection('achievements')" title="Достижения">🏆</button>
+    <button class="hbtn" onclick="openSection('settings')" title="Настройки">⚙️</button>
+    <button class="hbtn" id="theme-btn" onclick="toggleTheme()" title="Тема">🌙</button>
   </div>
 </header>
 
@@ -3403,7 +3416,7 @@ function playToastySound(){
 /* ════════ Экранный фонарик (без камеры) ════════ */
 
 
-/* ════════ П7: Принять/Отменить показания ════════ */
+/* ════════ П7: Фиксация показаний / Заново ════════ */
 const METER_INPUT_IDS=['prev-gvs','cur-gvs','prev-hvs','cur-hvs','prev-t1','cur-t1','prev-t2','cur-t2'];
 let metersAccepted=false;
 
