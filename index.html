@@ -52,6 +52,10 @@
   --space-md:    12px;
   --space-lg:    16px;
   --space-xl:    24px;
+  /* E-003: токены теней */
+  --shadow-sm:   0 2px 8px rgba(0,0,0,.2);
+  --shadow-md:   0 4px 20px rgba(0,0,0,.3);
+  --shadow-lg:   0 8px 40px rgba(0,0,0,.4);
 }
 :root.light {
   --bg:#f4f6fb; --surface:#ffffff; --surface2:#eef1f7; --border:#d1d9e6;
@@ -99,7 +103,7 @@ header {
   position: sticky; top: 0; background: var(--bg); z-index: 40;
   transition: box-shadow .25s cubic-bezier(.4,0,.2,1);
 }
-header.scrolled { box-shadow: 0 4px 24px rgba(0,0,0,.35); }
+header.scrolled { box-shadow: var(--shadow-md); }
 #app-title { font-size: 19px; font-weight: 700; letter-spacing: -.5px; cursor: default; }
 .header-sub { font-size: 10px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
 /* Стрик попап */
@@ -112,7 +116,7 @@ header.scrolled { box-shadow: 0 4px 24px rgba(0,0,0,.35); }
   z-index: 9990;
   width: 80px;
   height: 28px;
-  box-shadow: 0 8px 32px rgba(0,0,0,.2);
+  box-shadow: var(--shadow-lg);
   opacity: 0;
   pointer-events: none;
   overflow: hidden;
@@ -148,7 +152,7 @@ header.scrolled { box-shadow: 0 4px 24px rgba(0,0,0,.35); }
   position: sticky; top: 57px; background: var(--bg); z-index: 39;
 }
 .tabs::-webkit-scrollbar { display: none; }
-.tabs.scrolled { box-shadow: 0 2px 12px rgba(0,0,0,.2); }
+.tabs.scrolled { box-shadow: var(--shadow-sm); }
 .tab {
   position: relative;
   padding: 7px 14px 10px; cursor: pointer;
@@ -222,7 +226,7 @@ header.scrolled { box-shadow: 0 4px 24px rgba(0,0,0,.35); }
   border-radius: 8px; border: 1px solid #2e3350;
   white-space: pre-line; max-width: 240px; width: max-content;
   z-index: 8888; pointer-events: none; opacity: 0; transition: opacity .15s;
-  box-shadow: 0 4px 16px rgba(0,0,0,.45);
+  box-shadow: var(--shadow-md);
 }
 #gtip.show { opacity: 1; }
 
@@ -380,7 +384,7 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
   background: var(--surface); border: 1px solid var(--border);
   border-radius: var(--radius-md); overflow: visible; transition: box-shadow .2s;
 }
-.source-block:hover { box-shadow: 0 2px 12px rgba(0,0,0,.15); }
+.source-block:hover { box-shadow: var(--shadow-sm); }
 .source-head {
   display: flex; align-items: center; gap: 8px;
   padding: 10px 16px; border-bottom: 1px solid var(--border);
@@ -468,7 +472,7 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
 /* Month picker dropdown */
 #month-picker {
   position: absolute; background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius-md); padding: 6px; z-index: 100; box-shadow: 0 8px 24px rgba(0,0,0,.3);
+  border-radius: var(--radius-md); padding: 6px; z-index: 100; box-shadow: var(--shadow-md);
   display: none; min-width: 160px;
 }
 #month-picker.show { display: block; }
@@ -861,7 +865,7 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
   transition: transform .4s cubic-bezier(.32,1,.6,1);
   max-height: 90vh; display: flex; flex-direction: column;
   -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
-  box-shadow: 0 -8px 40px rgba(0,0,0,.35);
+  box-shadow: var(--shadow-lg);
 }
 #bottom-sheet.open { transform: translateY(0); }
 .sheet-handle-area {
@@ -932,7 +936,7 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
   border-radius: 50px; padding: 8px 18px; font-size: 13px; color: var(--muted);
   display: flex; align-items: center; gap: 8px;
   transition: top .25s cubic-bezier(.4,0,.2,1), opacity .2s;
-  box-shadow: 0 4px 20px rgba(0,0,0,.3); white-space: nowrap;
+  box-shadow: var(--shadow-md); white-space: nowrap;
 }
 #ptr-indicator.visible { top: 14px; }
 #ptr-arrow { font-size: 16px; transition: transform .3s; display: inline-block; }
@@ -964,7 +968,7 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
   color: var(--green); font-size: 12px; font-weight: 600;
   padding: 6px 14px; border-radius: var(--radius-xl);
   pointer-events: none; animation: copyFadeUp .8s ease forwards;
-  box-shadow: 0 4px 16px rgba(0,0,0,.3);
+  box-shadow: var(--shadow-sm);
 }
 @keyframes copyFadeUp{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-24px)}}
 
