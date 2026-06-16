@@ -2038,8 +2038,24 @@ function loadMonth(){
   if(!allData[m]||!hasPrevMeters(allData[m])){
     const prev=prevMK(m);
     if(prev&&allData[prev]){
-      ['gvs','hvs','t1','t2'].forEach(k=>{const el=document.getElementById('prev-'+k);if(el&&!el.value&&allData[prev]['cur-'+k]!==undefined)el.value=allData[prev]['cur-'+k];});
-      TARIFF_IDS.forEach(id=>{const el=document.getElementById(id);if(el&&!el.value&&allData[prev][id]!==undefined)el.value=allData[prev][id];});
+      if(!allData[m])allData[m]={};
+      // Записываем prev-* в allData — DOM только отображает, allData — источник истины
+      ['gvs','hvs','t1','t2'].forEach(k=>{
+        if(allData[prev]['cur-'+k]!==undefined){
+          allData[m]['prev-'+k]=allData[prev]['cur-'+k];
+          const el=document.getElementById('prev-'+k);
+          if(el)el.value=allData[prev]['cur-'+k];
+        }
+      });
+      TARIFF_IDS.forEach(id=>{
+        if(allData[prev][id]!==undefined){
+          allData[m][id]=allData[prev][id];
+          const el=document.getElementById(id);
+          if(el&&!el.value)el.value=allData[prev][id];
+        }
+      });
+      // Сохраняем перенос в Firebase/localStorage
+      autoSave();
     }
   }
   // Reset detail view state for new month
