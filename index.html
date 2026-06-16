@@ -4388,6 +4388,49 @@ function fpSync(k){
   const el=document.getElementById('fp-v'+k);
   const isEE=(k==='t1'||k==='t2');
   if(el)el.textContent=v>0?(isEE?Math.round(v)+' кВт·ч':v.toLocaleString('ru-RU',{minimumFractionDigits:3,maximumFractionDigits:3})+' м³'):'—';
+  fpValidateField(k);
+}
+
+function validateMeterInput(k, value, prevValue){
+  // Чистая функция — возвращает {ok, msg}
+  if(value===''||value===null||value===undefined)return{ok:true,msg:''};
+  const v=parseFloat(value);
+  if(isNaN(v))return{ok:false,msg:'Введите число'};
+  if(v<0)return{ok:false,msg:'Не может быть отрицательным'};
+  if(v>999999)return{ok:false,msg:'Слишком большое значение'};
+  const pv=parseFloat(prevValue)||0;
+  if(pv>0&&v<pv)return{ok:false,msg:'Меньше предыдущего ('+pv+')'};
+  return{ok:true,msg:''};
+}
+
+function fpValidateField(k){
+  const m=curMonth(),d=allData[m]||{};
+  const pv=d['prev-'+k]!==undefined?d['prev-'+k]:'';
+  const cel=document.getElementById('fp-c'+k);
+  if(!cel)return true;
+  const result=validateMeterInput(k,cel.value,pv);
+  // Находим или создаём блок ошибки под полем
+  const errId='fp-err-'+k;
+  let errEl=document.getElementById(errId);
+  if(!errEl){
+    errEl=document.createElement('div');
+    errEl.id=errId;
+    errEl.style.cssText='font-size:10px;color:var(--red);min-height:12px;margin-top:2px';
+    cel.parentNode.insertBefore(errEl,cel.nextSibling);
+  }
+  if(!result.ok){
+    cel.style.borderColor='var(--red)';
+    errEl.textContent=result.msg;
+  } else {
+    cel.style.borderColor='';
+    errEl.textContent='';
+  }
+  return result.ok;
+}
+
+function fpValidateAll(){
+  const results=['gvs','hvs','t1','t2'].map(k=>fpValidateField(k));
+  return results.every(Boolean);
 }
 
 function fpGetAverages(){
