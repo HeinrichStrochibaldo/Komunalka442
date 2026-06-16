@@ -4651,11 +4651,11 @@ function fpGoConfirm(){
 
 function fpApply(){
   haptic([50,30,100]);
-  const m=curMonth(),d=allData[m]||{};
+  // Берём значения из fpDraft (на экране подтверждения DOM полей уже нет)
   ['gvs','hvs','t1','t2'].forEach(k=>{
-    const cel=document.getElementById('fp-c'+k);
+    const val=fpDraft[k]!==undefined?fpDraft[k]:null;
     const ce=document.getElementById('cur-'+k);
-    if(ce&&cel&&cel.value!==''){ce.value=cel.value;ce.classList.add('changed');}
+    if(ce&&val!==null){ce.value=val;ce.classList.add('changed');}
   });
   onInput();
   closeFabPopup();
