@@ -1525,18 +1525,18 @@ const MK=Object.keys(MONTHS);
 const TARIFF_IDS=['t-kaprem','t-gvs-voda','t-gvs-pod','t-otop','t-hvs','t-vodo','t-soderzh','t-bezop','t-tko','t-tv','t-oi-ee-d','t-oi-ee-n','t-oi-vo','t-oi-gvs','t-oi-gvsp','t-oi-hvs','t-t1','t-t2','t-inet'];
 const TARIFF_LABELS={kaprem:'Капремонт','gvs-voda':'ГВС (вода)','gvs-pod':'ГВС (подогрев)',otop:'Отопление',hvs:'ХВС',vodo:'Водоотведение',soderzh:'Содержание',bezop:'Безопасность',tko:'ТКО',tv:'ТВ',t1:'ЭЭ Т1',t2:'ЭЭ Т2',inet:'Интернет'};
 const ACHS=[
-  {id:'first',icon:'🎯',name:'Первый шаг',desc:'Внёс первые данные'},
-  {id:'paid1',icon:'✅',name:'Оплачено!',desc:'Отметил первый месяц оплаченным'},
-  {id:'streak3',icon:'🔥',name:'3 в ряд',desc:'3 месяца подряд оплачено'},
-  {id:'streak6',icon:'🔥🔥',name:'Полгода',desc:'6 месяцев подряд оплачено'},
-  {id:'months10',icon:'📊',name:'Аналитик',desc:'Заполнено 10+ месяцев'},
-  {id:'allmonths',icon:'🏆',name:'Годовой рекорд',desc:'Все 12 месяцев заполнены'},
-  {id:'export1',icon:'💾',name:'Архивариус',desc:'Сделал резервную копию'},
-  {id:'konami',icon:'🎮',name:'Геймер',desc:'↑↑↓↓←→←→BA'},
-  {id:'toasty',icon:'🔥',name:'TOASTY!',desc:'Застал пасхалку MK'},
-  {id:'toasty_catch',icon:'👆',name:'Поймал!',desc:'Поймал Toasty тапом'},
-  {id:'birthday',icon:'🎂',name:'С днём рождения!',desc:'Открыл трекер в свой день рождения'},
-  {id:'newyear',icon:'🎉',name:'С новым годом!',desc:'Открыл трекер 1 января'},
+  {id:'first',icon:'🎯',name:'Первый шаг',desc:'Внёс первые данные',xp:15},
+  {id:'paid1',icon:'✅',name:'Оплачено!',desc:'Отметил первый месяц оплаченным',xp:0},
+  {id:'streak3',icon:'🔥',name:'3 в ряд',desc:'3 месяца подряд оплачено',xp:50},
+  {id:'streak6',icon:'🔥🔥',name:'Полгода',desc:'6 месяцев подряд оплачено',xp:150},
+  {id:'months10',icon:'📊',name:'Аналитик',desc:'Заполнено 10+ месяцев',xp:75},
+  {id:'allmonths',icon:'🏆',name:'Годовой рекорд',desc:'Все 12 месяцев заполнены',xp:200},
+  {id:'export1',icon:'💾',name:'Архивариус',desc:'Сделал резервную копию',xp:30},
+  {id:'konami',icon:'🎮',name:'Геймер',desc:'↑↑↓↓←→←→BA',xp:50},
+  {id:'toasty',icon:'🔥',name:'TOASTY!',desc:'Застал пасхалку MK',xp:25},
+  {id:'toasty_catch',icon:'👆',name:'Поймал!',desc:'Поймал Toasty тапом',xp:40},
+  {id:'birthday',icon:'🎂',name:'С днём рождения!',desc:'Открыл трекер в свой день рождения',xp:100},
+  {id:'newyear',icon:'🎉',name:'С новым годом!',desc:'Открыл трекер 1 января',xp:50},
 ];
 
 /* ============================================================ STATE ============================================================ */
@@ -2376,7 +2376,11 @@ function unlockAch(id){
   localStorage.setItem('kachs',JSON.stringify(data));
   if(!allData._achs)allData._achs=[];
   allData._achs=data;fbSave();
-  const a=ACHS.find(x=>x.id===id);if(a)showAchToast(a);
+  const a=ACHS.find(x=>x.id===id);
+  if(a){
+    showAchToast(a);
+    if(a.xp>0)addXP(a.xp,'достижение: '+a.name);
+  }
   renderAchievements();
   // Точечное обновление грида если оверлей открыт
   const overlay=document.getElementById('section-overlay');
@@ -2477,12 +2481,14 @@ function renderAchievements(){
     const dateStr=unlocked?(achEntry&&achEntry.date
       ?new Date(achEntry.date).toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'})
       :'дата неизвестна'):'';
+    const xpBadge=a.xp>0?`<div style="font-size:9px;font-weight:700;color:${unlocked?'var(--yellow)':'var(--muted)'};margin-top:2px">+${a.xp} XP</div>`:'';
     return `<div class="ach-card${unlocked?' unlocked':''}"
       style="opacity:0;transform:translateY(12px) scale(.95)"
       data-tip="${unlocked?a.name+': '+a.desc:'🔒 '+a.desc}">
       <div class="ach-icon">${a.icon}</div>
       <div class="ach-name">${a.name}</div>
-      ${unlocked?`<div style="font-size:9px;color:var(--muted);margin-top:3px;line-height:1.2">${dateStr}</div>`:''}
+      ${xpBadge}
+      ${unlocked?`<div style="font-size:9px;color:var(--muted);margin-top:2px;line-height:1.2">${dateStr}</div>`:''}
     </div>`;
   }).join('');
   // Stagger анимация
@@ -2935,6 +2941,7 @@ function resetAchs(){
 function resetXP(){
   xpTotal=0;
   localStorage.setItem('kxp','0');
+  localStorage.removeItem('kxp_log');
   Object.keys(localStorage).filter(k=>k.startsWith('kxp_')).forEach(k=>localStorage.removeItem(k));
   updateXPDisplay();
   const overlay2=document.getElementById('section-overlay');
@@ -3057,20 +3064,122 @@ function getRecords(){
 
 /* П38: XP за действия */
 let xpTotal=parseInt(localStorage.getItem('kxp')||'0');
+function getXPLog(){
+  try{return JSON.parse(localStorage.getItem('kxp_log')||'[]');}catch(e){return[];}
+}
 function addXP(pts, reason, monthKey){
-  // Проверяем не начисляли ли уже за этот месяц+причину
   const m=monthKey||curMonth();
   const xpKey='kxp_'+m+'_'+reason;
   if(localStorage.getItem(xpKey))return;
   localStorage.setItem(xpKey,'1');
   xpTotal+=pts;
   localStorage.setItem('kxp',xpTotal);
+  // Сохраняем в лог (максимум 50 записей)
+  const log=getXPLog();
+  log.unshift({pts,reason,date:new Date().toISOString().slice(0,10),total:xpTotal});
+  if(log.length>50)log.pop();
+  localStorage.setItem('kxp_log',JSON.stringify(log));
   updateXPDisplay();
   showXPFloat('+'+pts+' XP');
 }
 function updateXPDisplay(){
   const el=document.getElementById('xp-count');
   if(el)el.textContent=xpTotal;
+}
+
+function getXPLevel(xp){
+  if(xp>=1000)return{name:'Легенда',next:null,color:'#f59e0b'};
+  if(xp>=500)return{name:'Мастер',next:1000,color:'#8b5cf6'};
+  if(xp>=200)return{name:'Эксперт',next:500,color:'#3b82f6'};
+  if(xp>=100)return{name:'Опытный',next:200,color:'#10b981'};
+  return{name:'Новичок',next:100,color:'#6b7280'};
+}
+
+function openXPPopup(){
+  haptic(30);
+  const existing=document.getElementById('xp-popup-overlay');
+  if(existing)existing.remove();
+
+  const level=getXPLevel(xpTotal);
+  const pct=level.next?Math.min(100,Math.round(xpTotal/level.next*100)):100;
+  const log=getXPLog();
+
+  const logHtml=log.length===0
+    ?'<div style="text-align:center;color:var(--muted);font-size:13px;padding:20px 0">Пока пусто — зарабатывай XP!</div>'
+    :log.map(e=>{
+      const d=new Date(e.date).toLocaleDateString('ru-RU',{day:'numeric',month:'short'});
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+        <div>
+          <div style="font-size:12px;color:var(--text)">${e.reason}</div>
+          <div style="font-size:10px;color:var(--muted)">${d}</div>
+        </div>
+        <div style="font-size:13px;font-weight:700;color:var(--yellow);white-space:nowrap">+${e.pts} XP</div>
+      </div>`;
+    }).join('');
+
+  const overlay=document.createElement('div');
+  overlay.id='xp-popup-overlay';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;display:flex;align-items:center;justify-content:center';
+  overlay.innerHTML=`
+    <div id="xp-popup-modal" style="background:var(--surface);border:1px solid var(--border);border-radius:20px;width:min(340px,calc(100vw-32px));max-height:80vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.4)">
+      <div style="padding:20px 20px 0;flex-shrink:0">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <div style="font-size:15px;font-weight:700;color:var(--text)">✨ Опыт</div>
+          <button onclick="document.getElementById('xp-popup-overlay').remove()" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;padding:0 4px;line-height:1;font-family:inherit">×</button>
+        </div>
+        <div style="text-align:center;margin-bottom:16px">
+          <div style="font-size:40px;font-weight:800;color:var(--yellow);line-height:1">${xpTotal}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">XP</div>
+          <div style="font-size:13px;font-weight:600;color:${level.color};margin-top:6px">${level.name}</div>
+          ${level.next?`
+          <div style="height:6px;background:var(--border);border-radius:3px;margin:8px 0 4px;overflow:hidden">
+            <div style="height:100%;width:${pct}%;background:${level.color};border-radius:3px;transition:width .6s cubic-bezier(.34,1.56,.64,1)"></div>
+          </div>
+          <div style="font-size:10px;color:var(--muted)">${xpTotal} / ${level.next} XP до следующего уровня</div>`:'<div style="font-size:11px;color:var(--yellow);margin-top:6px">🏆 Максимальный уровень!</div>'}
+        </div>
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:8px">История начислений</div>
+      </div>
+      <div data-xp-scroll style="padding:0 20px 20px;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;">
+        ${logHtml}
+      </div>
+    </div>`;
+
+  document.body.appendChild(overlay);
+  // Блокируем PTR пока попап открыт
+  ptrLocked=true;
+
+  // Блокируем все touch-события на overlay
+  overlay.addEventListener('touchmove', e=>{
+    const scrollable=e.target.closest('[data-xp-scroll]');
+    if(!scrollable)e.preventDefault();
+  },{passive:false});
+
+  // Анимация — вырастает из XP кнопки
+  const modal=overlay.querySelector('#xp-popup-modal');
+  const xpBtn=document.querySelector('.xp-badge');
+  let originX='50%', originY='50%';
+  if(xpBtn){
+    const r=xpBtn.getBoundingClientRect();
+    const mx=r.left+r.width/2;
+    const my=r.top+r.height/2;
+    originX=mx+'px';
+    originY=my+'px';
+  }
+  modal.style.transformOrigin=`${originX} ${originY}`;
+  modal.style.opacity='0';
+  modal.style.transform='scale(.1)';
+  overlay.style.opacity='0';
+  requestAnimationFrame(()=>{
+    overlay.style.transition='opacity .2s ease';
+    overlay.style.opacity='1';
+    modal.style.transition='opacity .22s ease, transform .3s cubic-bezier(.34,1.4,.64,1)';
+    modal.style.opacity='1';
+    modal.style.transform='scale(1)';
+  });
+  // Клик на backdrop
+  const closeXPPopup=()=>{overlay.remove();ptrLocked=false;};
+  overlay.onclick=(e)=>{if(e.target===overlay)closeXPPopup();};
+  overlay.querySelector('button').onclick=closeXPPopup;
 }
 function showXPFloat(text){
   const el=document.createElement('div');
@@ -3667,7 +3776,7 @@ function openSection(name){
     content.innerHTML=`
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
         <div class="ach-counter" style="font-size:13px;color:var(--muted)">${getAchs().filter(id=>ACHS.some(a=>a.id===id)).length} из ${ACHS.length} разблокировано</div>
-        <div class="xp-badge" style="background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.25);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;color:var(--yellow)">✨ ${xp} XP</div>
+        <div class="xp-badge" onclick="openXPPopup()" style="background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.25);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;color:var(--yellow);cursor:pointer">✨ ${xp} XP ›</div>
       </div>
       ${recsHtml}
       <div class="ach-grid" id="so-ach-grid" style="margin-bottom:20px"></div>
@@ -4464,6 +4573,17 @@ const QA_FEATURES=[
     'Звуки (монетка, касса, Doom, Toasty)',
     'Диагностика на сплэше',
   ]},
+  {cat:'FAB флоу (П9)',items:[
+    'FAB попап — экран ввода показаний',
+    'FAB попап — экран подтверждения',
+    'Фиксация показаний (confirmAccept)',
+    'Разблокировка показаний (Заново)',
+    'Сброс показаний с удержанием',
+    'Блокировка FAB после фиксации',
+    'Кастомный диалог подтверждения',
+    'Кастомный календарь выбора даты',
+    'Машина состояний месяца',
+  ]},
 ];
 
 const QA_STORAGE_KEY='kqa_checks';
@@ -4495,7 +4615,7 @@ const QA_TESTS={
     closeFabPopup();return ok;
   },
   'Принятие/отмена пока': async()=>{
-    return typeof handleAccept==='function'&&typeof confirmAccept==='function';
+    return typeof confirmAccept==='function'&&typeof fpRedoUnlock==='function';
   },
   'Навигация по месяцам': async()=>{
     const before=curIdx;nextMonth();const after=curIdx;
@@ -4606,6 +4726,38 @@ const QA_TESTS={
   'Вибрация (haptic fee': async()=>{try{haptic(10);return true;}catch(e){return false;}},
   'Звуки (монетка, касс': async()=>{try{playCoin();return true;}catch(e){return false;}},
   'Диагностика на сплэш': async()=>typeof _dbg==='function',
+  // FAB флоу (П9)
+  'FAB попап — экран вв': async()=>{
+    if(metersAccepted)return true; // не открываем если зафиксировано
+    openFabPopup();
+    const ok=document.getElementById('fab-popup').style.display!=='none';
+    closeFabPopup();return ok;
+  },
+  'FAB попап — экран по': async()=>{
+    return typeof fpGoConfirm==='function'&&typeof fpShowScreen1==='function';
+  },
+  'Фиксация показаний (': async()=>{
+    return typeof confirmAccept==='function';
+  },
+  'Разблокировка показан': async()=>{
+    return typeof fpRedoUnlock==='function';
+  },
+  'Сброс показаний с уде': async()=>{
+    return typeof fpRedoConfirm==='function';
+  },
+  'Блокировка FAB после': async()=>{
+    const fab=document.getElementById('fab');
+    return fab!==null&&typeof openFabPopup==='function';
+  },
+  'Кастомный диалог подт': async()=>{
+    return typeof showConfirm==='function'&&typeof showBtnToast==='function';
+  },
+  'Кастомный календарь в': async()=>{
+    return typeof renderDatepickCal==='function';
+  },
+  'Машина состояний меся': async()=>{
+    return typeof updateMonthBarState==='function';
+  },
 };
 
 async function runQATest(key){
@@ -4772,7 +4924,9 @@ function renderDev(){
     'fabLoading','showSaveWave','updateProgressBar','updateOnboarding','getRecords',
     'addXP','updateXPDisplay','showXPFloat','updateYoY','updateHistoryBadge',
     'updateRecordsTable','playDoom','playToastySound',
-    'handleAccept','confirmAccept','lockedFieldFeedback',
+    'confirmAccept','lockedFieldFeedback','fpShowScreen1','fpGoConfirm','fpApply',
+    'fpRedoUnlock','fpRedoConfirm','updateMonthBarState','showConfirm','showBtnToast',
+    'renderDatepickCal',
     'initSheetDrag','initSplashText','getQuoteIndex','getContextualQuote','playCoin',
     'playCashRegister','openSection','closeSectionOverlay',
     '_buildSettingsContent','soSaveSettings','soToggleDevMode','applyDevMode',
