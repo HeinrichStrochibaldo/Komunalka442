@@ -1626,6 +1626,9 @@ function fmoney(n){return n>0?fmt(n):'—';}
 function setT(id,v){const e=document.getElementById(id);if(e)e.textContent=v;}
 function curMonth(){return MK[curIdx];}
 function prevMK(m){const i=MK.indexOf(m);return i>0?MK[i-1]:null;}
+function nextMK(m){const i=MK.indexOf(m);return i>=0&&i<MK.length-1?MK[i+1]:null;}
+function isCurrentMonth(m){return m===curMonth();}
+function monthIdx(m){return MK.indexOf(m);}
 
 /* ============================================================ COMPUTE ============================================================ */
 function compute(){
@@ -3208,7 +3211,7 @@ function updateYoY(){
   const el=document.getElementById('ft-yoy');if(!el)return;
   const m=curMonth();
   // Ищем тот же месяц прошлого года (упрощённо — 12 позиций назад)
-  const idx=MK.indexOf(m);
+  const idx=monthIdx(m);
   const prevYearIdx=idx-12;
   if(prevYearIdx<0||!allData[MK[prevYearIdx]]){el.textContent='';return;}
   const cur=cfd(allData[m]||{}).grand;
@@ -3874,8 +3877,8 @@ async function runHealthCheck(){
   const months=MK.filter(m=>allData[m]&&Object.keys(allData[m]).filter(k=>!k.startsWith('_')).length>0);
   let gaps=[];
   for(let i=1;i<months.length;i++){
-    const prev=MK.indexOf(months[i-1]);
-    const curr=MK.indexOf(months[i]);
+    const prev=monthIdx(months[i-1]);
+    const curr=monthIdx(months[i]);
     if(curr-prev>1){
       const missing=MK.slice(prev+1,curr);
       gaps=gaps.concat(missing.map(m=>MONTHS[m]||m));
