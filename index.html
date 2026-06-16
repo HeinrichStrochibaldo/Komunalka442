@@ -1187,7 +1187,6 @@ input.meter-locked:focus { border-color: var(--border) !important; }
 <div id="pages-viewport"><div id="pages-track">
 <div id="page-dev" class="page">
   <div class="sec-title">🛠 JS Диагностика</div>
-  <div id="dev-alldata-diag"></div>
   <div id="dev-list" style="font-size:12px;font-family:monospace"></div>
   <div id="dev-origins"></div>
 </div>
@@ -1703,6 +1702,10 @@ function prevMK(m){const i=MK.indexOf(m);return i>0?MK[i-1]:null;}
 function nextMK(m){const i=MK.indexOf(m);return i>=0&&i<MK.length-1?MK[i+1]:null;}
 function isCurrentMonth(m){return m===curMonth();}
 function monthIdx(m){return MK.indexOf(m);}
+// Проверяем наличие предыдущих показаний (undefined, не falsy — защита от 0)
+function hasPrevMeters(d){
+  return ['gvs','hvs','t1','t2'].some(k=>d['prev-'+k]!==undefined);
+}
 
 /* ============================================================ COMPUTE ============================================================ */
 function compute(){
@@ -2032,7 +2035,7 @@ function loadMonth(){
   closePicker();
   const d=allData[m]||{};
   document.querySelectorAll('input[type=number]').forEach(el=>{el.value=d[el.id]!==undefined?d[el.id]:'';});
-  if(!allData[m]){
+  if(!allData[m]||!hasPrevMeters(allData[m])){
     const prev=prevMK(m);
     if(prev&&allData[prev]){
       ['gvs','hvs','t1','t2'].forEach(k=>{const el=document.getElementById('prev-'+k);if(el&&!el.value&&allData[prev]['cur-'+k]!==undefined)el.value=allData[prev]['cur-'+k];});
@@ -5137,15 +5140,7 @@ function renderDevOrigins(){
 function renderDev(){
   const el=document.getElementById('dev-list');
   if(!el)return;
-  // ДИАГНОСТИКА: показываем allData текущего месяца
-  const diagEl=document.getElementById('dev-alldata-diag');
-  if(diagEl){
-    const m=curMonth();
-    const d=allData[m]||{};
-    const keys=['prev-gvs','prev-hvs','prev-t1','prev-t2','cur-gvs','cur-hvs','cur-t1','cur-t2','_accepted','_paid'];
-    const rows=keys.map(k=>`<tr><td style="color:var(--muted);padding:2px 8px 2px 0">${k}</td><td style="color:${d[k]!==undefined?'var(--green)':'var(--red)'}; font-weight:600">${d[k]!==undefined?d[k]:'—'}</td></tr>`).join('');
-    diagEl.innerHTML=`<div style="margin-bottom:12px;background:var(--surface2);border-radius:8px;padding:10px;font-size:11px;font-family:monospace"><div style="font-weight:700;color:var(--label);margin-bottom:6px">allData[${m}]</div><table>${rows}</table></div>`;
-  }
+
   // Если есть DEV_FNS — используем автотесты
   if(typeof DEV_FNS!=='undefined'&&DEV_FNS.length>50){
     const ok=Object.values(devResults).filter(r=>r&&r.status==='ok').length;
