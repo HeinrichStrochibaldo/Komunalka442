@@ -1618,6 +1618,11 @@ function gv(id){const e=document.getElementById(id);return e?(parseFloat(e.value
 function vol(m){return Math.max(0,gv('cur-'+m)-gv('prev-'+m));}
 function fmt(n){return n.toLocaleString('ru-RU',{minimumFractionDigits:2,maximumFractionDigits:2})+' ₽';}
 function fvol(n,u){return n>0?n.toLocaleString('ru-RU',{minimumFractionDigits:3,maximumFractionDigits:3})+' '+u:'—';}
+// C-003: единые функции форматирования
+function fwat(n){return n>0?n.toLocaleString('ru-RU',{minimumFractionDigits:3,maximumFractionDigits:3})+' м³':'—';}
+function fee(n){return n>0?Math.round(n)+' кВт·ч':'—';}
+function fpct(n,sign=true){return (sign&&n>=0?'+':'')+n.toFixed(1)+'%';}
+function fmoney(n){return n>0?fmt(n):'—';}
 function setT(id,v){const e=document.getElementById(id);if(e)e.textContent=v;}
 function curMonth(){return MK[curIdx];}
 function prevMK(m){const i=MK.indexOf(m);return i>0?MK[i-1]:null;}
@@ -2286,7 +2291,7 @@ function renderDynamics(){
       const cls=diff>0?'cup':diff<0?'cdn':'czr';
       const rowCls=diff>0?' row-up':diff<0?' row-dn':'';
       const dr=b!==undefined&&cur!==undefined?(diff>=0?'+':'')+diff.toLocaleString('ru-RU',{minimumFractionDigits:2,maximumFractionDigits:4})+' ₽':'—';
-      const dp=pct!==null?(diff>=0?'+':'')+pct.toFixed(1)+'%':'—';
+      const dp=pct!==null?fpct(pct,diff>=0):'—';
       return `<tr class="${rowCls}"><td>${lbl}</td><td>${cur!==undefined?cur.toLocaleString('ru-RU',{minimumFractionDigits:2,maximumFractionDigits:6}):'—'}</td><td class="${cls}">${dr}</td><td class="${cls}">${dp}</td></tr>`;
     }).join('');
     return `<div class="dyn-month">
@@ -3210,7 +3215,7 @@ function updateYoY(){
   const prev=cfd(allData[MK[prevYearIdx]]).grand;
   if(!cur||!prev){el.textContent='';return;}
   const diff=cur-prev;
-  const pct=Math.abs(diff/prev*100).toFixed(1);
+  const pct=Math.abs(diff/prev*100);
   el.textContent=(diff>0?'▲ +':'▼ ')+pct+'% vs прошлый год';
   el.style.color=diff>0?'var(--red)':'var(--green)';
 }
@@ -3902,7 +3907,7 @@ async function runHealthCheck(){
     const saved=allData[curMonth()]&&allData[curMonth()].grand;
     const diff=saved?Math.abs(c.grand-(saved||0)):0;
     results.push({icon:'🧮',label:'Расчёты',status:diff>1?'warn':'ok',
-      msg:diff>1?'Расхождение: '+diff.toFixed(2)+' ₽':'Корректны'});
+      msg:diff>1?'Расхождение: '+fmt(diff):'Корректны'});
   }catch(e){
     results.push({icon:'🧮',label:'Расчёты',status:'error',msg:'Ошибка: '+e.message});
   }
@@ -4382,7 +4387,7 @@ function fpSync(k){
   const v=Math.max(0,c-pv);
   const el=document.getElementById('fp-v'+k);
   const isEE=(k==='t1'||k==='t2');
-  if(el)el.textContent=v>0?(v.toFixed(isEE?0:3)+(isEE?' кВт·ч':' м³')):'—';
+  if(el)el.textContent=v>0?(isEE?Math.round(v)+' кВт·ч':v.toLocaleString('ru-RU',{minimumFractionDigits:3,maximumFractionDigits:3})+' м³'):'—';
 }
 
 function fpGetAverages(){
@@ -4434,7 +4439,7 @@ function fpGoConfirm(){
         '<span style="font-weight:700;color:'+(isAnom?'var(--yellow)':'var(--text)')+'">'+cv+'</span>'+
       '</span>'+
       '<span style="font-size:11px;color:'+(isAnom?'var(--yellow)':'var(--green)')+';font-weight:600;white-space:nowrap;text-align:right;min-width:64px">'+
-        (diff>0?'+'+diff.toFixed(isEE?0:3)+unit:'')+
+        (diff>0?'+'+(isEE?Math.round(diff):diff.toLocaleString('ru-RU',{minimumFractionDigits:3,maximumFractionDigits:3}))+unit:'')+
       '</span>'+
     '</div>';
   }).join('');
@@ -4445,8 +4450,8 @@ function fpGoConfirm(){
     const anomLines=keys.filter(k=>avgs[k]>0&&diffs[k]>avgs[k]*2).map(k=>{
       const isEE=(k==='t1'||k==='t2');
       const unit=units[k];
-      const avg=avgs[k].toFixed(isEE?0:2);
-      const cur=diffs[k].toFixed(isEE?0:2);
+      const avg=isEE?Math.round(avgs[k]):avgs[k].toFixed(2);
+      const cur=isEE?Math.round(diffs[k]):diffs[k].toFixed(2);
       return '<div style="font-size:11px;color:var(--yellow);margin-top:3px">'+labels[k]+': обычно ~'+avg+unit+', сейчас '+cur+unit+'</div>';
     });
     if(anomLines.length>0){
