@@ -1706,6 +1706,37 @@ function monthIdx(m){return MK.indexOf(m);}
 function hasPrevMeters(d){
   return ['gvs','hvs','t1','t2'].some(k=>d['prev-'+k]!==undefined);
 }
+// Закон 7: Созданный месяц = существует в allData И содержит prev-*
+function isCreatedMonth(m){
+  return !!allData[m]&&hasPrevMeters(allData[m]);
+}
+// Закон 8: guard для DEV-призрака — блокирует все изменяющие действия
+function isGhostMonth(){
+  return !!(settings.devMode&&!isCreatedMonth(curMonth()));
+}
+function ghostGuard(){
+  if(!isGhostMonth())return false;
+  haptic([10,10,10,10,10]);
+  showFabToast('👻 DEV PREVIEW · Действие недоступно');
+  return true;
+}
+// Создаём следующий месяц из текущего (Закон 5)
+function createNextMonth(currentMK){
+  const nextMk=nextMK(currentMK);
+  if(!nextMk)return; // нет следующего месяца в MK
+  if(isCreatedMonth(nextMk))return; // уже создан — не перезаписываем
+  const cur=allData[currentMK]||{};
+  const next={};
+  // Переносим cur-* → prev-* следующего месяца
+  ['gvs','hvs','t1','t2'].forEach(k=>{
+    if(cur['cur-'+k]!==undefined)next['prev-'+k]=cur['cur-'+k];
+  });
+  // Переносим тарифы
+  TARIFF_IDS.forEach(id=>{
+    if(cur[id]!==undefined)next[id]=cur[id];
+  });
+  allData[nextMk]=next;
+}
 
 /* ============================================================ COMPUTE ============================================================ */
 function compute(){
@@ -1760,6 +1791,7 @@ function render(){
 
 /* ============================================================ PAID ============================================================ */
 function handlePaid(){
+  if(ghostGuard())return;
   // Открываем кастомный календарь
   const today = new Date();
   _dpSelected = today.toISOString().slice(0,10);
@@ -1845,6 +1877,8 @@ function confirmPaid(){
   if(!allData[m])allData[m]={};
   allData[m]._paid=true;
   allData[m]._paidDate=dateVal;
+  // Закон 5: атомарно создаём следующий месяц с prev-* = текущий cur-*
+  createNextMonth(m);
   closeOverlay('datepick-overlay');
   fbSave();updatePaidBtn();updatePaidUI(compute());
   launchConfetti();unlockAch('paid1');
@@ -1857,6 +1891,7 @@ function confirmPaid(){
 }
 
 function handleUnpaid(){
+  if(ghostGuard())return;
   const m=curMonth();
   const d=allData[m]&&allData[m]._paidDate;
   const dateStr=d?new Date(d).toLocaleDateString('ru-RU',{day:'numeric',month:'long'}):'';
@@ -2013,8 +2048,44 @@ function guardMonthSwitch(action){
 }
 
 function prevMonth(){if(curIdx>0){guardMonthSwitch(()=>{curIdx--;loadMonth();});}}
-function nextMonth(){if(curIdx<MK.length-1){guardMonthSwitch(()=>{curIdx++;loadMonth();});}}
-function jumpTo(idx){guardMonthSwitch(()=>{curIdx=idx;loadMonth();});}
+function nextMonth(){
+  if(curIdx>=MK.length-1)return;
+  const nextMk=MK[curIdx+1];
+  // Закон В: в PROD нельзя переходить в несозданный месяц
+  if(!settings.devMode&&!isCreatedMonth(nextMk)){
+    showConfirm(
+      'Месяц ещё не открыт.\nЗавершите '+MONTHS[MK[curIdx]]+' чтобы продолжить.',
+      null, null
+    );
+    // Показываем только одну кнопку — "Ок"
+    setTimeout(()=>{
+      const yes=document.getElementById('app-confirm-yes');
+      const no=document.getElementById('app-confirm-no');
+      if(yes){yes.textContent='Остаться';yes.className='btn btn-ghost';}
+      if(no)no.style.display='none';
+    },0);
+    return;
+  }
+  guardMonthSwitch(()=>{curIdx++;loadMonth();});
+}
+function jumpTo(idx){
+  // Закон В: в PROD нельзя прыгать в несозданный месяц
+  const targetMk=MK[idx];
+  if(!settings.devMode&&targetMk&&!isCreatedMonth(targetMk)&&idx>curIdx){
+    showConfirm(
+      'Месяц ещё не открыт.\nЗавершите предыдущий месяц чтобы продолжить.',
+      null, null
+    );
+    setTimeout(()=>{
+      const yes=document.getElementById('app-confirm-yes');
+      const no=document.getElementById('app-confirm-no');
+      if(yes){yes.textContent='Остаться';yes.className='btn btn-ghost';}
+      if(no)no.style.display='none';
+    },0);
+    return;
+  }
+  guardMonthSwitch(()=>{curIdx=idx;loadMonth();});
+}
 
 // Long press on month label
 const mlabel=document.getElementById('month-label');
@@ -2033,37 +2104,50 @@ function loadMonth(){
   const m=curMonth();
   setT('month-label',MONTHS[m]);
   closePicker();
+
+  // Закон Г: DEV-призрак — несозданный месяц показывается только в DEV
+  const devGhost=settings.devMode&&!isCreatedMonth(m);
+  const ghostEl=document.getElementById('dev-ghost-banner');
+
+  if(devGhost){
+    // Показываем плашку DEV PREVIEW
+    if(!ghostEl){
+      const banner=document.createElement('div');
+      banner.id='dev-ghost-banner';
+      banner.style.cssText='background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3);border-radius:var(--radius-md);padding:10px 14px;margin-bottom:12px;font-size:12px;color:var(--yellow);text-align:center;';
+      banner.innerHTML='👻 DEV PREVIEW · Месяц не создан · Данные не существуют · Действия заблокированы';
+      const monthBar=document.querySelector('.month-bar');
+      if(monthBar&&monthBar.parentNode)monthBar.parentNode.insertBefore(banner,monthBar.nextSibling);
+    }
+    // Очищаем все поля
+    document.querySelectorAll('input[type=number]').forEach(el=>{el.value='';});
+    // Блокируем всё
+    METER_INPUT_IDS.forEach(id=>{
+      const el=document.getElementById(id);
+      if(el){el.classList.add('meter-locked');el.setAttribute('readonly','');}
+    });
+    metersAccepted=false;
+    updateMonthBarState();
+    render();
+    return;
+  }
+
+  // Убираем плашку если вернулись в обычный месяц
+  if(ghostEl)ghostEl.remove();
+
   const d=allData[m]||{};
   document.querySelectorAll('input[type=number]').forEach(el=>{el.value=d[el.id]!==undefined?d[el.id]:'';});
-  if(!allData[m]||!hasPrevMeters(allData[m])){
-    const prev=prevMK(m);
-    if(prev&&allData[prev]){
-      if(!allData[m])allData[m]={};
-      // Записываем prev-* в allData — DOM только отображает, allData — источник истины
-      ['gvs','hvs','t1','t2'].forEach(k=>{
-        if(allData[prev]['cur-'+k]!==undefined){
-          allData[m]['prev-'+k]=allData[prev]['cur-'+k];
-          const el=document.getElementById('prev-'+k);
-          if(el)el.value=allData[prev]['cur-'+k];
-        }
-      });
-      TARIFF_IDS.forEach(id=>{
-        if(allData[prev][id]!==undefined){
-          allData[m][id]=allData[prev][id];
-          const el=document.getElementById(id);
-          if(el&&!el.value)el.value=allData[prev][id];
-        }
-      });
-      // Сохраняем перенос в Firebase/localStorage
-      autoSave();
-    }
-  }
-  // Reset detail view state for new month
+  // Закон 3: loadMonth() только отображает — не создаёт данные
   detailOpen=!(allData[m]&&allData[m]._paid);
-  // Восстанавливаем состояние принятия показаний из данных месяца
   const isAccepted=!!(allData[m]&&allData[m]._accepted);
   metersAccepted=isAccepted;
-  METER_INPUT_IDS.forEach(id=>{
+  // prev-* ВСЕГДА заблокированы — Закон 1 Конституции трекера
+  PREV_METER_IDS.forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){el.classList.add('meter-locked');el.setAttribute('readonly','');}
+  });
+  // cur-* блокируются только после фиксации показаний
+  CUR_METER_IDS.forEach(id=>{
     const el=document.getElementById(id);
     if(el){
       if(isAccepted){el.classList.add('meter-locked');el.setAttribute('readonly','');}
@@ -3448,15 +3532,19 @@ function playToastySound(){
 
 
 /* ════════ П7: Фиксация показаний / Заново ════════ */
-const METER_INPUT_IDS=['prev-gvs','cur-gvs','prev-hvs','cur-hvs','prev-t1','cur-t1','prev-t2','cur-t2'];
+const PREV_METER_IDS=['prev-gvs','prev-hvs','prev-t1','prev-t2'];
+const CUR_METER_IDS=['cur-gvs','cur-hvs','cur-t1','cur-t2'];
+const METER_INPUT_IDS=[...PREV_METER_IDS,...CUR_METER_IDS]; // обратная совместимость
 let metersAccepted=false;
 
 function confirmAccept(){
+  if(ghostGuard())return;
   metersAccepted=true;
   const m=curMonth();
   if(!allData[m])allData[m]={};
   allData[m]._accepted=true;
-  METER_INPUT_IDS.forEach(id=>{
+  // При фиксации блокируем только cur-* (prev-* уже всегда заблокированы)
+  CUR_METER_IDS.forEach(id=>{
     const el=document.getElementById(id);
     if(el){
       el.classList.add('meter-locked');
@@ -3516,6 +3604,16 @@ function showBtnToast(btn, msg){
 }
 
 function updateMonthBarState(){
+  // Закон 8: в DEV-призраке все кнопки заблокированы
+  if(isGhostMonth()){
+    const acceptBtn=document.getElementById('accept-btn');
+    const paidBtn=document.getElementById('paid-btn');
+    const fabBtn=document.getElementById('fab');
+    if(acceptBtn){acceptBtn.style.opacity='0.35';acceptBtn.onpointerdown=null;acceptBtn.onpointerup=null;acceptBtn.onclick=()=>ghostGuard();}
+    if(paidBtn){paidBtn.style.opacity='0.35';paidBtn.style.pointerEvents='';paidBtn.onclick=()=>ghostGuard();}
+    if(fabBtn){fabBtn.style.opacity='0.35';fabBtn.classList.remove('pulse');fabBtn.title='👻 DEV PREVIEW';}
+    return;
+  }
   const m=curMonth();
   const accepted=!!(allData[m]&&allData[m]._accepted);
   const paid=!!(allData[m]&&allData[m]._paid);
@@ -3601,11 +3699,13 @@ function updateMonthBarState(){
 }
 
 function fpRedoUnlock(){
+  if(ghostGuard())return;
   // Обычный тап — снимаем блокировку, значения остаются
   metersAccepted=false;
   const m=curMonth();
   if(allData[m])delete allData[m]._accepted;
-  METER_INPUT_IDS.forEach(id=>{
+  // Разблокируем только cur-* (prev-* остаются заблокированными всегда)
+  CUR_METER_IDS.forEach(id=>{
     const el=document.getElementById(id);
     if(el){el.classList.remove('meter-locked');el.removeAttribute('readonly');}
   });
@@ -3615,18 +3715,16 @@ function fpRedoUnlock(){
 }
 
 function fpRedoConfirm(){
+  if(ghostGuard())return;
   // Удержание — предупреждение, сброс cur-* полей
   showConfirm('Сбросить текущие показания? Предыдущие не изменятся.',()=>{
     metersAccepted=false;
     const m=curMonth();
     if(allData[m])delete allData[m]._accepted;
-    ['cur-gvs','cur-hvs','cur-t1','cur-t2'].forEach(id=>{
+    // Сбрасываем только cur-* (prev-* остаются заблокированными всегда)
+    CUR_METER_IDS.forEach(id=>{
       const el=document.getElementById(id);
       if(el){el.value='';el.classList.remove('meter-locked');el.removeAttribute('readonly');}
-    });
-    ['prev-gvs','prev-hvs','prev-t1','prev-t2'].forEach(id=>{
-      const el=document.getElementById(id);
-      if(el){el.classList.remove('meter-locked');el.removeAttribute('readonly');}
     });
     onInput();
     updateMonthBarState();
@@ -4433,6 +4531,12 @@ function showFabToast(msg){
 function openFabPopup(){
   haptic(40);
   const m=curMonth();
+  // Закон Г: в DEV-призраке FAB заблокирован — Закон 8
+  if(settings.devMode&&!isCreatedMonth(m)){
+    haptic([10,10,10,10,10]);
+    showBtnToast(document.getElementById('fab'),'👻 DEV PREVIEW · Месяц не создан');
+    return;
+  }
   const paid=!!(allData[m]&&allData[m]._paid);
   if(paid){
     haptic([10,10,10,10,10]);
