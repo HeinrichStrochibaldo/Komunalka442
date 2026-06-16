@@ -4385,6 +4385,21 @@ function fpSync(k){
   if(el)el.textContent=v>0?(v.toFixed(isEE?0:3)+(isEE?' кВт·ч':' м³')):'—';
 }
 
+function fpGetAverages(){
+  // Считаем среднее потребление за последние 3 месяца (исключая текущий)
+  const prevMonths=MK.filter(m=>allData[m]&&m!==curMonth()).slice(-3);
+  if(prevMonths.length<2)return null; // недостаточно истории
+  const avgs={gvs:0,hvs:0,t1:0,t2:0};
+  prevMonths.forEach(m=>{
+    const d=allData[m];
+    Object.keys(avgs).forEach(k=>{
+      avgs[k]+=Math.max(0,(parseFloat(d['cur-'+k])||0)-(parseFloat(d['prev-'+k])||0));
+    });
+  });
+  Object.keys(avgs).forEach(k=>avgs[k]/=prevMonths.length);
+  return avgs;
+}
+
 function fpGoConfirm(){
   const pop=document.getElementById('fab-popup');
   if(!pop)return;
@@ -4398,25 +4413,50 @@ function fpGoConfirm(){
   const keys=['gvs','hvs','t1','t2'];
   const labels={gvs:'🔴 ГВС',hvs:'🔵 ХВС',t1:'⚡ Т1 День',t2:'⚡ Т2 Ночь'};
   const units={gvs:' м³',hvs:' м³',t1:' кВт·ч',t2:' кВт·ч'};
+
+  // Считаем diffs и проверяем аномалии
+  const avgs=fpGetAverages();
+  const diffs={};
   const rows=keys.map(k=>{
     const unit=units[k];
     const pv=d['prev-'+k]!==undefined?parseFloat(d['prev-'+k]):0;
     const cel=document.getElementById('fp-c'+k);
     const cv=cel?parseFloat(cel.value)||0:0;
     const diff=Math.max(0,cv-pv);
+    diffs[k]=diff;
     const isEE=(k==='t1'||k==='t2');
+    const isAnom=avgs&&avgs[k]>0&&diff>avgs[k]*2;
     return '<div style="display:grid;grid-template-columns:80px 1fr auto;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);gap:4px">'+
       '<span style="font-size:12px;color:var(--muted)">'+labels[k]+'</span>'+
       '<span style="font-size:12px;text-align:right">'+
         '<span style="color:var(--muted)">'+pv+'</span>'+
         '<span style="color:var(--label);margin:0 5px">→</span>'+
-        '<span style="font-weight:700;color:var(--text)">'+cv+'</span>'+
+        '<span style="font-weight:700;color:'+(isAnom?'var(--yellow)':'var(--text)')+'">'+cv+'</span>'+
       '</span>'+
-      '<span style="font-size:11px;color:var(--green);font-weight:600;white-space:nowrap;text-align:right;min-width:64px">'+
+      '<span style="font-size:11px;color:'+(isAnom?'var(--yellow)':'var(--green)')+';font-weight:600;white-space:nowrap;text-align:right;min-width:64px">'+
         (diff>0?'+'+diff.toFixed(isEE?0:3)+unit:'')+
       '</span>'+
     '</div>';
   }).join('');
+
+  // Строим блок предупреждений
+  let anomHtml='';
+  if(avgs){
+    const anomLines=keys.filter(k=>avgs[k]>0&&diffs[k]>avgs[k]*2).map(k=>{
+      const isEE=(k==='t1'||k==='t2');
+      const unit=units[k];
+      const avg=avgs[k].toFixed(isEE?0:2);
+      const cur=diffs[k].toFixed(isEE?0:2);
+      return '<div style="font-size:11px;color:var(--yellow);margin-top:3px">'+labels[k]+': обычно ~'+avg+unit+', сейчас '+cur+unit+'</div>';
+    });
+    if(anomLines.length>0){
+      anomHtml='<div style="background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.3);border-radius:10px;padding:10px 12px;margin-bottom:14px">'+
+        '<div style="font-size:12px;font-weight:700;color:var(--yellow);margin-bottom:2px">⚠️ Проверьте показания</div>'+
+        anomLines.join('')+
+      '</div>';
+    }
+  }
+
   pop.innerHTML=
     '<div style="padding:14px 14px 0;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch">'+
     '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">'+
@@ -4427,6 +4467,7 @@ function fpGoConfirm(){
     rows+
     '<div style="padding-top:4px"></div>'+
     '</div>'+
+    anomHtml+
     '</div>'+
     '<div style="display:flex;gap:8px;padding:0 14px 14px">'+
       '<button class="btn btn-ghost" style="flex:1;padding:10px;font-size:13px" onclick="fpShowScreen1()">Нет</button>'+
