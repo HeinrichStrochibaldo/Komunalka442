@@ -1730,9 +1730,11 @@ function isGhostMonth(){
   return !!(settings.devMode&&(!isCreatedMonth(m)||!isChainValid(m)));
 }
 function ghostGuard(){
-  if(!isGhostMonth())return false;
+  const m=curMonth();
+  if(isCreatedMonth(m)&&isChainValid(m))return false; // месяц создан и цепочка валидна — пропускаем
   haptic([10,10,10,10,10]);
-  showFabToast('👻 DEV PREVIEW · Действие недоступно');
+  const msg=settings.devMode?'👻 DEV PREVIEW · Действие недоступно':'Завершите предыдущий месяц';
+  showFabToast(msg);
   return true;
 }
 // Чистит cur-* в месяцах после следующего (не трогает prev-*, _paid, тарифы)
@@ -2089,40 +2091,11 @@ function guardMonthSwitch(action){
 function prevMonth(){if(curIdx>0){guardMonthSwitch(()=>{curIdx--;loadMonth();});}}
 function nextMonth(){
   if(curIdx>=MK.length-1)return;
-  const nextMk=MK[curIdx+1];
-  // Закон В: в PROD нельзя переходить в несозданный месяц
-  if(!settings.devMode&&(!isCreatedMonth(nextMk)||!isChainValid(nextMk))){
-    showConfirm(
-      'Месяц ещё не открыт.\nЗавершите '+MONTHS[MK[curIdx]]+' чтобы продолжить.',
-      null, null
-    );
-    // Показываем только одну кнопку — "Ок"
-    setTimeout(()=>{
-      const yes=document.getElementById('app-confirm-yes');
-      const no=document.getElementById('app-confirm-no');
-      if(yes){yes.textContent='Остаться';yes.className='btn btn-ghost';}
-      if(no)no.style.display='none';
-    },0);
-    return;
-  }
+  // Навигация свободная — действия блокирует ghostGuard()
   guardMonthSwitch(()=>{curIdx++;loadMonth();});
 }
 function jumpTo(idx){
-  // Закон В: в PROD нельзя прыгать в несозданный месяц
-  const targetMk=MK[idx];
-  if(!settings.devMode&&targetMk&&(!isCreatedMonth(targetMk)||!isChainValid(targetMk))&&idx>curIdx){
-    showConfirm(
-      'Месяц ещё не открыт.\nЗавершите предыдущий месяц чтобы продолжить.',
-      null, null
-    );
-    setTimeout(()=>{
-      const yes=document.getElementById('app-confirm-yes');
-      const no=document.getElementById('app-confirm-no');
-      if(yes){yes.textContent='Остаться';yes.className='btn btn-ghost';}
-      if(no)no.style.display='none';
-    },0);
-    return;
-  }
+  // Навигация свободная — действия блокирует ghostGuard()
   guardMonthSwitch(()=>{curIdx=idx;loadMonth();});
 }
 
@@ -2143,36 +2116,6 @@ function loadMonth(){
   const m=curMonth();
   setT('month-label',MONTHS[m]);
   closePicker();
-
-  // Закон Г: DEV-призрак — несозданный месяц показывается только в DEV
-  const devGhost=settings.devMode&&!isCreatedMonth(m);
-  const ghostEl=document.getElementById('dev-ghost-banner');
-
-  if(devGhost){
-    // Показываем плашку DEV PREVIEW
-    if(!ghostEl){
-      const banner=document.createElement('div');
-      banner.id='dev-ghost-banner';
-      banner.style.cssText='background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3);border-radius:var(--radius-md);padding:10px 14px;margin-bottom:12px;font-size:12px;color:var(--yellow);text-align:center;';
-      banner.innerHTML='👻 DEV PREVIEW · Месяц не создан · Данные не существуют · Действия заблокированы';
-      const monthBar=document.querySelector('.month-bar');
-      if(monthBar&&monthBar.parentNode)monthBar.parentNode.insertBefore(banner,monthBar.nextSibling);
-    }
-    // Очищаем все поля
-    document.querySelectorAll('input[type=number]').forEach(el=>{el.value='';});
-    // Блокируем всё
-    METER_INPUT_IDS.forEach(id=>{
-      const el=document.getElementById(id);
-      if(el){el.classList.add('meter-locked');el.setAttribute('readonly','');}
-    });
-    metersAccepted=false;
-    updateMonthBarState();
-    render();
-    return;
-  }
-
-  // Убираем плашку если вернулись в обычный месяц
-  if(ghostEl)ghostEl.remove();
 
   const d=allData[m]||{};
   document.querySelectorAll('input[type=number]').forEach(el=>{el.value=d[el.id]!==undefined?d[el.id]:'';});
@@ -3680,8 +3623,8 @@ function showBtnToast(btn, msg){
 }
 
 function updateMonthBarState(){
-  // Закон 8: в DEV-призраке все кнопки заблокированы
-  if(isGhostMonth()){
+  // Блокируем кнопки если месяц не создан (в любом режиме) или DEV-призрак
+  if(!isCreatedMonth(curMonth())||isGhostMonth()){
     const acceptBtn=document.getElementById('accept-btn');
     const paidBtn=document.getElementById('paid-btn');
     const fabBtn=document.getElementById('fab');
@@ -4610,10 +4553,11 @@ function showFabToast(msg){
 function openFabPopup(){
   haptic(40);
   const m=curMonth();
-  // Закон Г: в DEV-призраке FAB заблокирован — Закон 8
-  if(settings.devMode&&!isCreatedMonth(m)){
+  // Блокируем FAB если месяц не создан (в любом режиме)
+  if(!isCreatedMonth(m)){
     haptic([10,10,10,10,10]);
-    showBtnToast(document.getElementById('fab'),'👻 DEV PREVIEW · Месяц не создан');
+    const msg=settings.devMode?'👻 DEV PREVIEW · Месяц не создан':'Завершите предыдущий месяц';
+    showBtnToast(document.getElementById('fab'),msg);
     return;
   }
   const paid=!!(allData[m]&&allData[m]._paid);
