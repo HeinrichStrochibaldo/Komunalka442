@@ -1555,6 +1555,10 @@ setTimeout(function(){
 /* ============================================================ CONSTANTS ============================================================ */
 // C-008: магические числа → именованные константы
 const DATA_VERSION = 1;            // F-008: версия структуры данных
+const XP_FILLED = 10;              // XP за заполнение показаний
+const XP_PAID = 25;                // XP за оплату месяца
+const XP_STREAK = 50;              // XP за серию месяцев (стрик)
+const BADGE_DURATION = 1500;       // мс показ временного бейджа/иконки (galочка, конфетти)
 const MS_PER_DAY = 864e5;          // мс в сутках
 const AUTOSAVE_DELAY = 1500;       // мс до автосохранения
 const FIREBASE_TIMEOUT = 6000;     // мс таймаут Firebase
@@ -1937,9 +1941,9 @@ function confirmPaid(){
   fbSave();updatePaidBtn();updatePaidUI(compute());
   launchConfetti();unlockAch('paid1');
   playCoin();
-  addXP(25,'оплачено');
+  addXP(XP_PAID,'оплачено');
   let streak=0;for(let i=curIdx;i>=0;i--){if(allData[MK[i]]&&allData[MK[i]]._paid)streak++;else break;}
-  if(streak>=2)addXP(50,'стрик '+streak);
+  if(streak>=2)addXP(XP_STREAK,'стрик '+streak);
   if(!sessionPaidShown){sessionPaidShown=true;showToasty();}
   updateStreak();checkAchs();renderPayHistory();
 }
@@ -2167,11 +2171,11 @@ async function autoSave(){
   await fbSave();
   const lbl=document.getElementById('autosave-lbl');
   const t=new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
-  if(lbl){lbl.textContent='Сохранено в '+t+' ✓';lbl.className='autosave-lbl ok';setTimeout(()=>{lbl.textContent='';lbl.className='autosave-lbl';},3000);}
+  if(lbl){lbl.textContent='Сохранено в '+t+' ✓';lbl.className='autosave-lbl ok';setTimeout(()=>{lbl.textContent='';lbl.className='autosave-lbl';},TOOLTIP_DURATION);}
   haptic(50);
   if(settings.sounds)playSound('save');
   showSaveWave();
-  addXP(10,'заполнено');
+  addXP(XP_FILLED,'заполнено');
     renderVersionList();checkAchs();autoArchive();
 }
 
@@ -2299,7 +2303,7 @@ function resetStreak(){
   const f=document.createElement('div');
   f.className='copy-flash';f.textContent='✓ Стрик сброшен';
   f.style.cssText='position:fixed;bottom:120px;left:50%;transform:translateX(-50%);z-index:9999;white-space:nowrap';
-  document.body.appendChild(f);setTimeout(()=>f.remove(),1500);
+  document.body.appendChild(f);setTimeout(()=>f.remove(),BADGE_DURATION);
 }
 
 function openStreakPopup(){
@@ -2372,7 +2376,7 @@ function openStreakPopup(){
 
   // Автозакрытие через 3 сек
   clearTimeout(popup._autoClose);
-  popup._autoClose=setTimeout(()=>closeStreakPopup(),3000);
+  popup._autoClose=setTimeout(()=>closeStreakPopup(),TOOLTIP_DURATION);
 }
 function closeStreakPopup(){
   const popup=document.getElementById('streak-popup');
@@ -2577,7 +2581,7 @@ function renderDynamics(){
             head.style.borderRadius='';head.style.transition='';
             const b=head.querySelector('.dyn-new-badge');
             if(b)b.remove();
-          },3000);
+          },TOOLTIP_DURATION);
         }
       });
       markDynMonthsSeen(newDynMonths);
@@ -2753,7 +2757,7 @@ function renderAchievements(){
   grid.querySelectorAll('[data-tip]').forEach(el=>{
     el.addEventListener('mouseenter',()=>{const r=el.getBoundingClientRect();showTip(el.getAttribute('data-tip'),r.left+r.width/2,r.top);});
     el.addEventListener('mouseleave',()=>{if(!tipPinned)hideTip();});
-    el.addEventListener('click',e=>{const r=el.getBoundingClientRect();showTip(el.getAttribute('data-tip'),r.left+r.width/2,r.top);tipPinned=true;tipTarget=el;setTimeout(()=>{if(tipTarget===el)hideTip();},3000);e.stopPropagation();});
+    el.addEventListener('click',e=>{const r=el.getBoundingClientRect();showTip(el.getAttribute('data-tip'),r.left+r.width/2,r.top);tipPinned=true;tipTarget=el;setTimeout(()=>{if(tipTarget===el)hideTip();},TOOLTIP_DURATION);e.stopPropagation();});
   });
   updateRecordsTable();
 }
@@ -2854,7 +2858,7 @@ document.addEventListener('click',e=>{
   if(tipPinned&&tipTarget===el){hideTip();return;}
   tipPinned=true;tipTarget=el;
   const r=el.getBoundingClientRect();showTip(el.getAttribute('data-tip'),r.left+r.width/2,r.top);
-  setTimeout(()=>{if(tipPinned&&tipTarget===el)hideTip();},3000);
+  setTimeout(()=>{if(tipPinned&&tipTarget===el)hideTip();},TOOLTIP_DURATION);
 });
 
 /* ============================================================ PRESENTATION ============================================================ */
@@ -3044,7 +3048,7 @@ function fabSaved(){
   fab.classList.add('saved');
   fab.textContent='';
   haptic([50,30,80]);
-  setTimeout(()=>{fab.classList.remove('saved');fab.textContent='⚡';},1500);
+  setTimeout(()=>{fab.classList.remove('saved');fab.textContent='⚡';},BADGE_DURATION);
   // pulse не возвращаем — после fabSaved показания зафиксированы
 }
 
@@ -3185,7 +3189,7 @@ function initHoldButton(btnId, action){
       btn.classList.remove('holding');
       haptic([50,30,80]);
       action();
-    },1500);
+    },BADGE_DURATION);
   };
 
   const cancel=()=>{
@@ -3212,7 +3216,7 @@ function resetAchs(){
   const f=document.createElement('div');
   f.className='copy-flash';f.textContent='✓ Достижения сброшены';
   f.style.cssText='position:fixed;bottom:120px;left:50%;transform:translateX(-50%);z-index:9999;white-space:nowrap';
-  document.body.appendChild(f);setTimeout(()=>f.remove(),1500);
+  document.body.appendChild(f);setTimeout(()=>f.remove(),BADGE_DURATION);
 }
 
 function resetXP(){
@@ -3227,7 +3231,7 @@ function resetXP(){
   const f=document.createElement('div');
   f.className='copy-flash';f.textContent='✓ XP сброшен';
   f.style.cssText='position:fixed;bottom:120px;left:50%;transform:translateX(-50%);z-index:9999;white-space:nowrap';
-  document.body.appendChild(f);setTimeout(()=>f.remove(),1500);
+  document.body.appendChild(f);setTimeout(()=>f.remove(),BADGE_DURATION);
 }
 
 function testAllAchs(){
@@ -3990,7 +3994,7 @@ function playCashRegister(){
   const diff=(now-first)/(1000*60*60*24);
   const sameDay=now.getDate()===first.getDate()&&now.getMonth()===first.getMonth();
   if(diff>=365&&sameDay){
-    setTimeout(()=>{unlockAch('birthday');launchConfetti();showEgg('🎂 Годовщина трекера!','Ровно год как ты следишь за коммуналкой. Ты — легенда!');},3000);
+    setTimeout(()=>{unlockAch('birthday');launchConfetti();showEgg('🎂 Годовщина трекера!','Ровно год как ты следишь за коммуналкой. Ты — легенда!');},TOOLTIP_DURATION);
   }
 })();
 
@@ -4800,7 +4804,7 @@ function fpGoConfirm(){
   // Строим блок предупреждений
   let anomHtml='';
   if(avgs){
-    const anomLines=keys.filter(k=>avgs[k]>0&&diffs[k]>avgs[k]*2).map(k=>{
+    const anomLines=keys.filter(k=>avgs[k]>0&&diffs[k]>avgs[k]*ANOMALY_THRESHOLD).map(k=>{
       const isEE=(k==='t1'||k==='t2');
       const unit=units[k];
       const avg=isEE?Math.round(avgs[k]):avgs[k].toFixed(2);
