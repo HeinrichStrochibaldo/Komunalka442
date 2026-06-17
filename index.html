@@ -1530,7 +1530,6 @@ window.onerror = function(msg, src, line) {
 window.addEventListener('unhandledrejection', function(e) {
   _dbg('<span style="color:#f87171">PROMISE: '+(e.reason||'unknown')+'</span>');
 });
-_dbg('▶ Script started');
 /* Аварийный таймаут */
 setTimeout(function(){
   var splash = document.getElementById('splash');
@@ -1605,12 +1604,10 @@ let longPressTimer=null;
 
 /* ============================================================ FIREBASE ============================================================ */
 let db=null, DOC=null;
-_dbg('▶ Constants OK, Firebase pending...'); // инициализируются в fbLoad после загрузки SDK
 
 async function fbLoad(){
   fabLoading(true);
   // Ждём Firebase SDK если ещё не готов (макс 5 сек)
-  _dbg('▶ fbLoad: init Firebase...');
   if(!DOC) {
     try {
       if(typeof firebase !== 'undefined') {
@@ -1619,7 +1616,6 @@ async function fbLoad(){
         }
         db = firebase.firestore();
         DOC = db.collection('kommunalka').doc('data');
-        _dbg('▶ Firebase OK');
       } else {
         _dbg('<span style="color:#fbbf24">Firebase SDK not loaded, using localStorage</span>');
       }
@@ -1640,9 +1636,7 @@ async function fbLoad(){
     // Одноразовая очистка мусорных cur-* в несозданных месяцах
     cleanOrphanData();
   }catch(e){appError(e,'fbLoad:postprocess');}
-  _dbg('▶ Firebase done, hiding splash...');
   hideSplash();
-  _dbg('▶ hideSplash called');
   hideSkeleton();
   fabLoading(false);
   try{
@@ -2188,9 +2182,14 @@ async function autoArchive(){
 }
 
 function confirmClear(){
-  if(!confirm('Сбросить все данные за '+MONTHS[curMonth()]+'?\nОтменить нельзя.'))return;
-  document.querySelectorAll('input[type=number]').forEach(el=>el.value='');
-  delete allData[curMonth()];fbSave();updatePaidBtn();render();
+  showConfirm(
+    'Сбросить все данные за '+MONTHS[curMonth()]+'? Отменить нельзя.',
+    ()=>{
+      document.querySelectorAll('input[type=number]').forEach(el=>el.value='');
+      delete allData[curMonth()];fbSave();updatePaidBtn();render();
+    },
+    null
+  );
 }
 
 function fullWipe(){
@@ -2436,7 +2435,35 @@ function triggerImport(){document.getElementById('import-file').click();}
 function importJSON(e){
   const f=e.target.files[0];if(!f)return;
   const r=new FileReader();
-  r.onload=async ev=>{try{const d=JSON.parse(ev.target.result);if(confirm('Импортировать? Текущие данные будут перезаписаны.')){allData=d;await fbSave();loadMonth();}}catch(err){appError(err,'importJSON');showFabToast('Ошибка импорта');}};
+  r.onload=ev=>{
+    let parsed;
+    try{
+      parsed=JSON.parse(ev.target.result);
+    }catch(err){
+      appError(err,'importJSON:parse');
+      showFabToast('Ошибка импорта: файл повреждён');
+      return;
+    }
+    if(!parsed||typeof parsed!=='object'||Array.isArray(parsed)){
+      appError(new Error('invalid structure'),'importJSON:structure');
+      showFabToast('Ошибка импорта: неверный формат');
+      return;
+    }
+    showConfirm(
+      'Импортировать? Текущие данные будут перезаписаны.',
+      async()=>{
+        try{
+          allData=parsed;
+          await fbSave();
+          loadMonth();
+        }catch(err){
+          appError(err,'importJSON:apply');
+          showFabToast('Ошибка применения импорта');
+        }
+      },
+      null
+    );
+  };
   r.readAsText(f);e.target.value='';
 }
 function showQR(){
@@ -4380,9 +4407,21 @@ window.addEventListener('devicemotion',e=>{
   _shakeLastT=now;
   if(_shakeAccum>80){
     _shakeAccum=0;
-    if(_lastSavedSnapshot&&confirm('↩ Отменить последнее сохранение?')){
-      allData=JSON.parse(_lastSavedSnapshot);_lastSavedSnapshot=null;
-      fbSave();loadMonth();haptic([50,30,50]);
+    if(_lastSavedSnapshot){
+      showConfirm(
+        '↩ Отменить последнее сохранение?',
+        ()=>{
+          try{
+            allData=JSON.parse(_lastSavedSnapshot);
+            _lastSavedSnapshot=null;
+            fbSave();loadMonth();haptic([50,30,50]);
+          }catch(err){
+            appError(err,'shakeUndo:apply');
+            showFabToast('Ошибка отмены');
+          }
+        },
+        null
+      );
     }
   }
 },{passive:true});
@@ -5469,7 +5508,6 @@ function openArtifact(){
 
 /* Применяем devMode при старте */
 /* ============================================================ BOOTSTRAP — запускается после всех определений ============================================================ */
-_dbg('▶ Bootstrap start');
 (function init(){
   initSplashText();
   const ks=localStorage.getItem('ksettings');if(ks)settings={...settings,...JSON.parse(ks)};
@@ -5479,15 +5517,12 @@ _dbg('▶ Bootstrap start');
   const kt=localStorage.getItem('ktheme');
   applyTheme(kt||(window.matchMedia('(prefers-color-scheme:light)').matches?'light':'dark'));
   window.matchMedia('(prefers-color-scheme:light)').addEventListener('change',e=>{if(!localStorage.getItem('ktheme'))applyTheme(e.matches?'light':'dark');});
-  _dbg('▶ applySettings...');
   applySettings();
   applyDevMode();
   switchTab('entry');
 
  // всегда стартуем с Ввода
-  _dbg('▶ fbLoad...');
   fbLoad();
-  _dbg('▶ fbLoad called');
 })();
 
 </script>
