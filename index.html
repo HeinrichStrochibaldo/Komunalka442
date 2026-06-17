@@ -1554,6 +1554,7 @@ setTimeout(function(){
 
 /* ============================================================ CONSTANTS ============================================================ */
 // C-008: магические числа → именованные константы
+const DATA_VERSION = 1;            // F-008: версия структуры данных
 const MS_PER_DAY = 864e5;          // мс в сутках
 const AUTOSAVE_DELAY = 1500;       // мс до автосохранения
 const FIREBASE_TIMEOUT = 6000;     // мс таймаут Firebase
@@ -1629,6 +1630,7 @@ async function fbLoad(){
     allData=JSON.parse(localStorage.getItem('kv5')||'{}');
   }
   try{
+    migrateData(); // F-008: версия данных проверена и при необходимости мигрирована
     if(!allData['2026-05']){allData['2026-05']=MAY26;fbSave();}
     if(allData._achs)localStorage.setItem('kachs',JSON.stringify(allData._achs));
     // Одноразовая очистка мусорных cur-* в несозданных месяцах
@@ -1682,6 +1684,17 @@ async function fbSave(){
 
 /* ============================================================ UTILS ============================================================ */
 // C-007: централизованная обработка ошибок
+// F-008: точка миграции данных. Сегодня — заглушка, фундамент на будущее.
+// allData в памяти не меняет структуру — версия живёт только как метка _v
+function migrateData(){
+  const savedVersion=allData._v||0;
+  if(savedVersion<DATA_VERSION){
+    // Будущие миграции добавляются здесь по шагам:
+    // if(savedVersion<1){ ...привести к v1... }
+    allData._v=DATA_VERSION;
+  }
+}
+
 function appError(e, context){
   if(settings&&settings.devMode){
     _dbg('❌ ['+context+'] '+(e&&e.message?e.message:String(e)));
