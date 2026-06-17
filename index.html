@@ -5242,8 +5242,10 @@ function renderDevOrigins(){
   const born=new Date('2026-06-09');
   const now=new Date();
   const days=Math.floor((now-born)/MS_PER_DAY);
-  // Строки кода — считаем по размеру документа
-  const lines=document.documentElement.outerHTML.split('\n').length;
+  // E-008: контрольная точка размера файла, обновляется вручную при ревью
+  // Не используем outerHTML — оно считает DOM браузера, не файл на диске
+  const FILE_SIZE_KB=474.4; // зафиксировано 17.06.2026
+  const FILE_LINES=5453;
   el.innerHTML=`
     <div style="margin-top:32px;padding-top:20px;border-top:1px solid var(--border)">
       <div style="font-size:11px;color:var(--muted);text-align:center;letter-spacing:.5px;margin-bottom:16px">── найдено в архивах ──</div>
@@ -5264,8 +5266,8 @@ function renderDevOrigins(){
             <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">дней в пути</div>
           </div>
           <div style="background:var(--surface);border-radius:var(--radius-sm);padding:10px;text-align:center">
-            <div style="font-size:20px;font-weight:800;color:var(--accent)">${lines.toLocaleString('ru-RU')}</div>
-            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">строк кода</div>
+            <div style="font-size:20px;font-weight:800;color:var(--accent)">${FILE_SIZE_KB}<span style="font-size:11px">KB</span></div>
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">размер файла</div>
           </div>
         </div>
         <div style="font-size:11px;color:var(--muted);font-family:monospace;margin-bottom:16px;line-height:1.8">
