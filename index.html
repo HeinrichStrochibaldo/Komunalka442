@@ -2788,9 +2788,33 @@ function renderVersionList(){
   list.innerHTML=versions.map((v,i)=>{const d=new Date(v.t),label=d.toLocaleDateString('ru-RU')+' '+d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});return`<div class="version-item"><span class="version-label">Версия ${versions.length-i}</span><span class="version-time">${label}</span><button class="btn btn-ghost btn-sm" onclick="restoreVersion(${i})">Откатить</button></div>`;}).join('');
 }
 async function restoreVersion(i){
-  if(!confirm('Откатить данные к этой версии?'))return;
-  allData=JSON.parse(versions[i].d);await fbSave();loadMonth();
-  const lbl=document.getElementById('autosave-lbl');if(lbl){lbl.textContent='Версия восстановлена ✓';lbl.className='autosave-lbl ok';setTimeout(()=>{lbl.textContent='';lbl.className='autosave-lbl';},2500);}
+  showConfirm('Откатить данные к этой версии?',async()=>{
+    let parsed;
+    try{
+      parsed=JSON.parse(versions[i].d);
+    }catch(e){
+      appError(e,'restoreVersion:parse');
+      showFabToast('Ошибка: версия повреждена');
+      return;
+    }
+    // Минимальная проверка структуры — должен быть объект с месяцами
+    if(!parsed||typeof parsed!=='object'||Array.isArray(parsed)){
+      appError(new Error('invalid structure'),'restoreVersion:structure');
+      showFabToast('Ошибка: неверный формат версии');
+      return;
+    }
+    // allData не трогаем пока всё не прошло проверки
+    try{
+      allData=parsed;
+      await fbSave();
+      loadMonth();
+      const lbl=document.getElementById('autosave-lbl');
+      if(lbl){lbl.textContent='Версия восстановлена ✓';lbl.className='autosave-lbl ok';setTimeout(()=>{lbl.textContent='';lbl.className='autosave-lbl';},2500);}
+    }catch(e){
+      appError(e,'restoreVersion:apply');
+      showFabToast('Ошибка применения версии');
+    }
+  },null);
 }
 
 /* ============================================================ GLOBAL TOOLTIP ============================================================ */
