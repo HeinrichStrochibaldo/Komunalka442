@@ -52,6 +52,7 @@
   --space-md:    12px;
   --space-lg:    16px;
   --space-xl:    24px;
+  --space-2xl:   32px;
   /* E-003: токены теней */
   --shadow-sm:   0 2px 8px rgba(0,0,0,.2);
   --shadow-md:   0 4px 20px rgba(0,0,0,.3);
@@ -618,9 +619,9 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
 /* ============================================================
    SETTINGS
    ============================================================ */
-.set-section { margin-bottom: 24px; }
-.set-section-title { font-size: 11px; font-weight: 700; color: var(--label); text-transform: uppercase; letter-spacing: .6px; padding-bottom: 8px; border-bottom: 1px solid var(--border); margin-bottom: 12px; }
-.set-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); gap: 12px; }
+.set-section { margin-bottom: var(--space-xl); }
+.set-section-title { font-size: 11px; font-weight: 700; color: var(--label); text-transform: uppercase; letter-spacing: .6px; padding-bottom: var(--space-sm); border-bottom: 1px solid var(--border); margin-bottom: var(--space-md); }
+.set-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); gap: var(--space-md); }
 .set-row:last-child { border-bottom: none; }
 .set-row label { font-size: 13px; color: var(--text); flex-shrink: 0; }
 .set-row input[type=text] { width: 160px; }
@@ -632,7 +633,7 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
 .set-action-btns { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
 
 .contact-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(190px,1fr)); gap: 10px; }
-.contact-card { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px; }
+.contact-card { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: var(--space-md); }
 .contact-name { font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
 .contact-phone { font-size: 13px; color: var(--accent); text-decoration: none; display: block; }
 .contact-phone:hover { text-decoration: underline; }
