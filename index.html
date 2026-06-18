@@ -99,11 +99,15 @@ body {
    HEADER
    ============================================================ */
 header {
-  display: flex; align-items: center; gap: 10px;
+  display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr);
+  align-items: center; gap: 10px;
   padding: 18px 24px 14px; border-bottom: 1px solid var(--border);
   position: sticky; top: 0; background: var(--bg); z-index: 40;
   transition: box-shadow .25s cubic-bezier(.4,0,.2,1);
 }
+.header-zone-left { display: flex; flex-direction: column; line-height: 1.1; min-width: 0; }
+.header-zone-center { display: flex; justify-content: center; min-width: 0; }
+.header-zone-right { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
 header.scrolled { box-shadow: var(--shadow-md); }
 #app-title { font-size: 19px; font-weight: 700; letter-spacing: -.5px; cursor: default; }
 .header-sub { font-size: 10px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
@@ -135,7 +139,6 @@ header.scrolled { box-shadow: var(--shadow-md); }
   background: rgba(251,191,36,.12); border: 1px solid rgba(251,191,36,.3);
   border-radius: var(--radius-xl); padding: 3px 9px; font-size: 11px; font-weight: 600; color: var(--yellow);
 }
-.header-btns { margin-left: auto; display: flex; align-items: center; gap: 6px; }
 .hbtn {
   background: transparent; border: 1px solid var(--border); color: var(--label);
   border-radius: var(--radius-sm); padding: 5px 9px; font-size: 17px; cursor: pointer;
@@ -1136,12 +1139,14 @@ input.meter-locked:focus { border-color: var(--border) !important; }
 
 <!-- HEADER -->
 <header>
-  <div style="display:flex;flex-direction:column;line-height:1.1">
+  <div class="header-zone-left">
     <h1 id="app-title">Коммуналка</h1>
     <span class="header-sub" style="font-size:10px;color:var(--muted);margin-top:1px">Трекер расходов</span>
   </div>
-  <span id="streak-badge" onclick="openStreakPopup()" style="cursor:pointer;margin:0 auto">🔥 <span id="streak-count">0</span> мес.</span>
-  <div class="header-btns">
+  <div class="header-zone-center">
+    <span id="streak-badge" onclick="openStreakPopup()" style="cursor:pointer">🔥 <span id="streak-count">0</span> мес.</span>
+  </div>
+  <div class="header-zone-right">
     <button class="hbtn" id="back-btn" onclick="goBack()" style="display:none;font-size:13px;padding:5px 9px">← Назад</button>
     <div id="offline-badge" style="display:none;background:rgba(248,113,113,.15);border:1px solid rgba(248,113,113,.3);border-radius:20px;padding:3px 8px;font-size:11px;font-weight:600;color:var(--red)">📵</div>
     <button class="hbtn" onclick="openSection('achievements')" title="Достижения">🏆</button>
@@ -4568,7 +4573,7 @@ if(!ACHS.find(a=>a.id==='quote1001')){
   let sx=0,sy=0,tracking=false,handled=false;
 
   document.addEventListener('touchstart',e=>{
-    if(e.target.closest('#bottom-sheet,#float-bar,.overlay,#pres-overlay,#fab-popup,#section-overlay'))return;
+    if(e.target.closest('#bottom-sheet,#float-bar,.overlay,#pres-overlay,#fab-popup,#section-overlay,header'))return;
     // Не перехватываем если касание внутри горизонтально скроллируемого контейнера
     const scrollEl=e.target.closest('#hist-scroll,#year-table,[style*="overflow-x:auto"],[style*="overflow-x: auto"]');
     if(scrollEl&&scrollEl.scrollWidth>scrollEl.clientWidth)return;
@@ -4805,12 +4810,26 @@ function fpGetAverages(){
 function fpGoConfirm(){
   const pop=document.getElementById('fab-popup');
   if(!pop)return;
+  // Сначала проверяем что поля валидны (отрицательные/меньше предыдущего и т.п.)
+  if(!fpValidateAll())return;
   // Сохраняем введённые значения в черновик
   ['gvs','hvs','t1','t2'].forEach(k=>{
     const cel=document.getElementById('fp-c'+k);
     if(cel&&cel.value!=='')fpDraft[k]=parseFloat(cel.value);
     else delete fpDraft[k];
   });
+  // Закон 8: нельзя перейти к подтверждению, если нет ни одного
+  // введённого показания (все cur-* либо пусты, либо равны нулю).
+  // Один реальный показатель ≥0 — уже достаточно (счётчик может быть не задействован).
+  const allZero=['gvs','hvs','t1','t2'].every(k=>{
+    const v=fpDraft[k];
+    return v===undefined||v===0;
+  });
+  if(allZero){
+    showFabToast('Введите хотя бы одно показание');
+    haptic([40,30,40]);
+    return;
+  }
   const m=curMonth(),d=allData[m]||{};
   const keys=['gvs','hvs','t1','t2'];
   const labels={gvs:'🔴 ГВС',hvs:'🔵 ХВС',t1:'⚡ Т1 День',t2:'⚡ Т2 Ночь'};
