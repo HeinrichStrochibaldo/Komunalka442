@@ -3073,7 +3073,8 @@ function doomStageSwell(){
 function doomPlayRiff(){
   try{
     const ctx=window._doomAudioCtx||new (window.AudioContext||window.webkitAudioContext)();
-    if(ctx.state==='suspended')ctx.resume().catch(()=>{});
+    console.log('[doom-riff] AudioContext state:',ctx.state);
+    if(ctx.state==='suspended')ctx.resume().then(()=>console.log('[doom-riff] resumed, new state:',ctx.state)).catch(e=>console.log('[doom-riff] resume failed:',e));
     const master=ctx.createGain();
     master.gain.value=0.35;
     master.connect(ctx.destination);
@@ -3145,7 +3146,7 @@ function doomPlayRiff(){
 
     // Контекст общий и переиспользуемый — не закрываем его,
     // иначе следующий ритуал снова столкнётся с suspended-состоянием.
-  }catch(e){/* Web Audio недоступен — тишина не критична */}
+  }catch(e){console.log('[doom-riff] ERROR:',e);}
 }
 
 function doomStagePortal(){
@@ -5825,6 +5826,7 @@ function openArtifact(){
   }
 
   function ritualBegin(){
+    console.log('[doom-ritual] pointerdown fired, unlocked:',doomData.unlocked,'active:',ritualActive);
     if(!doomData.unlocked)return; // печать не пробуждена — ритуала не существует
     if(ritualActive)return;
     ritualActive=true;
@@ -5836,11 +5838,12 @@ function openArtifact(){
     try{
       if(!window._doomAudioCtx){
         window._doomAudioCtx=new (window.AudioContext||window.webkitAudioContext)();
+        console.log('[doom-ritual] AudioContext created, state:',window._doomAudioCtx.state);
       }
       if(window._doomAudioCtx.state==='suspended'){
-        window._doomAudioCtx.resume().catch(()=>{});
+        window._doomAudioCtx.resume().then(()=>console.log('[doom-ritual] resumed at pointerdown')).catch(e=>console.log('[doom-ritual] resume failed:',e));
       }
-    }catch(e){}
+    }catch(e){console.log('[doom-ritual] ERROR:',e);}
 
     stageTimers.push(setTimeout(doomStageTremor,STAGE_TREMOR));
     stageTimers.push(setTimeout(doomStageCracks,STAGE_CRACKS));
