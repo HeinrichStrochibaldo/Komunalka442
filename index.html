@@ -3066,10 +3066,62 @@ function doomStageSwell(){
   fab.classList.add('doom-swell');
   haptic([80,30,80,30,120]);
 }
+/* ============================================================
+   DOOMUNALKA — оригинальный синтезированный рифф (Web Audio API).
+   Никаких сэмплов или сторонних треков — всё генерируется кодом.
+   ============================================================ */
+function doomPlayRiff(){
+  try{
+    const ctx=new (window.AudioContext||window.webkitAudioContext)();
+    const master=ctx.createGain();
+    master.gain.value=0.35;
+    master.connect(ctx.destination);
+
+    // Лёгкое искажение для "грязного" индустриального звука
+    const distortion=ctx.createWaveShaper();
+    const curve=new Float32Array(256);
+    for(let i=0;i<256;i++){
+      const x=i*2/256-1;
+      curve[i]=Math.tanh(x*4);
+    }
+    distortion.curve=curve;
+    distortion.connect(master);
+
+    // Детюнированный бас-риф: низкие ноты с резкой атакой
+    const notes=[41.2,41.2,55,49,41.2,41.2,61.7,55]; // E1-ish паттерн
+    const noteLen=0.15;
+    const startTime=ctx.currentTime;
+
+    notes.forEach((freq,i)=>{
+      const osc1=ctx.createOscillator();
+      const osc2=ctx.createOscillator();
+      const gain=ctx.createGain();
+      osc1.type='sawtooth';
+      osc2.type='square';
+      osc1.frequency.value=freq;
+      osc2.frequency.value=freq*1.01; // лёгкий детюн для толщины звука
+      osc1.connect(gain);
+      osc2.connect(gain);
+      gain.connect(distortion);
+
+      const t=startTime+i*noteLen;
+      gain.gain.setValueAtTime(0,t);
+      gain.gain.linearRampToValueAtTime(0.8,t+0.01); // резкая атака
+      gain.gain.exponentialRampToValueAtTime(0.001,t+noteLen*0.9);
+
+      osc1.start(t);osc1.stop(t+noteLen);
+      osc2.start(t);osc2.stop(t+noteLen);
+    });
+
+    setTimeout(()=>ctx.close().catch(()=>{}),notes.length*noteLen*1000+200);
+  }catch(e){/* Web Audio недоступен — тишина не критична */}
+}
+
 function doomStagePortal(){
   const fab=document.getElementById('fab');
   if(fab)fab.classList.remove('doom-tremor','doom-cracks','doom-swell');
   haptic([200,50,200]);
+  doomPlayRiff();
   openPortalToHell();
 }
 function doomStageRetreat(){
