@@ -3072,7 +3072,8 @@ function doomStageSwell(){
    ============================================================ */
 function doomPlayRiff(){
   try{
-    const ctx=new (window.AudioContext||window.webkitAudioContext)();
+    const ctx=window._doomAudioCtx||new (window.AudioContext||window.webkitAudioContext)();
+    if(ctx.state==='suspended')ctx.resume().catch(()=>{});
     const master=ctx.createGain();
     master.gain.value=0.35;
     master.connect(ctx.destination);
@@ -3142,7 +3143,8 @@ function doomPlayRiff(){
       kickOsc.start(t);kickOsc.stop(t+0.12);
     }
 
-    setTimeout(()=>ctx.close().catch(()=>{}),totalDuration*1000+200);
+    // Контекст общий и переиспользуемый — не закрываем его,
+    // иначе следующий ритуал снова столкнётся с suspended-состоянием.
   }catch(e){/* Web Audio недоступен — тишина не критична */}
 }
 
@@ -5827,6 +5829,18 @@ function openArtifact(){
     if(ritualActive)return;
     ritualActive=true;
     ritualStart=Date.now();
+
+    // Создаём/разблокируем AudioContext именно здесь — на прямом pointerdown.
+    // Если ждать до 12-й секунды (внутри setTimeout), браузеры (особенно iOS Safari)
+    // не считают это пользовательским жестом и звук остаётся заглушённым без ошибки.
+    try{
+      if(!window._doomAudioCtx){
+        window._doomAudioCtx=new (window.AudioContext||window.webkitAudioContext)();
+      }
+      if(window._doomAudioCtx.state==='suspended'){
+        window._doomAudioCtx.resume().catch(()=>{});
+      }
+    }catch(e){}
 
     stageTimers.push(setTimeout(doomStageTremor,STAGE_TREMOR));
     stageTimers.push(setTimeout(doomStageCracks,STAGE_CRACKS));
