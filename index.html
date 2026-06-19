@@ -3087,33 +3087,62 @@ function doomPlayRiff(){
     distortion.curve=curve;
     distortion.connect(master);
 
-    // Детюнированный бас-риф: низкие ноты с резкой атакой
-    const notes=[41.2,41.2,55,49,41.2,41.2,61.7,55]; // E1-ish паттерн
-    const noteLen=0.15;
     const startTime=ctx.currentTime;
+    const noteLen=0.15;
 
-    notes.forEach((freq,i)=>{
-      const osc1=ctx.createOscillator();
-      const osc2=ctx.createOscillator();
-      const gain=ctx.createGain();
-      osc1.type='sawtooth';
-      osc2.type='square';
-      osc1.frequency.value=freq;
-      osc2.frequency.value=freq*1.01; // лёгкий детюн для толщины звука
-      osc1.connect(gain);
-      osc2.connect(gain);
-      gain.connect(distortion);
+    // Базовый бас-паттерн, повторяется с лёгкими вариациями по высоте —
+    // чтобы 10 секунд не звучали как зацикленный кусок, а как развитие.
+    const basePattern=[41.2,41.2,55,49,41.2,41.2,61.7,55];
+    const variations=[1,1,1.09,1.22,1,1,0.84,1]; // множители для вариаций между повторами
+    const totalDuration=10;
+    const patternDuration=basePattern.length*noteLen;
+    const repeats=Math.ceil(totalDuration/patternDuration);
 
-      const t=startTime+i*noteLen;
-      gain.gain.setValueAtTime(0,t);
-      gain.gain.linearRampToValueAtTime(0.8,t+0.01); // резкая атака
-      gain.gain.exponentialRampToValueAtTime(0.001,t+noteLen*0.9);
+    for(let r=0;r<repeats;r++){
+      const variation=variations[r%variations.length];
+      basePattern.forEach((freq,i)=>{
+        const t=startTime+r*patternDuration+i*noteLen;
+        if(t-startTime>=totalDuration)return;
 
-      osc1.start(t);osc1.stop(t+noteLen);
-      osc2.start(t);osc2.stop(t+noteLen);
-    });
+        const osc1=ctx.createOscillator();
+        const osc2=ctx.createOscillator();
+        const gain=ctx.createGain();
+        osc1.type='sawtooth';
+        osc2.type='square';
+        osc1.frequency.value=freq*variation;
+        osc2.frequency.value=freq*variation*1.01; // лёгкий детюн для толщины звука
+        osc1.connect(gain);
+        osc2.connect(gain);
+        gain.connect(distortion);
 
-    setTimeout(()=>ctx.close().catch(()=>{}),notes.length*noteLen*1000+200);
+        gain.gain.setValueAtTime(0,t);
+        gain.gain.linearRampToValueAtTime(0.8,t+0.01); // резкая атака
+        gain.gain.exponentialRampToValueAtTime(0.001,t+noteLen*0.9);
+
+        osc1.start(t);osc1.stop(t+noteLen);
+        osc2.start(t);osc2.stop(t+noteLen);
+      });
+    }
+
+    // Синтезированный "кик" — ритмический пульс на всю длительность,
+    // даёт ощущение движения вперёд, не давая риффу звучать монотонно.
+    const kickInterval=0.3;
+    const kickCount=Math.floor(totalDuration/kickInterval);
+    for(let k=0;k<kickCount;k++){
+      const t=startTime+k*kickInterval;
+      const kickOsc=ctx.createOscillator();
+      const kickGain=ctx.createGain();
+      kickOsc.type='sine';
+      kickOsc.frequency.setValueAtTime(120,t);
+      kickOsc.frequency.exponentialRampToValueAtTime(35,t+0.08);
+      kickGain.gain.setValueAtTime(0.9,t);
+      kickGain.gain.exponentialRampToValueAtTime(0.001,t+0.12);
+      kickOsc.connect(kickGain);
+      kickGain.connect(distortion);
+      kickOsc.start(t);kickOsc.stop(t+0.12);
+    }
+
+    setTimeout(()=>ctx.close().catch(()=>{}),totalDuration*1000+200);
   }catch(e){/* Web Audio недоступен — тишина не критична */}
 }
 
