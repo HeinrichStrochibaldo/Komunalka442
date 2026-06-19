@@ -3209,36 +3209,51 @@ function openPortalToHell(){
 
   doomSessionStart=Date.now();
 
+  // Пункт 1: динамическая главная кнопка — у нового пользователя нет ни
+  // убитых демонов, ни сохранённого прогресса боя, поэтому формулировка иная.
+  const hasProgress=doomData.demonsKilled>0;
+  const mainBtnLabel=hasProgress?'Продолжить бой':'Войти в ад';
+
   const portal=document.createElement('div');
   portal.id='doom-portal';
   portal.style.cssText='position:fixed;inset:0;z-index:999999;background:#000;'+
     'display:flex;flex-direction:column;align-items:center;justify-content:center;'+
-    'color:#ff3333;font-family:monospace;text-align:center;';
+    'color:#ff3333;font-family:monospace;text-align:center;overflow:hidden;';
 
   portal.innerHTML=
-    '<div style="font-size:28px;letter-spacing:4px;margin-bottom:20px">DOOMUNALKA</div>'+
-    '<div style="font-size:13px;color:#888;margin-bottom:30px">Загрузка АДА...</div>'+
+    '<div id="doom-title" style="font-size:28px;letter-spacing:4px;margin-bottom:20px">DOOMUNALKA</div>'+
+    '<div id="doom-loading-text" style="font-size:13px;color:#888;margin-bottom:30px">Загрузка АДА.</div>'+
     '<div style="font-size:12px;color:#aa3333;margin-bottom:8px">☠ Убито демонов: <span id="doom-stat-kills">'+doomData.demonsKilled+'</span></div>'+
     '<div style="font-size:12px;color:#aa3333;margin-bottom:20px">🔫 Потрачено патронов: <span id="doom-stat-shots">'+doomData.shotsFired+'</span></div>'+
     (doomData.achs.includes('doom_awakening')?
-      '<div style="font-size:10px;color:#552222;letter-spacing:2px;margin-bottom:24px;border-top:1px solid #331111;'+
+      '<div style="font-size:10px;color:#552222;letter-spacing:2px;margin-bottom:18px;border-top:1px solid #331111;'+
       'border-bottom:1px solid #331111;padding:6px 0">☠ Я ОТКРЫЛ ДВЕРЬ</div>':
       '')+
+    // Пункт 3: декоративный статус Печати Ада — без уровней, без механики
+    '<div style="font-size:10px;color:#663030;letter-spacing:1px;margin-bottom:24px">'+
+    '⛓ ПЕЧАТЬ АДА<br>'+
+    '<span style="color:#771515">██████████</span><br>'+
+    'СТАБИЛЬНА</div>'+
     '<div style="display:flex;flex-direction:column;gap:12px;width:220px">'+
     '<button id="doom-continue-btn" style="background:#1a0000;color:#aa3333;border:1px solid #663333;'+
-    'padding:10px 24px;border-radius:8px;font-family:monospace;cursor:pointer">Продолжить бой</button>'+
+    'padding:10px 24px;border-radius:8px;font-family:monospace;cursor:pointer">'+mainBtnLabel+'</button>'+
     '<button id="doom-settings-btn" style="background:#1a0000;color:#aa3333;border:1px solid #663333;'+
-    'padding:10px 24px;border-radius:8px;font-family:monospace;cursor:pointer">Настройки</button>'+
+    'padding:10px 24px;border-radius:8px;font-family:monospace;cursor:pointer">Печати и ритуалы</button>'+
     '<button id="doom-exit-btn" style="background:#330000;color:#ff3333;border:1px solid #ff3333;'+
     'padding:10px 24px;border-radius:8px;font-family:monospace;cursor:pointer">Выйти из ада</button>'+
     '</div>'+
-    '<div id="doom-stub-msg" style="font-size:11px;color:#555;margin-top:20px;min-height:14px"></div>';
+    '<div id="doom-stub-msg" style="font-size:11px;color:#555;margin-top:20px;min-height:14px"></div>'+
+    '<div style="position:absolute;bottom:14px;font-size:10px;color:#444">Ад пока спит. Бой впереди.</div>';
 
   document.body.appendChild(portal);
 
   document.getElementById('doom-exit-btn').onclick=closePortalToHell;
   document.getElementById('doom-continue-btn').onclick=doomMenuContinue;
   document.getElementById('doom-settings-btn').onclick=doomMenuSettings;
+
+  // Пункт 4: едва заметная "живость" портала — редкие, ненавязчивые эффекты.
+  // Это чистая декорация, не влияет ни на одно состояние или логику.
+  doomAmbientTimer=setInterval(doomAmbientTick,1800);
 
   // Закон 7: время игры считаем только пока портал открыт, сохраняем периодически
   doomTimeTimer=setInterval(()=>{
@@ -3247,10 +3262,36 @@ function openPortalToHell(){
   },1000);
 }
 
+/* ============================================================
+   DOOMUNALKA — Пункт 4: фоновая "живость" портала.
+   Декоративные эффекты: мерцание заголовка, изменяющиеся точки
+   в "Загрузка АДА...", редкая короткая помеха. Ничего не хранится,
+   ничего не влияет на doomData — чистая презентация.
+   ============================================================ */
+let doomAmbientTimer=null;
+function doomAmbientTick(){
+  const title=document.getElementById('doom-title');
+  const loadingText=document.getElementById('doom-loading-text');
+  if(!title||!loadingText)return;
+
+  // Точки "Загрузка АДА." → ".." → "..." циклически
+  const dotsMatch=loadingText.textContent.match(/\.+$/);
+  const dots=dotsMatch?dotsMatch[0].length:1;
+  const nextDots=dots>=3?1:dots+1;
+  loadingText.textContent='Загрузка АДА'+'.'.repeat(nextDots);
+
+  // Редкое мерцание заголовка — примерно раз в несколько тиков
+  if(Math.random()<0.35){
+    title.style.opacity='0.4';
+    setTimeout(()=>{title.style.opacity='1';},90);
+  }
+}
+
 function closePortalToHell(){
   const portal=document.getElementById('doom-portal');
   if(portal)portal.remove();
   if(doomTimeTimer){clearInterval(doomTimeTimer);doomTimeTimer=null;}
+  if(doomAmbientTimer){clearInterval(doomAmbientTimer);doomAmbientTimer=null;}
   doomSessionStart=null;
   doomSave();
   // Закон 6: "Печать восстановлена" — коммуналка не требует никакого восстановления,
@@ -3258,6 +3299,7 @@ function closePortalToHell(){
 }
 
 /* ============================================================
+
    DOOMUNALKA — Закон 4/6: меню портала.
    v1.0 не содержит игрового движка — заглушки честно сообщают
    об этом, а не притворяются рабочими кнопками.
