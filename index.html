@@ -78,7 +78,11 @@ body {
   background: var(--bg); background-image: var(--bg-img);
   color: var(--text); font-family: 'Inter', system-ui, -apple-system, sans-serif;
   font-size: 14px; min-height: 100vh; transition: background .3s;
+  -webkit-user-select: none; user-select: none;
+  -webkit-touch-callout: none;
 }
+/* Поля ввода всё равно должны быть выделяемыми/редактируемыми как обычно */
+input, textarea { -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
 
 /* ============================================================
    SPLASH
@@ -822,6 +826,7 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
   transition: transform .35s cubic-bezier(.34,1.56,.64,1), background .2s;
   animation: fabIn .5s cubic-bezier(.34,1.56,.64,1) .3s both;
   -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none; -webkit-user-select: none; user-select: none;
 }
 @keyframes fabIn{from{transform:scale(0) rotate(-180deg)}to{transform:scale(1) rotate(0)}}
 #fab:active { transform: scale(0.9); }
@@ -836,6 +841,40 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
 /* П13: пульсация FAB — визуальный зов когда месяц пустой */
 #fab.pulse { animation: fabIn .5s cubic-bezier(.34,1.56,.64,1) .3s both, fabPulse 2.5s ease-out 1s infinite; }
 @keyframes fabPulse{0%{box-shadow:0 4px 20px rgba(0,0,0,.4),0 0 0 0 color-mix(in srgb,var(--accent) 60%,transparent)}70%{box-shadow:0 4px 20px rgba(0,0,0,.4),0 0 0 14px color-mix(in srgb,var(--accent) 0%,transparent)}100%{box-shadow:0 4px 20px rgba(0,0,0,.4),0 0 0 0 color-mix(in srgb,var(--accent) 0%,transparent)}}
+
+/* ============================================================
+   DOOMUNALKA — Закон 3: визуальные стадии запретного ритуала.
+   Все переходы плавные, чтобы откат при отпускании выглядел
+   как "печать затягивается обратно", а не как resetэ.
+   ============================================================ */
+#fab { transition: transform .35s cubic-bezier(.34,1.56,.64,1), background .2s, box-shadow .4s ease, filter .4s ease; }
+#fab.doom-tremor {
+  animation: doomTremor .15s ease-in-out infinite;
+}
+@keyframes doomTremor {
+  0%,100% { transform: translate(0,0) scale(1); }
+  25% { transform: translate(-1px,1px) scale(1.02); }
+  50% { transform: translate(1px,-1px) scale(1.02); }
+  75% { transform: translate(-1px,-1px) scale(1.02); }
+}
+#fab.doom-cracks {
+  background: radial-gradient(circle at 50% 50%, #ff3333 0%, #4d0000 70%);
+  box-shadow: 0 4px 20px rgba(0,0,0,.4), 0 0 24px 6px rgba(255,30,30,.65);
+  animation: doomTremor .1s ease-in-out infinite, doomGlow 1.2s ease-in-out infinite;
+}
+@keyframes doomGlow {
+  0%,100% { filter: brightness(1); }
+  50% { filter: brightness(1.4); }
+}
+#fab.doom-swell {
+  background: radial-gradient(circle at 50% 50%, #ff0000 0%, #200000 80%);
+  box-shadow: 0 4px 30px rgba(0,0,0,.6), 0 0 40px 14px rgba(255,0,0,.85);
+  animation: doomTremor .08s ease-in-out infinite, doomSwellPulse .5s ease-in-out infinite;
+}
+@keyframes doomSwellPulse {
+  0%,100% { transform: scale(1.1); }
+  50% { transform: scale(1.3); }
+}
 
 /* ============================================================
    QUICK INPUT POPUP (FAB → попап над float-bar)
@@ -1600,6 +1639,21 @@ let settings={nameV:'Вадимовна',nameMe:'Я',area:27,title:'Коммун
 let meter={sgvs:'ПУЛЬСАР · 19-3097262',shvs:'ПУЛЬСАР · 19-3097272',see:'Меркурий-200.02 · 41804817',vgvs:'2026-07-13',vhvs:'2027-03-13',vee:'2036-01-01'};
 let versions=[], autoTimer=null;
 let konamiSeq=[];
+/* ============================================================
+   DOOMUNALKA — Закон 1: полная изоляция данных.
+   Этот контейнер никогда не пересекается с allData/settings/XP коммуналки.
+   ============================================================ */
+let doomData={unlocked:false,discoveredAt:null,version:1,achs:[],demonsKilled:0,shotsFired:0,timePlayed:0};
+function doomLoad(){
+  try{
+    const raw=localStorage.getItem('doomData');
+    if(raw)doomData=Object.assign({unlocked:false,discoveredAt:null,version:1,achs:[],demonsKilled:0,shotsFired:0,timePlayed:0},JSON.parse(raw));
+  }catch(e){/* печать держится крепко — игнорируем повреждённые данные */}
+}
+function doomSave(){
+  try{localStorage.setItem('doomData',JSON.stringify(doomData));}catch(e){}
+}
+doomLoad();
 const KONAMI=['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
 let sessionPaidShown=false;
 let _lastSavedSnapshot=null;
@@ -2973,11 +3027,145 @@ const E1M1=[
 ];
 let doomPlaying=false;
 
+/* ============================================================
+   DOOMUNALKA — Закон 2: тихое пробуждение под капотом Konami.
+   НИКОГДА не показывать пользователю сообщение об этом.
+   Konami остаётся тем, чем был — видимый слой не меняется.
+   ============================================================ */
+function doomAwaken(){
+  if(doomData.unlocked)return;
+  doomData.unlocked=true;
+  doomData.discoveredAt=new Date().toISOString();
+  if(!doomData.achs.includes('doom_awakening')){
+    doomData.achs.push('doom_awakening');
+  }
+  doomSave();
+}
+
+/* ============================================================
+   DOOMUNALKA — стадии ритуала (Закон 3).
+   Пока заглушки без визуальных эффектов — добавим следующим шагом.
+   ============================================================ */
+function doomStageTremor(){
+  const fab=document.getElementById('fab');
+  if(!fab)return;
+  fab.classList.add('doom-tremor');
+  haptic([20,10,20]);
+}
+function doomStageCracks(){
+  const fab=document.getElementById('fab');
+  if(!fab)return;
+  fab.classList.remove('doom-tremor');
+  fab.classList.add('doom-cracks');
+  haptic([40,20,40,20,40]);
+}
+function doomStageSwell(){
+  const fab=document.getElementById('fab');
+  if(!fab)return;
+  fab.classList.remove('doom-cracks');
+  fab.classList.add('doom-swell');
+  haptic([80,30,80,30,120]);
+}
+function doomStagePortal(){
+  const fab=document.getElementById('fab');
+  if(fab)fab.classList.remove('doom-tremor','doom-cracks','doom-swell');
+  haptic([200,50,200]);
+  openPortalToHell();
+}
+function doomStageRetreat(){
+  const fab=document.getElementById('fab');
+  if(!fab)return;
+  // Печать ещё слишком сильна — плавный откат, без штрафов и без ошибок
+  fab.classList.remove('doom-tremor','doom-cracks','doom-swell');
+}
+
+/* ============================================================
+   DOOMUNALKA — Закон 3/5/6: полноэкранный портал.
+   Слой существует в DOM только во время игры — пока его нет,
+   физически невозможно затронуть allData или сейвы коммуналки.
+   ============================================================ */
+let doomSessionStart=null;
+let doomTimeTimer=null;
+
+function openPortalToHell(){
+  if(document.getElementById('doom-portal'))return; // портал уже открыт
+
+  doomSessionStart=Date.now();
+
+  const portal=document.createElement('div');
+  portal.id='doom-portal';
+  portal.style.cssText='position:fixed;inset:0;z-index:999999;background:#000;'+
+    'display:flex;flex-direction:column;align-items:center;justify-content:center;'+
+    'color:#ff3333;font-family:monospace;text-align:center;';
+
+  portal.innerHTML=
+    '<div style="font-size:28px;letter-spacing:4px;margin-bottom:20px">DOOMUNALKA</div>'+
+    '<div style="font-size:13px;color:#888;margin-bottom:30px">Загрузка АДА...</div>'+
+    '<div style="font-size:12px;color:#aa3333;margin-bottom:8px">☠ Убито демонов: <span id="doom-stat-kills">'+doomData.demonsKilled+'</span></div>'+
+    '<div style="font-size:12px;color:#aa3333;margin-bottom:20px">🔫 Потрачено патронов: <span id="doom-stat-shots">'+doomData.shotsFired+'</span></div>'+
+    (doomData.achs.includes('doom_awakening')?
+      '<div style="font-size:10px;color:#552222;letter-spacing:2px;margin-bottom:24px;border-top:1px solid #331111;'+
+      'border-bottom:1px solid #331111;padding:6px 0">☠ Я ОТКРЫЛ ДВЕРЬ</div>':
+      '')+
+    '<div style="display:flex;flex-direction:column;gap:12px;width:220px">'+
+    '<button id="doom-continue-btn" style="background:#1a0000;color:#aa3333;border:1px solid #663333;'+
+    'padding:10px 24px;border-radius:8px;font-family:monospace;cursor:pointer">Продолжить бой</button>'+
+    '<button id="doom-settings-btn" style="background:#1a0000;color:#aa3333;border:1px solid #663333;'+
+    'padding:10px 24px;border-radius:8px;font-family:monospace;cursor:pointer">Настройки</button>'+
+    '<button id="doom-exit-btn" style="background:#330000;color:#ff3333;border:1px solid #ff3333;'+
+    'padding:10px 24px;border-radius:8px;font-family:monospace;cursor:pointer">Выйти из ада</button>'+
+    '</div>'+
+    '<div id="doom-stub-msg" style="font-size:11px;color:#555;margin-top:20px;min-height:14px"></div>';
+
+  document.body.appendChild(portal);
+
+  document.getElementById('doom-exit-btn').onclick=closePortalToHell;
+  document.getElementById('doom-continue-btn').onclick=doomMenuContinue;
+  document.getElementById('doom-settings-btn').onclick=doomMenuSettings;
+
+  // Закон 7: время игры считаем только пока портал открыт, сохраняем периодически
+  doomTimeTimer=setInterval(()=>{
+    doomData.timePlayed+=1;
+    doomSave();
+  },1000);
+}
+
+function closePortalToHell(){
+  const portal=document.getElementById('doom-portal');
+  if(portal)portal.remove();
+  if(doomTimeTimer){clearInterval(doomTimeTimer);doomTimeTimer=null;}
+  doomSessionStart=null;
+  doomSave();
+  // Закон 6: "Печать восстановлена" — коммуналка не требует никакого восстановления,
+  // т.к. портал никогда её не трогал. Это просто демонтаж слоя.
+}
+
+/* ============================================================
+   DOOMUNALKA — Закон 4/6: меню портала.
+   v1.0 не содержит игрового движка — заглушки честно сообщают
+   об этом, а не притворяются рабочими кнопками.
+   ============================================================ */
+function doomMenuStub(text){
+  const msg=document.getElementById('doom-stub-msg');
+  if(!msg)return;
+  msg.textContent=text;
+  clearTimeout(msg._t);
+  msg._t=setTimeout(()=>{msg.textContent='';},2500);
+}
+function doomMenuContinue(){
+  doomMenuStub('Ад пока спит. Бой впереди.');
+}
+function doomMenuSettings(){
+  doomMenuStub('Настройки появятся, когда печать ослабнет сильнее.');
+}
+
+
 /* ============================================================ KONAMI & EASTER EGGS ============================================================ */
 document.addEventListener('keydown',e=>{
   konamiSeq.push(e.key);if(konamiSeq.length>10)konamiSeq.shift();
   if(JSON.stringify(konamiSeq)===JSON.stringify(KONAMI)){
     unlockAch('konami');
+    doomAwaken();
     document.documentElement.style.setProperty('--accent','#00ff41');
     document.documentElement.style.setProperty('--bg-img','repeating-linear-gradient(0deg,rgba(0,255,65,.04) 0,rgba(0,255,65,.04) 1px,transparent 0,transparent 4px)');
     showEgg('🎮 KONAMI CODE!','Ретро режим + музыка из Doom!');
@@ -2995,6 +3183,7 @@ if(appTitle){
       if(mobileTapCount>=5){
         // Konami на телефоне — 5 тапов
         unlockAch('konami');
+        doomAwaken();
         showEgg('🎮 MOBILE KONAMI!','5 тапов — Doom активирован!');
         playDoom();haptic([100,50,100,50,200]);
       } else if(mobileTapCount>=3){
@@ -5526,7 +5715,57 @@ function openArtifact(){
 }
 
 
-/* Применяем devMode при старте */
+/* ============================================================
+   DOOMUNALKA — Закон 3: запретный ритуал удержания FAB.
+   Активен ТОЛЬКО если doomData.unlocked === true.
+   Не трогает обычный onclick="openFabPopup()" — короткий тап
+   продолжает работать как прежде для всех пользователей.
+   ============================================================ */
+(function initDoomRitual(){
+  const fab=document.getElementById('fab');
+  if(!fab)return;
+
+  // Стадии ритуала (в мс от начала удержания)
+  const STAGE_TREMOR=3000;   // 3с — лёгкая пульсация/дрожание
+  const STAGE_CRACKS=5000;   // 5с — трещины, красное свечение, гул
+  const STAGE_SWELL=8000;    // 8с — раздувание, частицы, глюки интерфейса
+  const STAGE_PORTAL=12000;  // 12с — портал открывается
+
+  let ritualTimer=null;
+  let ritualStart=0;
+  let ritualActive=false;
+  let stageTimers=[];
+
+  function clearStageTimers(){
+    stageTimers.forEach(t=>clearTimeout(t));
+    stageTimers=[];
+  }
+
+  function ritualBegin(){
+    if(!doomData.unlocked)return; // печать не пробуждена — ритуала не существует
+    if(ritualActive)return;
+    ritualActive=true;
+    ritualStart=Date.now();
+
+    stageTimers.push(setTimeout(doomStageTremor,STAGE_TREMOR));
+    stageTimers.push(setTimeout(doomStageCracks,STAGE_CRACKS));
+    stageTimers.push(setTimeout(doomStageSwell,STAGE_SWELL));
+    stageTimers.push(setTimeout(doomStagePortal,STAGE_PORTAL));
+  }
+
+  function ritualAbort(){
+    if(!ritualActive)return;
+    ritualActive=false;
+    clearStageTimers();
+    doomStageRetreat();
+  }
+
+  fab.addEventListener('pointerdown',ritualBegin);
+  fab.addEventListener('pointerup',ritualAbort);
+  fab.addEventListener('pointercancel',ritualAbort);
+  fab.addEventListener('pointerleave',ritualAbort);
+})();
+
 /* ============================================================ BOOTSTRAP — запускается после всех определений ============================================================ */
 (function init(){
   initSplashText();
