@@ -3076,72 +3076,105 @@ function doomPlayRiff(){
     console.log('[doom-riff] AudioContext state:',ctx.state);
     if(ctx.state==='suspended')ctx.resume().then(()=>console.log('[doom-riff] resumed, new state:',ctx.state)).catch(e=>console.log('[doom-riff] resume failed:',e));
     const master=ctx.createGain();
-    master.gain.value=0.35;
+    master.gain.value=0.4;
     master.connect(ctx.destination);
 
-    // Лёгкое искажение для "грязного" индустриального звука
-    const distortion=ctx.createWaveShaper();
-    const curve=new Float32Array(256);
-    for(let i=0;i<256;i++){
-      const x=i*2/256-1;
-      curve[i]=Math.tanh(x*4);
+    // Многоступенчатый жёсткий дисторшн — ближе к перегруженному гитарному
+    // усилителю, чем мягкий tanh. Два каскада клиппинга друг за другом.
+    function makeDistortion(amount){
+      const shaper=ctx.createWaveShaper();
+      const curve=new Float32Array(512);
+      for(let i=0;i<512;i++){
+        const x=i*2/512-1;
+        curve[i]=Math.tanh(x*amount)*0.9+Math.sign(x)*Math.min(Math.abs(x*amount*1.5),1)*0.1;
+      }
+      shaper.curve=curve;
+      shaper.oversample='4x';
+      return shaper;
     }
-    distortion.curve=curve;
-    distortion.connect(master);
+    const distStage1=makeDistortion(6);
+    const distStage2=makeDistortion(3);
+    distStage1.connect(distStage2);
+    distStage2.connect(master);
+
+    // Лёгкий low-pass — срезает самые верхи дисторшна, как кабинет гитарного усилителя
+    const cabFilter=ctx.createBiquadFilter();
+    cabFilter.type='lowpass';
+    cabFilter.frequency.value=3200;
+    cabFilter.Q.value=0.7;
+    cabFilter.connect(distStage1);
 
     const startTime=ctx.currentTime;
-    const noteLen=0.15;
 
-    // Базовый бас-паттерн, повторяется с лёгкими вариациями по высоте —
-    // чтобы 10 секунд не звучали как зацикленный кусок, а как развитие.
-    const basePattern=[41.2,41.2,55,49,41.2,41.2,61.7,55];
-    const variations=[1,1,1.09,1.22,1,1,0.84,1]; // множители для вариаций между повторами
-    const totalDuration=10;
-    const patternDuration=basePattern.length*noteLen;
-    const repeats=Math.ceil(totalDuration/patternDuration);
-
-    for(let r=0;r<repeats;r++){
-      const variation=variations[r%variations.length];
-      basePattern.forEach((freq,i)=>{
-        const t=startTime+r*patternDuration+i*noteLen;
-        if(t-startTime>=totalDuration)return;
-
+    // Power chord: корень + квинта + октава — то, как реально играют
+    // метал-гитаристы на нижних струнах. Каждая "нота" — это трезвучие.
+    function playPowerChord(rootFreq,t,len,sustain){
+      const freqs=[rootFreq,rootFreq*1.498,rootFreq*2]; // прима, квинта, октава
+      freqs.forEach((f,idx)=>{
         const osc1=ctx.createOscillator();
         const osc2=ctx.createOscillator();
         const gain=ctx.createGain();
         osc1.type='sawtooth';
-        osc2.type='square';
-        osc1.frequency.value=freq*variation;
-        osc2.frequency.value=freq*variation*1.01; // лёгкий детюн для толщины звука
-        osc1.connect(gain);
-        osc2.connect(gain);
-        gain.connect(distortion);
+        osc2.type='sawtooth';
+        osc1.frequency.value=f;
+        osc2.frequency.value=f*1.008; // лёгкий детюн для толщины
+        const noteGain=idx===0?1:0.6; // корень громче, квинта/октава тише
+        osc1.connect(gain);osc2.connect(gain);
+        gain.connect(cabFilter);
 
         gain.gain.setValueAtTime(0,t);
-        gain.gain.linearRampToValueAtTime(0.8,t+0.01); // резкая атака
-        gain.gain.exponentialRampToValueAtTime(0.001,t+noteLen*0.9);
-
-        osc1.start(t);osc1.stop(t+noteLen);
-        osc2.start(t);osc2.stop(t+noteLen);
+        gain.gain.linearRampToValueAtTime(0.7*noteGain,t+0.005); // мгновенная атака
+        if(sustain){
+          gain.gain.setValueAtTime(0.7*noteGain,t+len*0.3);
+          gain.gain.exponentialRampToValueAtTime(0.001,t+len);
+        } else {
+          // палм-мьютинг — резкое затухание, "тук" а не "дзынь"
+          gain.gain.exponentialRampToValueAtTime(0.001,t+len*0.35);
+        }
+        osc1.start(t);osc1.stop(t+len);
+        osc2.start(t);osc2.stop(t+len);
       });
     }
 
-    // Синтезированный "кик" — ритмический пульс на всю длительность,
-    // даёт ощущение движения вперёд, не давая риффу звучать монотонно.
-    const kickInterval=0.3;
+    // Ритм-паттерн в духе тяжёлого риффа: палм-мьютинг восьмые + акцентные удержания.
+    // root notes — нижние ноты power chord прогрессии (в Гц).
+    const E1=41.2, FsharpHalf=43.65, G1=49, A1=55, Bb1=58.3;
+    const noteLen=0.14;
+    // true = sustain (держать дольше), false = palm-mute (короткий "тук")
+    const pattern=[
+      [E1,false],[E1,false],[E1,false],[G1,false],
+      [E1,false],[E1,false],[A1,true],[A1,false],
+      [E1,false],[E1,false],[E1,false],[Bb1,false],
+      [A1,false],[G1,false],[E1,true],[E1,false]
+    ];
+    const patternDuration=pattern.length*noteLen;
+    const totalDuration=10;
+    const repeats=Math.ceil(totalDuration/patternDuration);
+
+    for(let r=0;r<repeats;r++){
+      pattern.forEach(([freq,sustain],i)=>{
+        const t=startTime+r*patternDuration+i*noteLen;
+        if(t-startTime>=totalDuration)return;
+        const len=sustain?noteLen*2.2:noteLen*0.85;
+        playPowerChord(freq,t,len,sustain);
+      });
+    }
+
+    // Синтезированный кик — ритмическая опора под гитарным риффом
+    const kickInterval=patternDuration/pattern.length;
     const kickCount=Math.floor(totalDuration/kickInterval);
     for(let k=0;k<kickCount;k++){
       const t=startTime+k*kickInterval;
       const kickOsc=ctx.createOscillator();
       const kickGain=ctx.createGain();
       kickOsc.type='sine';
-      kickOsc.frequency.setValueAtTime(120,t);
-      kickOsc.frequency.exponentialRampToValueAtTime(35,t+0.08);
-      kickGain.gain.setValueAtTime(0.9,t);
-      kickGain.gain.exponentialRampToValueAtTime(0.001,t+0.12);
+      kickOsc.frequency.setValueAtTime(110,t);
+      kickOsc.frequency.exponentialRampToValueAtTime(35,t+0.07);
+      kickGain.gain.setValueAtTime(1,t);
+      kickGain.gain.exponentialRampToValueAtTime(0.001,t+0.1);
       kickOsc.connect(kickGain);
-      kickGain.connect(distortion);
-      kickOsc.start(t);kickOsc.stop(t+0.12);
+      kickGain.connect(master); // кик мимо дисторшна — чище удар
+      kickOsc.start(t);kickOsc.stop(t+0.1);
     }
 
     // Контекст общий и переиспользуемый — не закрываем его,
