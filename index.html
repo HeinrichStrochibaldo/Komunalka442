@@ -3501,17 +3501,28 @@ function doomStartEngine(){
     onRuntimeInitialized: function(){
       doomEngineLoaded=true;
       doomEngineLoading=false;
+      clearTimeout(doomEngineLoadTimer);
       const loadingMsg=document.getElementById('doom-engine-loading');
       if(loadingMsg)loadingMsg.style.display='none';
     }
   };
 
+  // Если за 15с движок не инициализировался — это не "просто долго", это сломалось
+  // (чаще всего: websockets-doom.wasm или doom1.wad не нашлись по пути/регистру имени)
+  const doomEngineLoadTimer=setTimeout(()=>{
+    if(doomEngineLoaded)return;
+    doomEngineLoading=false;
+    const loadingMsg=document.getElementById('doom-engine-loading');
+    if(loadingMsg)loadingMsg.textContent='Печать не открывается — проверь, что websockets-doom.wasm и doom1.wad лежат рядом с index.html (см. консоль браузера).';
+  },15000);
+
   const script=document.createElement('script');
   script.src='websockets-doom.js';
   script.onerror=function(){
     doomEngineLoading=false;
+    clearTimeout(doomEngineLoadTimer);
     const loadingMsg=document.getElementById('doom-engine-loading');
-    if(loadingMsg)loadingMsg.textContent='Не удалось загрузить движок ада.';
+    if(loadingMsg)loadingMsg.textContent='Не удалось загрузить движок ада (websockets-doom.js не найден).';
   };
   document.body.appendChild(script);
 }
