@@ -3541,9 +3541,10 @@ function doomStartEngine(){
       clearTimeout(doomEngineLoadTimer);
       const loadingMsg=document.getElementById('doom-engine-loading');
       if(loadingMsg)loadingMsg.style.display='none';
-      // ВРЕМЕННАЯ ДИАГНОСТИКА — показываем факты прямо на экране, без консоли,
-      // чтобы можно было просто сделать скриншот на телефоне. Убрать после диагностики.
+      // ВРЕМЕННАЯ ДИАГНОСТИКА №2 — проверяем дважды: сразу и через 2с,
+      // на случай если что-то меняет размеры асинхронно после инициализации.
       setTimeout(showDoomCanvasDebug,300);
+      setTimeout(showDoomCanvasDebug,2000);
     }
   };
 
@@ -3573,18 +3574,29 @@ function doomExitEngine(){
   closePortalToHell();
 }
 
-// ВРЕМЕННАЯ ДИАГНОСТИКА (см. комментарий в onRuntimeInitialized) — убрать после находки бага.
+// ВРЕМЕННАЯ ДИАГНОСТИКА №2 — обходим всю цепочку родителей #doom-canvas,
+// ищем transform/zoom/overflow на каждом уровне. Убрать после находки бага.
 function showDoomCanvasDebug(){
-  const canvases=document.querySelectorAll('canvas');
-  let lines=['Canvas count: '+canvases.length, 'devicePixelRatio: '+window.devicePixelRatio];
-  canvases.forEach((c,i)=>{
+  const c=document.getElementById('doom-canvas');
+  let lines=['=== снимок @ '+Math.round(performance.now())+'мс ===','devicePixelRatio: '+window.devicePixelRatio];
+  if(c){
     const r=c.getBoundingClientRect();
-    lines.push('#'+i+' id='+(c.id||'(none)'));
-    lines.push('  buffer: '+c.width+'x'+c.height);
-    lines.push('  client: '+c.clientWidth+'x'+c.clientHeight);
-    lines.push('  rect: '+Math.round(r.width)+'x'+Math.round(r.height)+' @ '+Math.round(r.left)+','+Math.round(r.top));
-    lines.push('  style: '+(c.getAttribute('style')||'(none)'));
-  });
+    lines.push('CANVAS rect: '+Math.round(r.width)+'x'+Math.round(r.height)+' @ '+Math.round(r.left)+','+Math.round(r.top));
+    lines.push('CANVAS buffer: '+c.width+'x'+c.height+' client: '+c.clientWidth+'x'+c.clientHeight);
+    lines.push('--- цепочка родителей ---');
+    let el=c, depth=0;
+    while(el && depth<10){
+      const cs=getComputedStyle(el);
+      const rr=el.getBoundingClientRect();
+      lines.push('['+depth+'] '+el.tagName+'#'+(el.id||'-')+' rect='+Math.round(rr.width)+'x'+Math.round(rr.height));
+      lines.push('    transform='+cs.transform+' zoom='+cs.zoom+' overflow='+cs.overflow);
+      lines.push('    width='+cs.width+' height='+cs.height+' position='+cs.position);
+      el=el.parentElement;
+      depth++;
+    }
+  } else {
+    lines.push('doom-canvas НЕ НАЙДЕН в DOM');
+  }
   console.log('[doom-debug]\n'+lines.join('\n'));
 
   let panel=document.getElementById('doom-debug-panel');
@@ -3592,12 +3604,12 @@ function showDoomCanvasDebug(){
     panel=document.createElement('div');
     panel.id='doom-debug-panel';
     panel.style.cssText='position:fixed;top:50px;left:8px;right:8px;z-index:1000002;'+
-      'background:rgba(0,0,0,.92);color:#0f0;font-family:monospace;font-size:11px;'+
+      'background:rgba(0,0,0,.92);color:#0f0;font-family:monospace;font-size:10px;'+
       'padding:10px;border:1px solid #0f0;border-radius:6px;white-space:pre-wrap;'+
-      'max-height:70vh;overflow:auto';
+      'max-height:80vh;overflow:auto';
     document.body.appendChild(panel);
   }
-  panel.textContent=lines.join('\n');
+  panel.textContent=(panel.textContent?panel.textContent+'\n\n':'')+lines.join('\n');
 }
 
 
