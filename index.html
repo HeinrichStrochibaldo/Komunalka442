@@ -842,6 +842,10 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
 #fab.pulse { animation: fabIn .5s cubic-bezier(.34,1.56,.64,1) .3s both, fabPulse 2.5s ease-out 1s infinite; }
 @keyframes fabPulse{0%{box-shadow:0 4px 20px rgba(0,0,0,.4),0 0 0 0 color-mix(in srgb,var(--accent) 60%,transparent)}70%{box-shadow:0 4px 20px rgba(0,0,0,.4),0 0 0 14px color-mix(in srgb,var(--accent) 0%,transparent)}100%{box-shadow:0 4px 20px rgba(0,0,0,.4),0 0 0 0 color-mix(in srgb,var(--accent) 0%,transparent)}}
 
+/* C-005: "сердцебиение" FAB теперь через Web Animations API (см. pulseFab() в JS) —
+   намеренно НЕ через CSS-класс/animation-свойство, иначе оно конфликтует с каскадом
+   правила #fab.pulse (его fabIn "переоткрывается" при снятии нашего класса). */
+
 /* ============================================================
    DOOMUNALKA — Закон 3: визуальные стадии запретного ритуала.
    Все переходы плавные, чтобы откат при отпускании выглядел
@@ -1047,7 +1051,7 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
 }
 
 
-/* П7: Заблокированные поля счётчиков */
+/* П7: Заблокированные поля счётчиков (после фиксации — реальная блокировка) */
 input.meter-locked {
   background: var(--surface2) !important;
   color: var(--muted) !important;
@@ -1100,6 +1104,31 @@ input.meter-locked:focus { border-color: var(--border) !important; }
 /* Dev tabs — скрыты по умолчанию */
 .dev-tab { display: none; }
 .dev-mode .dev-tab { display: block; }
+
+/* S3: Режим архитектора — постоянный, тихий "чертёжный" паттерн поверх обычного фона.
+   Не использует --bg-img (там живёт пользовательский выбор паттерна в Настройках),
+   поэтому переключение темы/паттерна не сбивает индикацию режима, и наоборот. */
+html.dev-mode body::before{
+  content:'';
+  position:fixed; inset:0; z-index:-1; pointer-events:none;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(91,140,255,.07) 0, rgba(91,140,255,.07) 1px, transparent 0, transparent 24px),
+    repeating-linear-gradient(90deg, rgba(91,140,255,.07) 0, rgba(91,140,255,.07) 1px, transparent 0, transparent 24px);
+}
+
+/* S3: постоянное напоминание, что режим активен ПРЯМО СЕЙЧАС — даже если приложение
+   только что открыли и про режим успели забыть. Это состояние, не реакция на событие,
+   поэтому живёт в CSS (Закон Анимаций), а не в JS/WAAPI — переживает перезагрузку сама,
+   просто потому что applyDevMode() при старте читает settings.devMode и ставит класс. */
+@keyframes architectGlow{
+  0%,100%{box-shadow:0 0 0 0 rgba(245,197,66,.5);}
+  50%{box-shadow:0 0 0 5px rgba(245,197,66,0);}
+}
+html.dev-mode #settings-btn{
+  border-color:#f5c542 !important;
+  color:#f5c542 !important;
+  animation:architectGlow 2.4s ease-in-out infinite;
+}
 </style>
 </head>
 <body>
@@ -1189,7 +1218,7 @@ input.meter-locked:focus { border-color: var(--border) !important; }
     <button class="hbtn" id="back-btn" onclick="goBack()" style="display:none;font-size:13px;padding:5px 9px">← Назад</button>
     <div id="offline-badge" style="display:none;background:rgba(248,113,113,.15);border:1px solid rgba(248,113,113,.3);border-radius:20px;padding:3px 8px;font-size:11px;font-weight:600;color:var(--red)">📵</div>
     <button class="hbtn" onclick="openSection('achievements')" title="Достижения">🏆</button>
-    <button class="hbtn" onclick="openSection('settings')" title="Настройки">⚙️</button>
+    <button class="hbtn" id="settings-btn" onclick="settingsBtnTap()" title="Настройки">⚙️</button>
     <button class="hbtn" id="theme-btn" onclick="toggleTheme()" title="Тема">🌙</button>
   </div>
 </header>
@@ -1301,7 +1330,7 @@ input.meter-locked:focus { border-color: var(--border) !important; }
       <div class="meter-cell" style="border-top:3px solid #f87171">
         <div class="mc-lbl-row" style="color:#f87171">🔴 ГВС</div>
         <div class="mc-row"><span>Пред.</span><input type="number" id="prev-gvs" step="0.001" oninput="onInput()"></div>
-        <div class="mc-row"><span>Тек.</span><input type="number" id="cur-gvs" step="0.001" oninput="onInput()"></div>
+        <div class="mc-row"><span>Тек.</span><input type="number" id="cur-gvs" step="0.001" readonly onclick="cmFieldTap()" onfocus="this.blur()" tabindex="-1"></div>
         <div class="mc-vol" id="vol-gvs">—</div>
         <div class="mc-meta">
           <div class="mc-serial" id="serial-gvs">ПУЛЬСАР · 19-3097262</div>
@@ -1315,7 +1344,7 @@ input.meter-locked:focus { border-color: var(--border) !important; }
       <div class="meter-cell" style="border-top:3px solid #60a5fa">
         <div class="mc-lbl-row" style="color:#60a5fa">🔵 ХВС</div>
         <div class="mc-row"><span>Пред.</span><input type="number" id="prev-hvs" step="0.001" oninput="onInput()"></div>
-        <div class="mc-row"><span>Тек.</span><input type="number" id="cur-hvs" step="0.001" oninput="onInput()"></div>
+        <div class="mc-row"><span>Тек.</span><input type="number" id="cur-hvs" step="0.001" readonly onclick="cmFieldTap()" onfocus="this.blur()" tabindex="-1"></div>
         <div class="mc-vol" id="vol-hvs">—</div>
         <div class="mc-meta">
           <div class="mc-serial" id="serial-hvs">ПУЛЬСАР · 19-3097272</div>
@@ -1332,13 +1361,13 @@ input.meter-locked:focus { border-color: var(--border) !important; }
           <div>
             <div class="ee-sub-lbl">Т1 — День</div>
             <div class="mc-row"><span>Пред.</span><input type="number" id="prev-t1" step="1" oninput="onInput()"></div>
-            <div class="mc-row"><span>Тек.</span><input type="number" id="cur-t1" step="1" oninput="onInput()"></div>
+            <div class="mc-row"><span>Тек.</span><input type="number" id="cur-t1" step="1" readonly onclick="cmFieldTap()" onfocus="this.blur()" tabindex="-1"></div>
             <div class="mc-vol" id="vol-t1">—</div>
           </div>
           <div>
             <div class="ee-sub-lbl">Т2 — Ночь</div>
             <div class="mc-row"><span>Пред.</span><input type="number" id="prev-t2" step="1" oninput="onInput()"></div>
-            <div class="mc-row"><span>Тек.</span><input type="number" id="cur-t2" step="1" oninput="onInput()"></div>
+            <div class="mc-row"><span>Тек.</span><input type="number" id="cur-t2" step="1" readonly onclick="cmFieldTap()" onfocus="this.blur()" tabindex="-1"></div>
             <div class="mc-vol" id="vol-t2">—</div>
           </div>
         </div>
@@ -1897,6 +1926,33 @@ function render(){
     if(el)el._lastVal=el.textContent;
   });
   setTimeout(()=>makeCopyable('.td-sum,.ft-val,.source-total'),60);
+  maybeDoomWhisper();
+}
+
+// C-005, реализация №4: 👹 случайный "шёпот" — печать пока спит (doomData.unlocked===false),
+// но иногда едва заметно дрожит. Редко, без haptic — это шёпот, а не сигнал.
+let _lastDoomWhisper=0;
+function maybeDoomWhisper(){
+  if(typeof doomData==='undefined'||doomData.unlocked)return;
+  const now=Date.now();
+  if(now-_lastDoomWhisper<5*60*1000)return; // не чаще раза в 5 минут
+  if(Math.random()<0.02){
+    _lastDoomWhisper=now;
+    doomWhisperTremor();
+  }
+}
+function doomWhisperTremor(){
+  const fab=document.getElementById('fab');
+  if(!fab)return;
+  if(fab._heartbeatAnim){try{fab._heartbeatAnim.cancel();}catch(e){}}
+  fab._heartbeatAnim = fab.animate([
+    {transform:'translate(0,0) rotate(0deg)',     offset:0},
+    {transform:'translate(-1px,0) rotate(-2deg)', offset:0.15},
+    {transform:'translate(1px,0) rotate(2deg)',   offset:0.3},
+    {transform:'translate(-1px,1px) rotate(-1deg)',offset:0.45},
+    {transform:'translate(1px,-1px) rotate(1deg)', offset:0.6},
+    {transform:'translate(0,0) rotate(0deg)',     offset:1}
+  ], {duration:400, easing:'ease-in-out', fill:'none'});
 }
 
 /* ============================================================ PAID ============================================================ */
@@ -2199,12 +2255,13 @@ function loadMonth(){
     const el=document.getElementById(id);
     if(el){el.classList.add('meter-locked');el.setAttribute('readonly','');}
   });
-  // cur-* блокируются только после фиксации показаний
+  // cur-* всегда readonly — ввод только через FAB (Закон C-005: один путь ввода)
   CUR_METER_IDS.forEach(id=>{
     const el=document.getElementById(id);
     if(el){
-      if(isAccepted){el.classList.add('meter-locked');el.setAttribute('readonly','');}
-      else{el.classList.remove('meter-locked');el.removeAttribute('readonly');}
+      el.setAttribute('readonly','');
+      if(isAccepted){el.classList.add('meter-locked');}
+      else{el.classList.remove('meter-locked');}
     }
   });
   updateMonthBarState();render();
@@ -2212,6 +2269,48 @@ function loadMonth(){
 
 function onInput(){
   render();clearTimeout(autoTimer);autoTimer=setTimeout(autoSave,AUTOSAVE_DELAY);
+}
+
+// C-005: единственная точка входа для cur-* — поле само ничего не делает,
+// оно лишь "кивает" в сторону FAB. Действие совершает только FAB.
+let meterTapGuided=false; // сбрасывается при полной перезагрузке приложения
+function pulseFab(full){
+  const fab=document.getElementById('fab');
+  if(!fab)return;
+  // Прерываем предыдущий heartbeat, если он ещё идёт (быстрые повторные тапы)
+  if(fab._heartbeatAnim){try{fab._heartbeatAnim.cancel();}catch(e){}}
+  const frames = full ? [
+    {transform:'scale(1)',     offset:0},
+    {transform:'scale(1.38)',  offset:0.18},
+    {transform:'scale(1.08)',  offset:0.32},
+    {transform:'scale(1.45)',  offset:0.55},
+    {transform:'scale(1.1)',   offset:0.78},
+    {transform:'scale(1)',     offset:1}
+  ] : [
+    {transform:'scale(1)',     offset:0},
+    {transform:'scale(1.15)',  offset:0.5},
+    {transform:'scale(1)',     offset:1}
+  ];
+  // fill:'none' — после завершения transform полностью отдаётся обратно CSS-каскаду
+  // (включая #fab.pulse), который мы вообще не трогаем — поэтому fabIn не "переоткрывается"
+  fab._heartbeatAnim = fab.animate(frames, {
+    duration: full ? 800 : 300,
+    easing: full ? 'cubic-bezier(.36,.07,.19,.97)' : 'ease-in-out',
+    fill: 'none'
+  });
+}
+function cmFieldTap(){
+  if(metersAccepted){
+    haptic([10,10,10,10,10]); // показания уже зафиксированы — это отдельный, существующий случай
+    return;
+  }
+  if(!meterTapGuided){
+    meterTapGuided=true;
+    pulseFab(true);
+    haptic([40,80,40]); // тук / пауза / тук
+  }else{
+    pulseFab(false);
+  }
 }
 
 async function autoSave(){
@@ -2349,8 +2448,36 @@ function getStreakMonths(){
 function updateStreak(){
   const streak=getStreakMonths();
   const b=document.getElementById('streak-badge'),c=document.getElementById('streak-count');
-  if(streak.length>=2&&b&&c){b.style.display='inline-flex';c.textContent=streak.length;}
-  else if(b)b.style.display='none';
+  if(streak.length>=2&&b&&c){
+    b.style.display='inline-flex';
+    const newLen=streak.length;
+    const changed=c._lastVal!==undefined&&c._lastVal!==newLen;
+    const best=parseInt(localStorage.getItem('kstreak_best')||'0');
+    if(newLen>best){
+      localStorage.setItem('kstreak_best',String(newLen));
+      // Всплеск только если это реальное изменение прямо сейчас, а не просто
+      // открытие приложения на уже-рекордном месяце (первая отрисовка молчит)
+      if(changed)burstStreakBadge(b);
+    }
+    c.textContent=newLen;
+    c._lastVal=newLen;
+  }
+  else if(b){
+    b.style.display='none';
+    if(c)c._lastVal=undefined;
+  }
+}
+// C-005, реализация №5: 🔥 новый рекорд стрика — отдельный всплеск бейджа (Web Animations API)
+function burstStreakBadge(el){
+  if(el._burstAnim){try{el._burstAnim.cancel();}catch(e){}}
+  haptic([15,30,15,30,70]);
+  el._burstAnim = el.animate([
+    {transform:'scale(1) rotate(0deg)',     textShadow:'0 0 0 rgba(255,100,30,0)',   offset:0},
+    {transform:'scale(1.35) rotate(-6deg)', textShadow:'0 0 14px rgba(255,100,30,.8)',offset:0.3},
+    {transform:'scale(1.1) rotate(5deg)',   textShadow:'0 0 10px rgba(255,100,30,.6)',offset:0.55},
+    {transform:'scale(1.2) rotate(-2deg)',  textShadow:'0 0 8px rgba(255,100,30,.4)', offset:0.75},
+    {transform:'scale(1) rotate(0deg)',     textShadow:'0 0 0 rgba(255,100,30,0)',   offset:1}
+  ], {duration:750, easing:'ease-out', fill:'none'});
 }
 
 
@@ -2685,7 +2812,7 @@ function toggleDynMonth(head){
 /* ============================================================ YEAR ============================================================ */
 function renderYear(){
   const qEl=document.getElementById('year-q');if(!qEl)return;
-  const qs=[{l:'Q1 янв–мар',m:['2027-01','2027-02','2027-03']},{l:'Q2 апр–июн',m:['2026-05','2026-06']},{l:'Q3 июл–сен',m:['2026-07','2026-08','2026-09']},{l:'Q4 окт–дек',m:['2026-10','2026-11','2026-12']}];
+  const qs=[{l:'Q1 янв–мар',m:['2027-01','2027-02','2027-03']},{l:'Q2 апр–июн',m:['2027-04','2026-05','2026-06']},{l:'Q3 июл–сен',m:['2026-07','2026-08','2026-09']},{l:'Q4 окт–дек',m:['2026-10','2026-11','2026-12']}];
   let total=0;
   qEl.innerHTML=qs.map(q=>{const s=q.m.reduce((a,m)=>a+(allData[m]?cfd(allData[m]).grand:0),0);total+=s;return`<div class="qcard"><div class="qcard-lbl">${q.l}</div><div class="qcard-val">${s>0?fmt(s):'—'}</div></div>`;}).join('')+`<div class="qcard total"><div class="qcard-lbl">💰 Итого</div><div class="qcard-val">${total>0?fmt(total):'—'}</div></div>`;
   const wrap=document.getElementById('year-table');if(!wrap)return;
@@ -3312,10 +3439,87 @@ function doomMenuStub(text){
   msg._t=setTimeout(()=>{msg.textContent='';},2500);
 }
 function doomMenuContinue(){
-  doomMenuStub('Ад пока спит. Бой впереди.');
+  doomStartEngine();
 }
 function doomMenuSettings(){
   doomMenuStub('Настройки появятся, когда печать ослабнет сильнее.');
+}
+
+/* ============================================================
+   DOOMUNALKA — реальный движок (websockets-doom.js/.wasm + doom1.wad).
+   Контейнер движка создаётся один раз и просто скрывается/показывается —
+   повторная пересборка WASM-инстанса на каждый вход не нужна.
+   Скрипт движка подключается лениво — только при первом реальном входе в бой,
+   а не при загрузке всего приложения.
+   ============================================================ */
+let doomEngineLoaded=false;
+let doomEngineLoading=false;
+
+function ensureDoomEngineDom(){
+  let engine=document.getElementById('doom-engine');
+  if(engine)return engine;
+
+  engine=document.createElement('div');
+  engine.id='doom-engine';
+  engine.style.cssText='position:fixed;inset:0;z-index:1000000;background:#000;'+
+    'display:none;align-items:center;justify-content:center;overflow:hidden;';
+
+  engine.innerHTML=
+    '<canvas id="doom-canvas" oncontextmenu="event.preventDefault()" '+
+    'style="width:100%;height:100%;outline:none;touch-action:none"></canvas>'+
+    '<div id="doom-engine-loading" style="position:absolute;color:#aa3333;font-family:monospace;font-size:13px">Загрузка движка ада…</div>'+
+    '<button id="doom-engine-exit-btn" style="position:absolute;top:10px;right:10px;z-index:1000001;'+
+    'background:#330000;color:#ff3333;border:1px solid #ff3333;padding:6px 14px;border-radius:8px;'+
+    'font-family:monospace;font-size:12px;cursor:pointer">Выйти из ада</button>';
+
+  document.body.appendChild(engine);
+  document.getElementById('doom-engine-exit-btn').onclick=doomExitEngine;
+  return engine;
+}
+
+function doomStartEngine(){
+  const engine=ensureDoomEngineDom();
+  engine.style.display='flex';
+
+  if(doomEngineLoaded){
+    // движок уже загружен и работает в фоне — просто показываем его снова
+    const loadingMsg=document.getElementById('doom-engine-loading');
+    if(loadingMsg)loadingMsg.style.display='none';
+    return;
+  }
+  if(doomEngineLoading)return;
+  doomEngineLoading=true;
+
+  window.Module={
+    canvas: document.getElementById('doom-canvas'),
+    arguments: ['-iwad','doom1.wad','-window','-nogui','-nomusic'],
+    print: function(text){ console.log('[doom]',text); },
+    printErr: function(text){ console.log('[doom:err]',text); },
+    preRun: [function(){
+      Module.FS_createPreloadedFile('/','doom1.wad','doom1.wad',true,true);
+    }],
+    onRuntimeInitialized: function(){
+      doomEngineLoaded=true;
+      doomEngineLoading=false;
+      const loadingMsg=document.getElementById('doom-engine-loading');
+      if(loadingMsg)loadingMsg.style.display='none';
+    }
+  };
+
+  const script=document.createElement('script');
+  script.src='websockets-doom.js';
+  script.onerror=function(){
+    doomEngineLoading=false;
+    const loadingMsg=document.getElementById('doom-engine-loading');
+    if(loadingMsg)loadingMsg.textContent='Не удалось загрузить движок ада.';
+  };
+  document.body.appendChild(script);
+}
+
+function doomExitEngine(){
+  const engine=document.getElementById('doom-engine');
+  if(engine)engine.style.display='none';
+  closePortalToHell();
 }
 
 
@@ -3984,15 +4188,9 @@ function confirmAccept(){
   const m=curMonth();
   if(!allData[m])allData[m]={};
   allData[m]._accepted=true;
-  // При фиксации блокируем только cur-* (prev-* уже всегда заблокированы)
   CUR_METER_IDS.forEach(id=>{
     const el=document.getElementById(id);
-    if(el){
-      el.classList.add('meter-locked');
-      el.setAttribute('readonly','');
-      el.addEventListener('click',lockedFieldFeedback,{passive:true});
-      el.addEventListener('touchstart',lockedFieldFeedback,{passive:true});
-    }
+    if(el){el.classList.add('meter-locked');}
   });
   haptic([50,30,80,30,120]);
   updateMonthBarState();
@@ -4141,18 +4339,17 @@ function updateMonthBarState(){
 
 function fpRedoUnlock(){
   if(ghostGuard())return;
-  // Обычный тап — снимаем блокировку, значения остаются
+  // Обычный тап — снимаем фиксацию, значения остаются, поле снова "Нажми ⚡"
   metersAccepted=false;
   const m=curMonth();
   if(allData[m])delete allData[m]._accepted;
-  // Разблокируем только cur-* (prev-* остаются заблокированными всегда)
   CUR_METER_IDS.forEach(id=>{
     const el=document.getElementById(id);
-    if(el){el.classList.remove('meter-locked');el.removeAttribute('readonly');}
+    if(el){el.classList.remove('meter-locked');}
   });
   updateMonthBarState();
   autoSave();
-  showFabToast('Показания разблокированы');
+  showFabToast('Разблокировано — нажми ⚡ для повторного ввода');
 }
 
 function fpRedoConfirm(){
@@ -4162,10 +4359,9 @@ function fpRedoConfirm(){
     metersAccepted=false;
     const m=curMonth();
     if(allData[m])delete allData[m]._accepted;
-    // Сбрасываем только cur-* (prev-* остаются заблокированными всегда)
     CUR_METER_IDS.forEach(id=>{
       const el=document.getElementById(id);
-      if(el){el.value='';el.classList.remove('meter-locked');el.removeAttribute('readonly');}
+      if(el){el.value='';el.classList.remove('meter-locked');}
     });
     onInput();
     updateMonthBarState();
@@ -4713,17 +4909,6 @@ function _buildSettingsContent(content){
       </div>
     </div>
 
-    <!-- 🛠 Разработка -->
-    <div class="set-section">
-      <div class="set-section-title">🛠 Разработка</div>
-      <div class="set-row"><label>Режим разработчика</label>
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-          <input type="checkbox" id="so-devmode" ${settings.devMode?'checked':''} onchange="soToggleDevMode()">
-          <span style="font-size:13px;color:var(--muted)">Включить</span>
-        </label>
-      </div>
-    </div>
-
     <!-- 📞 Контакты -->
     <div class="set-section">
       <div class="set-section-title">📞 Контакты поставщиков</div>
@@ -4891,11 +5076,71 @@ document.querySelectorAll('.source-head').forEach(head=>{
 /* П43: сэкономленные деньги 🌱 */
 function updateSavings(){
   const m=curMonth(),pm=prevMK(m);
-  if(!pm||!allData[pm]||!allData[m])return;
-  const cur=cfd(allData[m]).grand,prev=cfd(allData[pm]).grand;
   const el=document.getElementById('ft-savings');if(!el)return;
-  if(cur>0&&prev>0&&prev>cur){el.style.display='block';el.textContent='🌱 сэкономлено '+fmt(prev-cur);}
-  else el.style.display='none';
+  if(!pm||!allData[pm]||!allData[m]){el.style.display='none';el._lastVal=undefined;return;}
+  const cur=cfd(allData[m]).grand,prev=cfd(allData[pm]).grand;
+  if(cur>0&&prev>0&&prev>cur){
+    const diff=prev-cur,pct=diff/prev;
+    const newText='🌱 сэкономлено '+fmt(diff);
+    el.style.display='block';
+    // Реакция только на реальное изменение, и не всегда одна и та же —
+    // иначе через полгода это станет фоновым шумом (правило трёх уровней):
+    //  🥇 новый рекорд экономии  → богатый праздничный эффект
+    //  🥈 экономия ≥20%          → лёгкий пульс
+    //  обычная небольшая экономия → просто текст, без анимации
+    if(el._lastVal!==undefined&&el._lastVal!==newText){
+      const histMax=getMaxSavingsRecord(m);
+      if(diff>histMax)pulseSavingsRecord(el);
+      else if(pct>=0.20)pulseSavings(el);
+    }
+    el.textContent=newText;
+    el._lastVal=newText;
+  } else {
+    el.style.display='none';
+    el._lastVal=undefined;
+  }
+}
+
+// Исторический максимум помесячной экономии, кроме месяца excludeMonth
+// (чтобы текущий результат сравнивался с ПРОШЛЫМИ месяцами, а не с самим собой)
+function getMaxSavingsRecord(excludeMonth){
+  let maxDiff=0;
+  MK.forEach(m=>{
+    if(m===excludeMonth)return;
+    const pm=prevMK(m);
+    if(!pm||!allData[pm]||!allData[m])return;
+    const cur=cfd(allData[m]).grand,prev=cfd(allData[pm]).grand;
+    if(cur>0&&prev>0&&prev>cur){
+      const d=prev-cur;
+      if(d>maxDiff)maxDiff=d;
+    }
+  });
+  return maxDiff;
+}
+
+// C-005, реализация №2а: лёгкий пульс (экономия ≥20%) — Web Animations API
+function pulseSavings(el){
+  if(el._savingsAnim){try{el._savingsAnim.cancel();}catch(e){}}
+  el._savingsAnim = el.animate([
+    {transform:'scale(1)',    offset:0},
+    {transform:'scale(1.25)', offset:0.35},
+    {transform:'scale(0.96)', offset:0.6},
+    {transform:'scale(1.05)', offset:0.8},
+    {transform:'scale(1)',    offset:1}
+  ], {duration:550, easing:'ease-out', fill:'none'});
+}
+
+// C-005, реализация №2б: 🥇 новый рекорд экономии — заметно богаче, но всё ещё разово
+function pulseSavingsRecord(el){
+  if(el._savingsAnim){try{el._savingsAnim.cancel();}catch(e){}}
+  haptic([20,40,20,40,90]);
+  el._savingsAnim = el.animate([
+    {transform:'scale(1)',    color:'var(--green)', textShadow:'0 0 0 rgba(245,197,66,0)', offset:0},
+    {transform:'scale(1.4)',  color:'#f5c542',       textShadow:'0 0 12px rgba(245,197,66,.7)', offset:0.4},
+    {transform:'scale(0.95)', color:'#f5c542',       textShadow:'0 0 6px rgba(245,197,66,.4)',  offset:0.65},
+    {transform:'scale(1.08)', color:'var(--green)',  textShadow:'0 0 0 rgba(245,197,66,0)', offset:0.85},
+    {transform:'scale(1)',    color:'var(--green)',  textShadow:'0 0 0 rgba(245,197,66,0)', offset:1}
+  ], {duration:850, easing:'ease-out', fill:'none'});
 }
 
 /* П50+П61: Достижение "Тысяча и одна ночь" — добавляем в список */
@@ -5285,16 +5530,56 @@ function closeFabPopup(){
 
 
 /* ── Режим разработчика ── */
-function soToggleDevMode(){
-  const cb=document.getElementById('so-devmode');
-  settings.devMode=cb?cb.checked:false;
+/* ── Режим архитектора (бывший "режим разработчика") ──
+   S3: больше не обычный чекбокс в настройках. Активация — 5 тапов по кнопке
+   ⚙️ за короткое окно. Выглядит как достижение, но не сохраняется в ACHS —
+   это просто визуальное подтверждение переключения скрытого режима. */
+let settingsTapCount=0, settingsTapTimer=null;
+function settingsBtnTap(){
+  settingsTapCount++;
+  clearTimeout(settingsTapTimer);
+  settingsTapTimer=setTimeout(()=>{
+    if(settingsTapCount>=5){
+      toggleArchitectMode();
+    } else {
+      openSection('settings');
+    }
+    settingsTapCount=0;
+  },600);
+}
+function toggleArchitectMode(){
+  settings.devMode=!settings.devMode;
   localStorage.setItem('ksettings',JSON.stringify(settings));
   applyDevMode();
+  haptic(settings.devMode?[30,20,30,20,80]:[80,20,30]);
+  pulseArchitectToggle();
+  showAchToast({
+    icon:'🏗',
+    name:settings.devMode?'Режим архитектора включён':'Режим архитектора выключен',
+    desc:settings.devMode?'Чертежи Коммуналки теперь видны':'Чертежи скрыты обратно',
+    xp:0
+  });
+}
+// C-005, реализация №3: золотой импульс по рамке кнопки ⚙️ — Web Animations API,
+// разовая реакция на сам момент переключения (не на постоянное состояние — оно живёт в CSS .dev-mode)
+function pulseArchitectToggle(){
+  const btn=document.getElementById('settings-btn');
+  if(!btn)return;
+  if(btn._archAnim){try{btn._archAnim.cancel();}catch(e){}}
+  btn._archAnim = btn.animate([
+    {boxShadow:'0 0 0 0 rgba(245,197,66,.9)',  transform:'scale(1)',   offset:0},
+    {boxShadow:'0 0 0 4px rgba(245,197,66,.55)',transform:'scale(1.15)',offset:0.4},
+    {boxShadow:'0 0 0 10px rgba(245,197,66,0)', transform:'scale(1)',   offset:1}
+  ], {duration:700, easing:'ease-out', fill:'none'});
+}
+function soToggleDevMode(){
+  // Оставлено для обратной совместимости (QA-самопроверка), реальный UI-путь — toggleArchitectMode()
+  toggleArchitectMode();
 }
 
 function applyDevMode(){
   const on=settings.devMode;
-  // Класс на documentElement управляет .dev-tab видимостью
+  // Класс на documentElement управляет .dev-tab видимостью И паттерном чертежа (см. CSS)
   document.documentElement.classList.toggle('dev-mode', on);
   // Если выключили и стоим на dev вкладке — переходим на entry
   if(!on){
@@ -5944,7 +6229,6 @@ function openArtifact(){
 (function init(){
   initSplashText();
   const ks=localStorage.getItem('ksettings');if(ks)settings={...settings,...JSON.parse(ks)};
-  settings.devMode=false; // всегда выключен при запуске
   const km=localStorage.getItem('kmeter');if(km)meter={...meter,...JSON.parse(km)};
   try{const kv=localStorage.getItem('kversions');if(kv)versions=JSON.parse(kv);}catch(e){appError(e,'init:versions');}
   const kt=localStorage.getItem('ktheme');
