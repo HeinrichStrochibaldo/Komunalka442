@@ -3496,7 +3496,14 @@ function doomStartEngine(){
     print: function(text){ console.log('[doom]',text); },
     printErr: function(text){ console.log('[doom:err]',text); },
     preRun: [function(){
-      Module.FS_createPreloadedFile('/','doom1.wad','doom1.wad',true,true);
+      // Разные версии Emscripten называют это по-разному: иногда глобальный FS,
+      // иногда Module.FS — пробуем оба варианта, не угадываем вслепую.
+      var fsObj = (typeof FS!=='undefined') ? FS : (window.Module&&window.Module.FS?window.Module.FS:null);
+      if(fsObj && typeof fsObj.createPreloadedFile==='function'){
+        fsObj.createPreloadedFile('/','doom1.wad','doom1.wad',true,true);
+      } else {
+        console.error('[doom] createPreloadedFile недоступен — ни FS, ни Module.FS его не дали');
+      }
     }],
     onRuntimeInitialized: function(){
       doomEngineLoaded=true;
