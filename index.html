@@ -3465,8 +3465,9 @@ function ensureDoomEngineDom(){
     'display:none;align-items:center;justify-content:center;overflow:hidden;';
 
   engine.innerHTML=
-    '<canvas id="doom-canvas" oncontextmenu="event.preventDefault()" '+
-    'style="width:100%;height:100%;outline:none;touch-action:none"></canvas>'+
+    '<canvas id="doom-canvas" width="320" height="200" oncontextmenu="event.preventDefault()" '+
+    'style="max-width:100%;max-height:100%;width:auto;height:auto;outline:none;touch-action:none;'+
+    'image-rendering:pixelated;image-rendering:-moz-crisp-edges;image-rendering:crisp-edges"></canvas>'+
     '<div id="doom-engine-loading" style="position:absolute;color:#aa3333;font-family:monospace;font-size:13px">Загрузка движка ада…</div>'+
     '<button id="doom-engine-exit-btn" style="position:absolute;top:10px;right:10px;z-index:1000001;'+
     'background:#330000;color:#ff3333;border:1px solid #ff3333;padding:6px 14px;border-radius:8px;'+
@@ -3492,7 +3493,7 @@ function doomStartEngine(){
 
   window.Module={
     canvas: document.getElementById('doom-canvas'),
-    arguments: ['-iwad','doom1.wad','-window','-nogui','-nomusic'],
+    arguments: ['-iwad','doom1.wad','-window','-geom','320x200','-nogui','-nomusic'],
     print: function(text){ console.log('[doom]',text); },
     printErr: function(text){ console.log('[doom:err]',text); },
     preRun: [function(){
