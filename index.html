@@ -3461,7 +3461,7 @@ function ensureDoomEngineDom(){
 
   engine=document.createElement('div');
   engine.id='doom-engine';
-  engine.style.cssText='position:fixed;inset:0;z-index:1000000;background:#000;'+
+  engine.style.cssText='position:fixed;top:0;left:0;z-index:1000000;background:#000;'+
     'display:none;align-items:center;justify-content:center;overflow:hidden;';
 
   engine.innerHTML=
@@ -3477,15 +3477,39 @@ function ensureDoomEngineDom(){
 
   document.body.appendChild(engine);
   document.getElementById('doom-engine-exit-btn').onclick=doomExitEngine;
-  window.addEventListener('resize',fitDoomCanvas);
-  window.addEventListener('orientationchange',fitDoomCanvas);
+  if(window.visualViewport){
+    window.visualViewport.addEventListener('resize',syncDoomEngineViewport);
+    window.visualViewport.addEventListener('scroll',syncDoomEngineViewport);
+  } else {
+    window.addEventListener('resize',fitDoomCanvas);
+    window.addEventListener('orientationchange',fitDoomCanvas);
+  }
   return engine;
 }
 
-// CSS-размер канваса держим строго 320x200 — иначе SDL2/Emscripten на Retina-экранах
-// сам умножит буфер на devicePixelRatio, и DOOM нарисует свои 320x200 пикселей
-// только в углу гигантского буфера. Визуальное увеличение — отдельно, через transform,
-// он не трогает реальный размер буфера.
+// iOS Safari: при сворачивании/разворачивании адресной строки CSS inset:0/100vh
+// считают размер по "layout viewport" (включая место под скрытую панель), а НЕ по
+// тому, что реально видно прямо сейчас. Это сдвигает центрирование канваса —
+// именно это и обрезало картинку. Используем Visual Viewport API — он всегда
+// отражает то, что реально видно на экране в эту секунду.
+function syncDoomEngineViewport(){
+  const engine=document.getElementById('doom-engine');
+  if(!engine||engine.style.display==='none')return;
+  const vv=window.visualViewport;
+  if(vv){
+    engine.style.left=vv.offsetLeft+'px';
+    engine.style.top=vv.offsetTop+'px';
+    engine.style.width=vv.width+'px';
+    engine.style.height=vv.height+'px';
+  } else {
+    engine.style.left='0';
+    engine.style.top='0';
+    engine.style.width='100%';
+    engine.style.height='100%';
+  }
+  fitDoomCanvas();
+}
+
 function fitDoomCanvas(){
   const engine=document.getElementById('doom-engine');
   const wrap=document.getElementById('doom-canvas-wrap');
@@ -3498,7 +3522,7 @@ function fitDoomCanvas(){
 function doomStartEngine(){
   const engine=ensureDoomEngineDom();
   engine.style.display='flex';
-  fitDoomCanvas();
+  syncDoomEngineViewport();
 
   if(doomEngineLoaded){
     // движок уже загружен и работает в фоне — просто показываем его снова
