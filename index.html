@@ -1267,6 +1267,16 @@ html.dev-mode #settings-btn{
 <div id="page-qa" class="page">
   <div class="sec-title">🧪 Функции</div>
   <div id="qa-list"></div>
+  <div class="sec-title" style="margin-top:24px">🗑 Достижения / XP / стрик</div>
+  <div style="text-align:center">
+    <button class="btn btn-ghost btn-sm" onclick="testAllAchs()">🧪 Тест достижений</button>
+    <button class="btn btn-ghost btn-sm" onclick="testToasty()">🔥 Тест Toasty</button>
+    <button class="btn btn-ghost btn-sm btn-hold" id="btn-reset-achs" style="color:var(--red)">🗑 Сброс достижений</button>
+    <button class="btn btn-ghost btn-sm btn-hold" id="btn-reset-xp" style="color:var(--red)">🗑 Сброс XP</button>
+    <button class="btn btn-ghost btn-sm" onclick="localStorage.removeItem('khist_seen');updateHistoryBadge();" style="color:var(--muted)">🔄 Сброс истории</button>
+    <button class="btn btn-ghost btn-sm" onclick="localStorage.removeItem('kdyn_seen');updateDynamicsBadge();" style="color:var(--muted)">🔄 Сброс динамики</button>
+    <button class="btn btn-ghost btn-sm" onclick="resetStreak()" style="color:var(--red)">🗑 Сброс стрика</button>
+  </div>
 </div>
 <div id="page-entry" class="page active">
 
@@ -1479,7 +1489,7 @@ html.dev-mode #settings-btn{
 <div id="page-year" class="page">
   <div class="sec-title">Годовой итог</div>
   <div class="year-quarters" id="year-q"></div>
-  <div id="year-table" style="overflow-x:auto"></div>
+  <div class="year-quarters" id="year-stats"></div>
 </div>
 </div></div>
 
@@ -2815,13 +2825,24 @@ function renderYear(){
   const qs=[{l:'Q1 янв–мар',m:['2027-01','2027-02','2027-03']},{l:'Q2 апр–июн',m:['2027-04','2026-05','2026-06']},{l:'Q3 июл–сен',m:['2026-07','2026-08','2026-09']},{l:'Q4 окт–дек',m:['2026-10','2026-11','2026-12']}];
   let total=0;
   qEl.innerHTML=qs.map(q=>{const s=q.m.reduce((a,m)=>a+(allData[m]?cfd(allData[m]).grand:0),0);total+=s;return`<div class="qcard"><div class="qcard-lbl">${q.l}</div><div class="qcard-val">${s>0?fmt(s):'—'}</div></div>`;}).join('')+`<div class="qcard total"><div class="qcard-lbl">💰 Итого</div><div class="qcard-val">${total>0?fmt(total):'—'}</div></div>`;
-  const wrap=document.getElementById('year-table');if(!wrap)return;
-  const months=MK.filter(m=>allData[m]);
-  if(!months.length){wrap.innerHTML='<div class="empty-state"><div class="empty-icon">📅</div><div class="empty-text">Нет данных</div></div>';return;}
-  const nv=settings.nameV||'Вадимовна',nm=settings.nameMe||'Я';
-  let html='<table class="hist-table"><thead><tr><th>Месяц</th><th>Всего</th><th>'+nv+'</th><th>'+nm+'</th><th>Статус</th></tr></thead><tbody>';
-  months.forEach(m=>{const c=cfd(allData[m]);html+=`<tr><td>${MONTHS[m]}</td><td class="fw7">${c.grand>0?fmt(c.grand):'—'}</td><td>${c.vadim>0?fmt(c.vadim):'—'}</td><td>${c.me>0?fmt(c.me):'—'}</td><td style="text-align:center">${allData[m]._paid?'✅':'⬜'}</td></tr>`;});
-  wrap.innerHTML=html+'</tbody></table>';
+
+  const statsEl=document.getElementById('year-stats');if(!statsEl)return;
+  const filledMonths=MK.filter(m=>allData[m]&&cfd(allData[m]).grand>0);
+  if(!filledMonths.length){
+    statsEl.innerHTML=`<div class="qcard" style="grid-column:1/-1"><div class="qcard-lbl">📅 Нет данных за год</div><div class="qcard-val" style="font-size:14px">Заполните первый месяц</div></div>`;
+    return;
+  }
+  const avg=total/filledMonths.length;
+  let html=
+    `<div class="qcard total"><div class="qcard-lbl">💰 Сумма за год</div><div class="qcard-val">${fmt(total)}</div></div>`+
+    `<div class="qcard"><div class="qcard-lbl">📊 Средний платёж</div><div class="qcard-val">${fmt(avg)}</div></div>`;
+  const r=getRecords();
+  if(r){
+    html+=
+      `<div class="qcard"><div class="qcard-lbl">💸 Самый дорогой</div><div style="font-size:11px;color:var(--muted);margin-bottom:3px">${MONTHS[r.maxM]}</div><div class="qcard-val">${fmt(r.maxV)}</div></div>`+
+      `<div class="qcard"><div class="qcard-lbl">💚 Самый дешёвый</div><div style="font-size:11px;color:var(--muted);margin-bottom:3px">${MONTHS[r.minM]}</div><div class="qcard-val">${fmt(r.minV)}</div></div>`;
+  }
+  statsEl.innerHTML=html;
 }
 
 /* ============================================================ ACHIEVEMENTS ============================================================ */
@@ -4817,16 +4838,7 @@ function openSection(name){
         <div class="xp-badge" onclick="openXPPopup()" style="background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.25);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;color:var(--yellow);cursor:pointer">✨ ${xp} XP ›</div>
       </div>
       ${recsHtml}
-      <div class="ach-grid" id="so-ach-grid" style="margin-bottom:20px"></div>
-      <div style="text-align:center">
-        <button class="btn btn-ghost btn-sm" onclick="testAllAchs()">🧪 Тест достижений</button>
-      <button class="btn btn-ghost btn-sm" onclick="testToasty()">🔥 Тест Toasty</button>
-      <button class="btn btn-ghost btn-sm btn-hold" id="btn-reset-achs" style="color:var(--red)">🗑 Сброс достижений</button>
-      <button class="btn btn-ghost btn-sm btn-hold" id="btn-reset-xp" style="color:var(--red)">🗑 Сброс XP</button>
-      <button class="btn btn-ghost btn-sm" onclick="localStorage.removeItem('khist_seen');updateHistoryBadge();" style="color:var(--muted)">🔄 Сброс истории</button>
-      <button class="btn btn-ghost btn-sm" onclick="localStorage.removeItem('kdyn_seen');updateDynamicsBadge();" style="color:var(--muted)">🔄 Сброс динамики</button>
-      <button class="btn btn-ghost btn-sm" onclick="resetStreak()" style="color:var(--red)">🗑 Сброс стрика</button>
-      </div>`;
+      <div class="ach-grid" id="so-ach-grid" style="margin-bottom:20px"></div>`;
     // Рендерим сетку достижений
     const grid=document.getElementById('so-ach-grid');
     if(grid){
@@ -4855,11 +4867,6 @@ function openSection(name){
           },i*30);
         });
       });
-      // Инициализируем hold кнопки
-      setTimeout(()=>{
-        initHoldButton('btn-reset-achs',resetAchs);
-        initHoldButton('btn-reset-xp',resetXP);
-      },100);
     }
   } else if(name==='settings'){
     if(title)title.textContent='⚙️ Настройки';
@@ -5331,7 +5338,7 @@ if(!ACHS.find(a=>a.id==='quote1001')){
   document.addEventListener('touchstart',e=>{
     if(e.target.closest('#bottom-sheet,#float-bar,.overlay,#pres-overlay,#fab-popup,#section-overlay,header'))return;
     // Не перехватываем если касание внутри горизонтально скроллируемого контейнера
-    const scrollEl=e.target.closest('#hist-scroll,#year-table,[style*="overflow-x:auto"],[style*="overflow-x: auto"]');
+    const scrollEl=e.target.closest('#hist-scroll,[style*="overflow-x:auto"],[style*="overflow-x: auto"]');
     if(scrollEl&&scrollEl.scrollWidth>scrollEl.clientWidth)return;
     sx=e.touches[0].clientX;
     sy=e.touches[0].clientY;
@@ -6053,6 +6060,10 @@ async function runSingleQATest(key){
 function renderQA(){
   const el=document.getElementById('qa-list');
   if(!el)return;
+  setTimeout(()=>{
+    initHoldButton('btn-reset-achs',resetAchs);
+    initHoldButton('btn-reset-xp',resetXP);
+  },100);
   let total=0,ok=0,fail=0;
   // Подсчёт
   QA_FEATURES.forEach(cat=>{
