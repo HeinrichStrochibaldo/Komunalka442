@@ -3603,10 +3603,37 @@ function doomExitEngine(){
 function showDoomCanvasDebug(){
   const c=document.getElementById('doom-canvas');
   let lines=['=== снимок @ '+Math.round(performance.now())+'мс ===','devicePixelRatio: '+window.devicePixelRatio];
+  lines.push('window.innerWidth/innerHeight: '+window.innerWidth+'x'+window.innerHeight);
+  if(window.visualViewport){
+    lines.push('visualViewport.width/height: '+Math.round(window.visualViewport.width)+'x'+Math.round(window.visualViewport.height));
+    lines.push('visualViewport.offsetLeft/Top: '+Math.round(window.visualViewport.offsetLeft)+','+Math.round(window.visualViewport.offsetTop));
+    lines.push('РАЗНИЦА innerHeight-vvHeight: '+(window.innerHeight-window.visualViewport.height));
+  } else {
+    lines.push('visualViewport API недоступен');
+  }
+  lines.push('scrollY: '+window.scrollY+' document.scrollingElement.scrollTop: '+(document.scrollingElement?document.scrollingElement.scrollTop:'?'));
   if(c){
     const r=c.getBoundingClientRect();
     lines.push('CANVAS rect: '+Math.round(r.width)+'x'+Math.round(r.height)+' @ '+Math.round(r.left)+','+Math.round(r.top));
     lines.push('CANVAS buffer: '+c.width+'x'+c.height+' client: '+c.clientWidth+'x'+c.clientHeight);
+    // Проверка версии "движок рисует не в ту область": читаем реальные пиксели
+    // буфера по вертикали (а не геометрию CSS) — если внутри самого буфера есть
+    // незарисованные чёрные полосы, это докажет, что дело в самом порте, не в CSS.
+    try{
+      const ctx=c.getContext('2d',{willReadFrequently:true});
+      if(ctx){
+        const rows=[0,40,80,100,120,160,199];
+        const px=rows.map(y=>{
+          const d=ctx.getImageData(160,y,1,1).data;
+          return y+':rgb('+d[0]+','+d[1]+','+d[2]+')';
+        });
+        lines.push('PIXELS @x=160: '+px.join(' | '));
+      } else {
+        lines.push('PIXELS: контекст не 2d (вероятно WebGL) — пропущено');
+      }
+    }catch(e){
+      lines.push('PIXELS: ошибка чтения — '+e.message);
+    }
     lines.push('--- цепочка родителей ---');
     let el=c, depth=0;
     while(el && depth<10){
