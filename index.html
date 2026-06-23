@@ -3465,11 +3465,9 @@ function ensureDoomEngineDom(){
     'display:none;align-items:center;justify-content:center;overflow:hidden;';
 
   engine.innerHTML=
-    '<div id="doom-canvas-wrap" style="width:320px;height:200px;flex-shrink:0">'+
-    '<canvas id="doom-canvas" width="320" height="200" oncontextmenu="event.preventDefault()" '+
-    'style="width:320px;height:200px;outline:none;touch-action:none;'+
+    '<canvas id="doom-canvas" oncontextmenu="event.preventDefault()" '+
+    'style="outline:none;touch-action:none;'+
     'image-rendering:pixelated;image-rendering:-moz-crisp-edges;image-rendering:crisp-edges"></canvas>'+
-    '</div>'+
     '<div id="doom-engine-loading" style="position:absolute;color:#aa3333;font-family:monospace;font-size:13px">Загрузка движка ада…</div>'+
     '<button id="doom-engine-exit-btn" style="position:absolute;top:10px;right:10px;z-index:1000001;'+
     'background:#330000;color:#ff3333;border:1px solid #ff3333;padding:6px 14px;border-radius:8px;'+
@@ -3481,17 +3479,12 @@ function ensureDoomEngineDom(){
     window.visualViewport.addEventListener('resize',syncDoomEngineViewport);
     window.visualViewport.addEventListener('scroll',syncDoomEngineViewport);
   } else {
-    window.addEventListener('resize',fitDoomCanvas);
-    window.addEventListener('orientationchange',fitDoomCanvas);
+    window.addEventListener('resize',syncDoomEngineViewport);
+    window.addEventListener('orientationchange',syncDoomEngineViewport);
   }
   return engine;
 }
 
-// iOS Safari: при сворачивании/разворачивании адресной строки CSS inset:0/100vh
-// считают размер по "layout viewport" (включая место под скрытую панель), а НЕ по
-// тому, что реально видно прямо сейчас. Это сдвигает центрирование канваса —
-// именно это и обрезало картинку. Используем Visual Viewport API — он всегда
-// отражает то, что реально видно на экране в эту секунду.
 function syncDoomEngineViewport(){
   const engine=document.getElementById('doom-engine');
   if(!engine||engine.style.display==='none')return;
@@ -3507,16 +3500,22 @@ function syncDoomEngineViewport(){
     engine.style.width='100%';
     engine.style.height='100%';
   }
-  fitDoomCanvas();
 }
 
-function fitDoomCanvas(){
-  const engine=document.getElementById('doom-engine');
-  const wrap=document.getElementById('doom-canvas-wrap');
-  if(!engine||!wrap)return;
-  const availW=engine.clientWidth, availH=engine.clientHeight;
-  const scale=Math.max(1, Math.min(availW/320, availH/200));
-  wrap.style.transform='scale('+scale+')';
+// Считаем РОВНО ОДНО разрешение (сохраняя пропорцию DOOM 320:200) под текущий
+// экран — и используем ЭТО ЖЕ число везде: атрибут канваса, CSS-размер, -geom.
+// Никакого отдельного "визуального" масштаба через transform — раньше движок,
+// судя по всему, считывал логический размер через getBoundingClientRect()
+// (который видит наш CSS-transform), а не через width/height атрибут, из-за
+// чего получался рассинхрон между тем, что движок "думает", и тем, что реально
+// в буфере — отсюда и "маленькое окно, растянутое на весь экран".
+function computeDoomGeom(){
+  const vv=window.visualViewport;
+  const availW=vv?vv.width:window.innerWidth;
+  const availH=vv?vv.height:window.innerHeight;
+  let w=availW, h=Math.round(w/1.6);
+  if(h>availH){ h=availH; w=Math.round(h*1.6); }
+  return {w:Math.max(320,Math.round(w)), h:Math.max(200,Math.round(h))};
 }
 
 function doomStartEngine(){
@@ -3534,19 +3533,24 @@ function doomStartEngine(){
   doomEngineLoading=true;
 
   // На Retina-экранах (iPhone и т.п.) движок сам умножает буфер канваса на
-  // devicePixelRatio при инициализации SDL2-видео — независимо от CSS-размера.
-  // DOOM рисует свои честные 320x200 пикселей только в углу такого раздутого
-  // буфера, остальное остаётся чёрным. Подменяем devicePixelRatio на 1 ДО
-  // загрузки движка, чтобы он вообще не умножал.
+  // devicePixelRatio при инициализации SDL2-видео. Подменяем на 1, чтобы он
+  // не умножал — наше собственное geom уже учитывает реальный экран.
   try{
     Object.defineProperty(window,'devicePixelRatio',{value:1,configurable:true});
   }catch(e){
     console.error('[doom] не удалось подменить devicePixelRatio',e);
   }
 
+  const geom=computeDoomGeom();
+  const canvas=document.getElementById('doom-canvas');
+  canvas.width=geom.w;
+  canvas.height=geom.h;
+  canvas.style.width=geom.w+'px';
+  canvas.style.height=geom.h+'px';
+
   window.Module={
-    canvas: document.getElementById('doom-canvas'),
-    arguments: ['-iwad','doom1.wad','-window','-geom','320x200','-nogui','-nomusic'],
+    canvas: canvas,
+    arguments: ['-iwad','doom1.wad','-window','-geom',geom.w+'x'+geom.h,'-nogui','-nomusic'],
     print: function(text){ console.log('[doom]',text); },
     printErr: function(text){ console.log('[doom:err]',text); },
     preRun: [function(){
@@ -3565,8 +3569,7 @@ function doomStartEngine(){
       clearTimeout(doomEngineLoadTimer);
       const loadingMsg=document.getElementById('doom-engine-loading');
       if(loadingMsg)loadingMsg.style.display='none';
-      // ВРЕМЕННАЯ ДИАГНОСТИКА №2 — проверяем дважды: сразу и через 2с,
-      // на случай если что-то меняет размеры асинхронно после инициализации.
+      // ВРЕМЕННАЯ ДИАГНОСТИКА №3
       setTimeout(showDoomCanvasDebug,300);
       setTimeout(showDoomCanvasDebug,2000);
     }
@@ -3598,7 +3601,7 @@ function doomExitEngine(){
   closePortalToHell();
 }
 
-// ВРЕМЕННАЯ ДИАГНОСТИКА №2 — обходим всю цепочку родителей #doom-canvas,
+// ВРЕМЕННАЯ ДИАГНОСТИКА №3 — обходим всю цепочку родителей #doom-canvas,
 // ищем transform/zoom/overflow на каждом уровне. Убрать после находки бага.
 function showDoomCanvasDebug(){
   const c=document.getElementById('doom-canvas');
