@@ -3567,6 +3567,12 @@ function doomStartEngine(){
       clearTimeout(doomEngineLoadTimer);
       const loadingMsg=document.getElementById('doom-engine-loading');
       if(loadingMsg)loadingMsg.style.display='none';
+      // Принудительно фиксируем canvas.width/height и GL viewport — на случай,
+      // если внутренняя логика движка (fullscreen-detect / Browser.updateCanvasDimensions)
+      // незаметно поменяла их после нашего geom. Используем тот же canvas.GLctxObject.GLctx,
+      // что и сам движок (нашли в его коде).
+      forceDoomCanvasGeom(geom.w,geom.h);
+      setTimeout(()=>forceDoomCanvasGeom(geom.w,geom.h),250);
       // ВРЕМЕННАЯ ДИАГНОСТИКА №3
       setTimeout(showDoomCanvasDebug,300);
       setTimeout(showDoomCanvasDebug,2000);
@@ -3591,6 +3597,21 @@ function doomStartEngine(){
     if(loadingMsg)loadingMsg.textContent='Не удалось загрузить движок ада (websockets-doom.js не найден).';
   };
   document.body.appendChild(script);
+}
+
+function forceDoomCanvasGeom(w,h){
+  const canvas=document.getElementById('doom-canvas');
+  if(!canvas)return;
+  if(canvas.width!==w)canvas.width=w;
+  if(canvas.height!==h)canvas.height=h;
+  canvas.style.setProperty('width',w+'px','important');
+  canvas.style.setProperty('height',h+'px','important');
+  if(canvas.GLctxObject && canvas.GLctxObject.GLctx){
+    canvas.GLctxObject.GLctx.viewport(0,0,w,h);
+    console.log('[doom] viewport принудительно выставлен в',w,'x',h);
+  } else {
+    console.log('[doom] GLctxObject недоступен на момент коррекции');
+  }
 }
 
 function doomExitEngine(){
