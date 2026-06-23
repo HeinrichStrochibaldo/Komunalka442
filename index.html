@@ -3510,12 +3510,10 @@ function syncDoomEngineViewport(){
 // чего получался рассинхрон между тем, что движок "думает", и тем, что реально
 // в буфере — отсюда и "маленькое окно, растянутое на весь экран".
 function computeDoomGeom(){
-  const vv=window.visualViewport;
-  const availW=vv?vv.width:window.innerWidth;
-  const availH=vv?vv.height:window.innerHeight;
-  let w=availW, h=Math.round(w/1.6);
-  if(h>availH){ h=availH; w=Math.round(h*1.6); }
-  return {w:Math.max(320,Math.round(w)), h:Math.max(200,Math.round(h))};
+  // ВРЕМЕННЫЙ ИЗОЛЯЦИОННЫЙ ТЕСТ: чистое нативное 320x200, без подгонки под экран.
+  // Если даже тут картинка остаётся "фрагментом, растянутым на экран" — баг
+  // безусловно внутри движка, и не зависит от того, какое geom мы передаём.
+  return {w:320, h:200};
 }
 
 function doomStartEngine(){
