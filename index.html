@@ -2048,6 +2048,7 @@ function confirmPaid(){
   if(!allData[m])allData[m]={};
   allData[m]._paid=true;
   allData[m]._paidDate=dateVal;
+  logEvent('payment','Месяц оплачен');
   // Закон 5: атомарно создаём следующий месяц с prev-* = текущий cur-*
   createNextMonth(m);
   // Чистим мусорные cur-* в будущих месяцах
@@ -2813,6 +2814,7 @@ function unlockAch(id){
   if(a){
     showAchToast(a);
     if(a.xp>0)addXP(a.xp,'достижение: '+a.name);
+    logEvent('achievement','Получено достижение: '+a.name);
   }
   renderAchievements();
   // Точечное обновление грида если оверлей открыт
@@ -3127,6 +3129,7 @@ function doomAwaken(){
   if(doomData.unlocked)return;
   doomData.unlocked=true;
   doomData.discoveredAt=new Date().toISOString();
+  logEvent('doom','Портал открыт');
   if(!doomData.achs.includes('doom_awakening')){
     doomData.achs.push('doom_awakening');
   }
@@ -4095,6 +4098,18 @@ let xpTotal=parseInt(localStorage.getItem('kxp')||'0');
 function getXPLog(){
   try{return JSON.parse(localStorage.getItem('kxp_log')||'[]');}catch(e){return[];}
 }
+// Журнал событий квартиры — фундамент без UI (см. обсуждение шторки/ленты событий).
+// Никуда не отображается сейчас, просто копит историю на будущее.
+function getEventLog(){
+  try{return JSON.parse(localStorage.getItem('kevents')||'[]');}catch(e){return [];}
+}
+function logEvent(type,text){
+  const log=getEventLog();
+  log.unshift({type,text,t:Date.now()});
+  if(log.length>50)log.pop();
+  localStorage.setItem('kevents',JSON.stringify(log));
+}
+
 function addXP(pts, reason, monthKey){
   const m=monthKey||curMonth();
   const xpKey='kxp_'+m+'_'+reason;
@@ -4318,6 +4333,7 @@ function confirmAccept(){
   haptic([50,30,80,30,120]);
   updateMonthBarState();
   autoSave();
+  logEvent('meters','Внесены показания');
 }
 
 function showConfirm(msg, onYes, onNo){
@@ -5662,6 +5678,7 @@ function toggleArchitectMode(){
   applyDevMode();
   haptic(settings.devMode?[30,20,30,20,80]:[80,20,30]);
   pulseArchitectToggle();
+  logEvent('architect',settings.devMode?'Режим архитектора включён':'Режим архитектора выключен');
   showAchToast({
     icon:'🏗',
     name:settings.devMode?'Режим архитектора включён':'Режим архитектора выключен',
