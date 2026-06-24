@@ -959,9 +959,6 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
 }
 
 /* История в шторке */
-.sheet-streak { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; background: rgba(251,191,36,.08); border: 1px solid rgba(251,191,36,.2); border-radius: var(--radius-md); padding: 10px 14px; }
-.sheet-streak-fire { font-size: 22px; }
-.sheet-streak-info { font-size: 13px; color: var(--yellow); font-weight: 600; }
 .sheet-hist-item {
   display: flex; align-items: center; justify-content: space-between;
   padding: 11px 0; border-bottom: 1px solid var(--border);
@@ -1239,8 +1236,8 @@ html.dev-mode #settings-btn{
   <div class="tab dev-tab" onclick="switchTab('dev')">🛠 JS</div>
   <div class="tab dev-tab" onclick="switchTab('qa')">🧪 Функции</div>
   <div class="tab active" onclick="switchTab('entry')">📝 Ввод</div>
-  <div class="tab" onclick="switchTab('history')">📋 История <span class="tab-badge" id="history-badge" style="display:none">0</span></div>
-  <div class="tab" onclick="switchTab('dynamics')">📈 Динамика <span class="tab-badge" id="dynamics-badge" style="display:none">0</span></div>
+  <div class="tab" onclick="switchTab('history')">📋 История</div>
+  <div class="tab" onclick="switchTab('dynamics')">📈 Динамика</div>
   <div class="tab" onclick="switchTab('year')">📅 Год</div>
 </div>
 
@@ -1273,8 +1270,6 @@ html.dev-mode #settings-btn{
     <button class="btn btn-ghost btn-sm" onclick="testToasty()">🔥 Тест Toasty</button>
     <button class="btn btn-ghost btn-sm btn-hold" id="btn-reset-achs" style="color:var(--red)">🗑 Сброс достижений</button>
     <button class="btn btn-ghost btn-sm btn-hold" id="btn-reset-xp" style="color:var(--red)">🗑 Сброс XP</button>
-    <button class="btn btn-ghost btn-sm" onclick="localStorage.removeItem('khist_seen');updateHistoryBadge();" style="color:var(--muted)">🔄 Сброс истории</button>
-    <button class="btn btn-ghost btn-sm" onclick="localStorage.removeItem('kdyn_seen');updateDynamicsBadge();" style="color:var(--muted)">🔄 Сброс динамики</button>
     <button class="btn btn-ghost btn-sm" onclick="resetStreak()" style="color:var(--red)">🗑 Сброс стрика</button>
   </div>
 </div>
@@ -1747,7 +1742,7 @@ async function fbLoad(){
     else curIdx=MK.length-1;
     loadMonth();updateVerify();updateStreak();checkEaster();
     updateXPDisplay();updateProgressBar();updateOnboarding();
-    updateHistoryBadge();updateDynamicsBadge();checkTariffSuggestion();
+    checkTariffSuggestion();
       }catch(e){console.error('Render:',e);_dbg('<span style="color:#f87171">RENDER ERR: '+e.message+'</span>');}
 }
 
@@ -2688,14 +2683,12 @@ function renderHistory(){
   if(!acc)return;
   if(!months.length){acc.innerHTML='<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">Нет данных</div></div>';return;}
   const nv=settings.nameV||'Вадимовна',nm=settings.nameMe||'Я';
-  const newMonths=getNewMonths();
   let html='';
   // Показываем месяцы от новых к старым
   const sorted=[...months].reverse();
   sorted.forEach(m=>{
     const d=allData[m]||{};
     const c=cfd(d);
-    const isNew=newMonths.includes(m);
     const isPaid=d._paid;
     const rows=[
       {l:'Всего',k:'grand',total:true},
@@ -2706,10 +2699,10 @@ function renderHistory(){
       {l:'Мосэнергосбыт',k:'ee'},
       {l:'Интернет',k:'inet'},
     ];
-    html+=`<div class="hist-month-card${isNew?' hist-new':''}" data-month="${m}">
+    html+=`<div class="hist-month-card" data-month="${m}">
       <div class="hist-month-head" onclick="toggleHistMonth(this.closest('.hist-month-card'))">
         <div class="hist-month-title">
-          ${isPaid?'✅':''} ${MONTHS[m]}${isNew?' <span style="font-size:10px;background:var(--accent);color:#fff;padding:2px 6px;border-radius:10px">NEW</span>':''}
+          ${isPaid?'✅':''} ${MONTHS[m]}
         </div>
         <div style="display:flex;align-items:center;gap:10px">
           <div class="hist-month-total">${c.grand>0?fmt(c.grand):'—'}</div>
@@ -2728,25 +2721,6 @@ function renderHistory(){
     </div>`;
   });
   acc.innerHTML=html;
-  // Подсвечиваем новые карточки и помечаем просмотренными
-  if(newMonths.length>0){
-    setTimeout(()=>{
-      newMonths.forEach(m=>{
-        const card=acc.querySelector(`[data-month="${m}"]`);
-        if(card){
-          card.style.setProperty('transition','box-shadow .3s ease, border-color .3s ease');
-          card.style.setProperty('border-color','var(--accent)');
-          card.style.setProperty('box-shadow','0 0 0 2px rgba(91,140,255,.2)');
-          setTimeout(()=>{
-            card.style.removeProperty('border-color');
-            card.style.removeProperty('box-shadow');
-          },2000);
-        }
-      });
-      markMonthsSeen(newMonths);
-      setTimeout(()=>updateHistoryBadge(),200);
-    },300);
-  }
 }
 
 /* ============================================================ DYNAMICS ACCORDION ============================================================ */
@@ -2781,37 +2755,6 @@ function renderDynamics(){
       </div>
     </div>`;
   }).join('');
-  // Дебаг + подсветка новых месяцев
-  const newDynMonths=getNewDynMonths();
-  if(newDynMonths.length>0){
-    setTimeout(()=>{
-      newDynMonths.forEach(m=>{
-        const head=wrap.querySelector('[data-month="'+m+'"]');
-        if(head){
-          head.style.transition='border-color .3s, box-shadow .3s';
-          head.style.border='1px solid var(--accent)';
-          head.style.boxShadow='0 0 0 2px rgba(91,140,255,.2)';
-          head.style.borderRadius='12px';
-          const name=head.querySelector('.dyn-month-name');
-          if(name&&!name.querySelector('.dyn-new-badge')){
-            const badge=document.createElement('span');
-            badge.className='dyn-new-badge';
-            badge.style.cssText='font-size:10px;background:var(--accent);color:#fff;padding:2px 6px;border-radius:10px;margin-left:8px';
-            badge.textContent='NEW';
-            name.appendChild(badge);
-          }
-          setTimeout(()=>{
-            head.style.border='';head.style.boxShadow='';
-            head.style.borderRadius='';head.style.transition='';
-            const b=head.querySelector('.dyn-new-badge');
-            if(b)b.remove();
-          },TOOLTIP_DURATION);
-        }
-      });
-      markDynMonthsSeen(newDynMonths);
-      updateDynamicsBadge();
-    },300);
-  }
 }
 function toggleDynMonth(head){
   head.classList.toggle('open');
@@ -3822,16 +3765,15 @@ function fabSaved(){
 }
 
 /* ============================================================ BOTTOM SHEET ============================================================ */
-let sheetMode='input', sheetDragStart=0, sheetCurrentY=0, sheetDragging=false;
+let sheetDragStart=0, sheetCurrentY=0, sheetDragging=false;
 
-function openSheet(mode){
-  sheetMode=mode||'input';
+function openSheet(){
   haptic(40);
   const bs=document.getElementById('bottom-sheet');
   const bd=document.getElementById('sheet-backdrop');
   const content=document.getElementById('sheet-content');
   if(!bs||!bd)return;
-  content.innerHTML=buildSheetHistory();
+  content.innerHTML=buildSheetMonth();
   bd.classList.add('show');
   bs.classList.add('open');
   document.body.style.overflow='hidden';
@@ -3856,29 +3798,65 @@ function closeSheet(){
 // Фонарик (п.10)
 
 
-// История оплат в шторке с разбивкой Вадимовна/Я + стрик (п.13)
-function buildSheetHistory(){
+// Паспорт текущего месяца + архив квартиры за всё время (см. обсуждение шторки)
+function buildSheetMonth(){
+  const m=curMonth();
+  const d=allData[m]||{};
+  const c=cfd(d);
   const nv=settings.nameV||'Вадимовна', nm=settings.nameMe||'Я';
-  const paid=MK.filter(m=>allData[m]&&allData[m]._paid&&allData[m]._paidDate).reverse();
-  let streak=0;
-  for(let i=curIdx;i>=0;i--){if(allData[MK[i]]&&allData[MK[i]]._paid)streak++;else break;}
-  const streakHtml=streak>0?`<div class="sheet-streak"><div class="sheet-streak-fire">🔥</div><div class="sheet-streak-info">${streak} ${streak===1?'месяц':streak<5?'месяца':'месяцев'} подряд!</div></div>`:'';
-  const r=getRecords();
-  const recsHtml=r?`<div style="margin-top:16px;padding:14px;background:var(--surface2);border:1px solid var(--border);border-radius:12px"><div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--label);margin-bottom:10px">🏅 Рекорды</div><div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-size:12px;color:var(--muted)">💸 Дорогой</span><span style="font-size:13px;font-weight:600;color:var(--red)">${MONTHS[r.maxM]} · ${fmt(r.maxV)}</span></div><div style="display:flex;justify-content:space-between"><span style="font-size:12px;color:var(--muted)">💚 Дешёвый</span><span style="font-size:13px;font-weight:600;color:var(--green)">${MONTHS[r.minM]} · ${fmt(r.minV)}</span></div></div>`:'';
-  const t=(versions&&versions.length>0)?new Date(versions[0].t).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'}):null;
-  const footerHtml=t?`<div style="text-align:center;padding:12px 0 4px;font-size:11px;color:var(--muted)">Последнее обновление в ${t}</div>`:'';
-  if(!paid.length)return`<div class="sheet-title">История оплат 💳</div>${streakHtml}<div style="padding:30px 0;text-align:center;color:var(--muted)">Нет оплаченных месяцев</div>${recsHtml}${footerHtml}`;
-  const items=paid.map(m=>{
-    const c=cfd(allData[m]);
-    const pd=new Date(allData[m]._paidDate);
-    const ds=pd.toLocaleDateString('ru-RU',{day:'numeric',month:'long'});
-    return`<div class="sheet-hist-item"><div><div class="shi-month">${MONTHS[m]}</div><div class="shi-payer">Оплачено ${ds}</div></div><div style="text-align:right"><div class="shi-amount">${c.grand>0?fmt(c.grand):'—'}</div><div style="display:flex;gap:4px;margin-top:3px;justify-content:flex-end"><span class="shi-badge shi-badge-v">${nv}: ${c.vadim>0?fmt(c.vadim):'—'}</span><span class="shi-badge shi-badge-me">${nm}: ${c.me>0?fmt(c.me):'—'}</span></div></div></div>`;
-  }).join('');
-  return`<div class="sheet-title">История оплат 💳</div><div class="sheet-subtitle">${paid.length} оплачено</div>${streakHtml}${items}${recsHtml}${footerHtml}`;
+
+  const allMonths=MK.filter(mk=>allData[mk]);
+  if(!c.grand&&!allMonths.length){
+    return `<div class="sheet-title">${MONTHS[m]||'Месяц'} 💰</div><div style="padding:30px 0;text-align:center;color:var(--muted)">Нет данных за этот месяц</div>`;
+  }
+
+  const topHtml=`<div class="sheet-title">${MONTHS[m]} 💰</div>
+    <div style="font-size:28px;font-weight:800;margin-bottom:14px">${c.grand>0?fmt(c.grand):'—'}</div>
+    <div style="display:flex;gap:10px;margin-bottom:20px">
+      <div style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px">👤 ${nm}</div>
+        <div style="font-size:17px;font-weight:700">${c.me>0?fmt(c.me):'—'}</div>
+      </div>
+      <div style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px">👤 ${nv}</div>
+        <div style="font-size:17px;font-weight:700">${c.vadim>0?fmt(c.vadim):'—'}</div>
+      </div>
+    </div>`;
+
+  const sources=[
+    {l:'МосОблЕИРЦ',v:c.mosob},
+    {l:'Пик-Комфорт',v:c.pik},
+    {l:'Мосэнергосбыт',v:c.ee},
+    {l:'Интернет',v:c.inet},
+  ].filter(s=>s.v>0);
+  const breakdownHtml=sources.length?`<div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--label);margin-bottom:10px">Из чего сложилась сумма</div>
+    <div style="margin-bottom:20px">
+      ${sources.map(s=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border)"><span style="font-size:13px;color:var(--muted)">${s.l}</span><span style="font-size:14px;font-weight:600">${fmt(s.v)}</span></div>`).join('')}
+    </div>`:'';
+
+  let lifeTotal=0,lifeVg=0,lifeVh=0,lifeT1=0,lifeT2=0,paidCount=0;
+  allMonths.forEach(mk=>{
+    const dd=allData[mk];
+    lifeTotal+=cfd(dd).grand;
+    if(dd._paid)paidCount++;
+    lifeVg+=Math.max(0,(dd['cur-gvs']||0)-(dd['prev-gvs']||0));
+    lifeVh+=Math.max(0,(dd['cur-hvs']||0)-(dd['prev-hvs']||0));
+    lifeT1+=Math.max(0,(dd['cur-t1']||0)-(dd['prev-t1']||0));
+    lifeT2+=Math.max(0,(dd['cur-t2']||0)-(dd['prev-t2']||0));
+  });
+  const archiveHtml=allMonths.length?`<div style="padding:14px;background:var(--surface2);border:1px solid var(--border);border-radius:12px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--label);margin-bottom:10px">🏠 Архив квартиры</div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:12px;color:var(--muted)">Заплачено всего</span><span style="font-size:13px;font-weight:600">${fmt(lifeTotal)}</span></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:12px;color:var(--muted)">Закрыто месяцев</span><span style="font-size:13px;font-weight:600">${paidCount}</span></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:12px;color:var(--muted)">💧 Вода всего</span><span style="font-size:13px;font-weight:600">${fwat(lifeVg+lifeVh)}</span></div>
+      <div style="display:flex;justify-content:space-between"><span style="font-size:12px;color:var(--muted)">⚡ Электричество всего</span><span style="font-size:13px;font-weight:600">${fee(lifeT1+lifeT2)}</span></div>
+    </div>`:'';
+
+  return topHtml+breakdownHtml+archiveHtml;
 }
 
 // Открытие истории из float-bar
-function openPayHistorySheet(){openSheet('history');}
+function openPayHistorySheet(){openSheet();}
 
 /* ============================================================ PULL-TO-REFRESH (п.20) ============================================================ */
 let ptrStart=0, ptrActive=false, ptrReady=false, ptrLocked=false;
@@ -4265,45 +4243,6 @@ function updateYoY(){
   el.style.color=diff>0?'var(--red)':'var(--green)';
 }
 
-
-
-function getSeenMonths(){
-  return JSON.parse(localStorage.getItem('khist_seen')||'[]');
-}
-function markMonthsSeen(months){
-  const seen=getSeenMonths();
-  const updated=[...new Set([...seen,...months])];
-  localStorage.setItem('khist_seen',JSON.stringify(updated));
-}
-function getNewMonths(){
-  const seen=getSeenMonths();
-  return MK.filter(m=>allData[m]&&Object.keys(allData[m]).filter(k=>!k.startsWith('_')).length>0&&!seen.includes(m));
-}
-function updateHistoryBadge(){
-  const badge=document.getElementById('history-badge');if(!badge)return;
-  const newMonths=getNewMonths();
-  if(newMonths.length>0){badge.textContent=newMonths.length;badge.style.display='inline-flex';}
-  else badge.style.display='none';
-}
-// Динамика — отдельный список просмотренных
-function getSeenDynMonths(){
-  return JSON.parse(localStorage.getItem('kdyn_seen')||'[]');
-}
-function markDynMonthsSeen(months){
-  const seen=getSeenDynMonths();
-  const updated=[...new Set([...seen,...months])];
-  localStorage.setItem('kdyn_seen',JSON.stringify(updated));
-}
-function getNewDynMonths(){
-  const seen=getSeenDynMonths();
-  return MK.filter(m=>allData[m]&&Object.keys(allData[m]).filter(k=>!k.startsWith('_')).length>0&&!seen.includes(m));
-}
-function updateDynamicsBadge(){
-  const badge=document.getElementById('dynamics-badge');if(!badge)return;
-  const newMonths=getNewDynMonths();
-  if(newMonths.length>0){badge.textContent=newMonths.length;badge.style.display='inline-flex';}
-  else badge.style.display='none';
-}
 
 /* П39: Таблица рекордов в достижениях */
 function updateRecordsTable(){
@@ -5913,14 +5852,14 @@ const QA_TESTS={
   'Пружина на крайних в': async()=>true, // в долгом ящике
   // Шторка
   'Нижняя шторка с исто': async()=>{
-    openSheet('history');
+    openSheet();
     const ok=document.getElementById('bottom-sheet').classList.contains('open');
     closeSheet();return ok;
   },
   'Разбивка оплат Вадим': async()=>{
-    const r=buildSheetHistory();return r.includes('Вадимовна')||r.includes(settings.nameV);
+    const r=buildSheetMonth();return r.includes('Вадимовна')||r.includes(settings.nameV);
   },
-  'Последнее обновление': async()=>typeof buildSheetHistory==='function',
+  'Архив квартиры в шторке': async()=>typeof buildSheetMonth==='function',
   'Pull-to-refresh': async()=>true,
   // Достижения
   'Система достижений (': async()=>{
@@ -6238,9 +6177,9 @@ function renderDev(){
     'launchConfetti','showToasty','_hideToasty','testToasty','playSound','checkEaster',
     'showEgg','switchTab','applyTheme','toggleTheme','hideSplash','haptic','fabSaved',
     'openSheet','closeSheet',
-    'buildSheetHistory','openPayHistorySheet','testAllAchs','hideSkeleton',
+    'buildSheetMonth','openPayHistorySheet','testAllAchs','hideSkeleton',
     'fabLoading','showSaveWave','updateProgressBar','updateOnboarding','getRecords',
-    'addXP','updateXPDisplay','showXPFloat','updateYoY','updateHistoryBadge',
+    'addXP','updateXPDisplay','showXPFloat','updateYoY',
     'updateRecordsTable','playDoom','playToastySound',
     'confirmAccept','lockedFieldFeedback','fpShowScreen1','fpGoConfirm','fpApply',
     'fpRedoUnlock','fpRedoConfirm','updateMonthBarState','showConfirm','showBtnToast',
@@ -6402,6 +6341,10 @@ function openArtifact(){
 /* ============================================================ BOOTSTRAP — запускается после всех определений ============================================================ */
 (function init(){
   initSplashText();
+  // Миграция: концепция "непрочитанного месяца" удалена из приложения —
+  // подчищаем осиротевшие ключи один раз, чтобы не копился мусор.
+  localStorage.removeItem('khist_seen');
+  localStorage.removeItem('kdyn_seen');
   const ks=localStorage.getItem('ksettings');if(ks)settings={...settings,...JSON.parse(ks)};
   const km=localStorage.getItem('kmeter');if(km)meter={...meter,...JSON.parse(km)};
   try{const kv=localStorage.getItem('kversions');if(kv)versions=JSON.parse(kv);}catch(e){appError(e,'init:versions');}
