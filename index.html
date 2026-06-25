@@ -1272,6 +1272,10 @@ html.dev-mode #settings-btn{
     <button class="btn btn-ghost btn-sm btn-hold" id="btn-reset-xp" style="color:var(--red)">🗑 Сброс XP</button>
     <button class="btn btn-ghost btn-sm" onclick="resetStreak()" style="color:var(--red)">🗑 Сброс стрика</button>
   </div>
+  <div class="sec-title" style="margin-top:24px">🧪 MeterPad — песочница</div>
+  <div style="text-align:center">
+    <button class="btn btn-ghost btn-sm" onclick="openMeterPadDemo()">⌨️ Открыть демо</button>
+  </div>
 </div>
 <div id="page-entry" class="page active">
 
@@ -1563,6 +1567,16 @@ html.dev-mode #settings-btn{
 #fab-popup-backdrop{position:fixed;inset:0;z-index:249;background:transparent;}
 </style>
 <div id="fab-popup-backdrop" style="display:none" onclick="closeFabPopup()"></div>
+
+<!-- 🧪 MeterPad — песочница (см. план Ветка А). Полностью изолирована от allData. -->
+<div id="meterpad-demo-backdrop" style="display:none;position:fixed;inset:0;z-index:299;background:rgba(0,0,0,.4)" onclick="closeMeterPadDemo()"></div>
+<div id="meterpad-demo" style="display:none;position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:300;background:var(--surface);border:1px solid var(--border);border-radius:16px;width:min(360px,calc(100vw-24px));box-shadow:0 8px 40px rgba(0,0,0,.5);flex-direction:column;max-height:85vh;overflow:hidden">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border)">
+    <div id="mpd-title" style="font-weight:700;font-size:15px">Показания</div>
+    <button onclick="closeMeterPadDemo()" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;line-height:1">×</button>
+  </div>
+  <div id="mpd-body" style="padding:16px;overflow-y:auto"></div>
+</div>
 
 <!-- Pull-to-refresh indicator -->
 <div id="ptr-indicator"><span id="ptr-arrow">↓</span><span id="ptr-text">Потяни чтобы обновить</span></div>
@@ -3082,6 +3096,171 @@ function _hideToasty(el,sx,sy){
   el.style.pointerEvents='none';
 }
 function testToasty(){showToasty();}
+
+/* ============================================================
+   🧪 MeterPad — песочница (Ветка А, Шаг 1).
+   Полностью изолирована: свой объект состояния mpdState,
+   НИКОГДА не читает и не пишет в allData. Ничего реального не ломает.
+   ============================================================ */
+let mpdState=null;
+
+const MPD_BLOCKS=[
+  {id:'voda',icon:'💧',label:'Вода',fields:[
+    {id:'gvs',label:'ГВС',unit:'м³'},
+    {id:'hvs',label:'ХВС',unit:'м³'}
+  ]},
+  {id:'elec',icon:'⚡',label:'Электричество',fields:[
+    {id:'t1',label:'Т1 (день)',unit:'кВт·ч'},
+    {id:'t2',label:'Т2 (ночь)',unit:'кВт·ч'}
+  ]},
+  {id:'mosob',icon:'📄',label:'МосОблЕИРЦ',fields:[
+    {id:'otop',label:'Отопление',unit:'Гкал'},
+    {id:'gvsp',label:'ГВС (подогрев)',unit:'Гкал'}
+  ]},
+  {id:'pik',icon:'🏢',label:'Пик-Комфорт',fields:[
+    {id:'eed',label:'ЭЭ ОДН (день)',unit:'кВт·ч'},
+    {id:'een',label:'ЭЭ ОДН (ночь)',unit:'кВт·ч'},
+    {id:'vo',label:'Водоотведение ОИ',unit:'м³'},
+    {id:'gvsoi',label:'ГВС-вода ОИ',unit:'м³'},
+    {id:'gvspoi',label:'ГВС-подогрев ОИ',unit:'Гкал'},
+    {id:'hvsoi',label:'ХВС ОИ',unit:'м³'}
+  ]}
+];
+
+function mpdInitState(){
+  const blocks={};
+  MPD_BLOCKS.forEach(b=>{
+    blocks[b.id]={values:{},skipped:{}};
+    b.fields.forEach(f=>{blocks[b.id].values[f.id]=null;});
+  });
+  return {blocks,view:'list',activeBlock:null,activeFieldIdx:0,draft:''};
+}
+
+function openMeterPadDemo(){
+  if(!mpdState)mpdState=mpdInitState();
+  document.getElementById('meterpad-demo-backdrop').style.display='block';
+  document.getElementById('meterpad-demo').style.display='flex';
+  mpdRender();
+}
+function closeMeterPadDemo(){
+  document.getElementById('meterpad-demo-backdrop').style.display='none';
+  document.getElementById('meterpad-demo').style.display='none';
+}
+
+// BlockState: done/total + complete + anomaly (демо-проверка: >999 — чисто для показа состояния)
+function mpdBlockState(blockId){
+  const b=MPD_BLOCKS.find(x=>x.id===blockId);
+  const st=mpdState.blocks[blockId];
+  let done=0,anomaly=false;
+  b.fields.forEach(f=>{
+    if(st.values[f.id]!==null||st.skipped[f.id])done++;
+    const v=parseFloat(st.values[f.id]);
+    if(!isNaN(v)&&v>999)anomaly=true;
+  });
+  return {done,total:b.fields.length,anomaly,complete:done===b.fields.length};
+}
+
+function mpdRender(){
+  const body=document.getElementById('mpd-body');
+  const title=document.getElementById('mpd-title');
+  if(mpdState.view==='list'){
+    title.textContent='Показания (демо)';
+    body.innerHTML=MPD_BLOCKS.map(b=>{
+      const s=mpdBlockState(b.id);
+      const color=s.anomaly?'var(--yellow)':(s.complete?'var(--green)':'var(--muted)');
+      const mark=s.complete?' ✓':(s.anomaly?' ⚠':'');
+      return `<div onclick="mpdOpenBlock('${b.id}')" style="display:flex;align-items:center;justify-content:space-between;padding:12px 10px;border-bottom:1px solid var(--border);cursor:pointer">
+        <div style="display:flex;align-items:center;gap:10px;font-size:14px"><span style="font-size:18px">${b.icon}</span><span>${b.label}</span></div>
+        <div style="font-size:13px;font-weight:700;color:${color}">${s.done}/${s.total}${mark}</div>
+      </div>`;
+    }).join('')+'<div style="text-align:center;margin-top:14px;font-size:11px;color:var(--muted)">Это песочница — ничего не сохраняется в реальные данные месяца</div>';
+  } else {
+    const b=MPD_BLOCKS.find(x=>x.id===mpdState.activeBlock);
+    const f=b.fields[mpdState.activeFieldIdx];
+    const st=mpdState.blocks[b.id];
+    const isSkipped=!!st.skipped[f.id];
+    const curVal=mpdState.draft!==''?mpdState.draft:(st.values[f.id]!==null?String(st.values[f.id]):'');
+    title.textContent=b.icon+' '+b.label;
+    const numVal=parseFloat(curVal.replace(',','.'));
+    const anomalyWarn=(!isSkipped&&!isNaN(numVal)&&numVal>999)?'<div style="color:var(--yellow);font-size:12px;margin-top:6px;text-align:center">⚠ Значение выглядит непривычно большим (демо-проверка)</div>':'';
+    body.innerHTML=`
+      <div style="text-align:center;margin-bottom:6px;font-size:12px;color:var(--muted)">${mpdState.activeFieldIdx+1} из ${b.fields.length}</div>
+      <div style="text-align:center;font-size:14px;color:var(--muted);margin-bottom:4px">${f.label}</div>
+      <div style="text-align:center;font-size:28px;font-weight:800;margin-bottom:4px;min-height:36px">${isSkipped?'⏸ без изменений':(curVal||'0')}${curVal&&!isSkipped?' <span style="font-size:14px;color:var(--muted)">'+f.unit+'</span>':''}</div>
+      ${anomalyWarn}
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:16px 0">
+        ${['1','2','3','4','5','6','7','8','9',',','0','⌫'].map(k=>`<button onclick="mpdKey('${k}')" style="padding:14px 0;font-size:18px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);color:var(--text);cursor:pointer">${k}</button>`).join('')}
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <button onclick="mpdNav(-1)" ${mpdState.activeFieldIdx===0?'disabled':''} style="flex:1;padding:10px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);color:var(--text);cursor:pointer">←</button>
+        <button onclick="mpdToggleSkip()" style="flex:2;padding:10px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);color:var(--text);cursor:pointer">⏸ Без изменений</button>
+        <button onclick="mpdNav(1)" ${mpdState.activeFieldIdx===b.fields.length-1?'disabled':''} style="flex:1;padding:10px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);color:var(--text);cursor:pointer">→</button>
+      </div>
+      <button onclick="mpdNext()" style="width:100%;padding:12px;border:none;border-radius:10px;background:var(--accent);color:#fff;font-weight:700;cursor:pointer">${mpdState.activeFieldIdx===b.fields.length-1?'✓ Готово':'Далее →'}</button>
+      <button onclick="mpdBackToList()" style="width:100%;padding:10px;margin-top:8px;border:none;background:none;color:var(--muted);font-size:13px;cursor:pointer">← К списку</button>
+    `;
+  }
+}
+
+function mpdOpenBlock(blockId){
+  mpdState.activeBlock=blockId;
+  mpdState.activeFieldIdx=0;
+  mpdState.draft='';
+  mpdState.view='block';
+  mpdRender();
+}
+function mpdBackToList(){
+  mpdSaveDraft();
+  mpdState.view='list';
+  mpdState.draft='';
+  mpdRender();
+}
+function mpdSaveDraft(){
+  const b=MPD_BLOCKS.find(x=>x.id===mpdState.activeBlock);
+  if(!b)return;
+  const f=b.fields[mpdState.activeFieldIdx];
+  const st=mpdState.blocks[b.id];
+  if(mpdState.draft!==''){
+    st.values[f.id]=mpdState.draft;
+    st.skipped[f.id]=false;
+  }
+}
+function mpdKey(k){
+  const b=MPD_BLOCKS.find(x=>x.id===mpdState.activeBlock);
+  const f=b.fields[mpdState.activeFieldIdx];
+  if(k==='⌫'){mpdState.draft=mpdState.draft.slice(0,-1);}
+  else if(k===','){if(!mpdState.draft.includes(','))mpdState.draft+=',';}
+  else{mpdState.draft+=k;}
+  mpdState.blocks[b.id].skipped[f.id]=false;
+  mpdRender();
+}
+function mpdToggleSkip(){
+  const b=MPD_BLOCKS.find(x=>x.id===mpdState.activeBlock);
+  const f=b.fields[mpdState.activeFieldIdx];
+  mpdState.blocks[b.id].skipped[f.id]=true;
+  mpdState.draft='';
+  mpdNav(1);
+}
+function mpdNav(dir){
+  mpdSaveDraft();
+  const b=MPD_BLOCKS.find(x=>x.id===mpdState.activeBlock);
+  const newIdx=mpdState.activeFieldIdx+dir;
+  if(newIdx<0||newIdx>=b.fields.length)return;
+  mpdState.activeFieldIdx=newIdx;
+  mpdState.draft='';
+  mpdRender();
+}
+function mpdNext(){
+  mpdSaveDraft();
+  const b=MPD_BLOCKS.find(x=>x.id===mpdState.activeBlock);
+  if(mpdState.activeFieldIdx<b.fields.length-1){
+    mpdState.activeFieldIdx++;
+    mpdState.draft='';
+    mpdRender();
+  }else{
+    mpdBackToList();
+  }
+}
 // Тап по toasty — достижение
 document.getElementById('toasty')&&document.getElementById('toasty').addEventListener('click',()=>{
   unlockAch('toasty_catch');haptic([30,20,80]);
