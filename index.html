@@ -5605,13 +5605,26 @@ function openWaterTerminal(k){
   const el=document.getElementById('fp-c'+k);
   wtDraft=(el&&el.value!=='')?String(el.value):'';
   document.getElementById('water-terminal-backdrop').style.display='block';
-  document.getElementById('water-terminal').style.display='flex';
+  const term=document.getElementById('water-terminal');
+  term.style.display='flex';
+  term.animate([
+    {opacity:0,transform:'translate(-50%,-50%) scale(.9)'},
+    {opacity:1,transform:'translate(-50%,-50%) scale(1)'}
+  ],{duration:220,easing:'cubic-bezier(.32,1,.52,1)'});
   wtRender();
 }
 function closeWaterTerminal(){
   wtSaveDraft();
-  document.getElementById('water-terminal-backdrop').style.display='none';
-  document.getElementById('water-terminal').style.display='none';
+  const bd=document.getElementById('water-terminal-backdrop');
+  const term=document.getElementById('water-terminal');
+  const anim=term.animate([
+    {opacity:1,transform:'translate(-50%,-50%) scale(1)'},
+    {opacity:0,transform:'translate(-50%,-50%) scale(.92)'}
+  ],{duration:150,easing:'ease-in'});
+  anim.onfinish=()=>{
+    bd.style.display='none';
+    term.style.display='none';
+  };
 }
 function wtSaveDraft(){
   const el=document.getElementById('fp-c'+wtField);
@@ -5628,18 +5641,41 @@ function wtRender(){
   const body=document.getElementById('wt-body');
   const idx=WT_FIELDS.findIndex(x=>x.id===wtField);
   const f=WT_FIELDS[idx];
+
+  const m=curMonth(),d=allData[m]||{};
+  const pv=d['prev-'+wtField]!==undefined?d['prev-'+wtField]:'';
+  const valNorm=wtDraft.replace(',','.');
+  const check=validateMeterInput(wtField,valNorm,pv);
+
+  let warnHtml='';
+  if(wtDraft!==''&&!check.ok){
+    warnHtml='<div style="color:var(--red);font-size:12px;margin-bottom:8px;text-align:center">⚠ '+check.msg+'</div>';
+  } else if(wtDraft!==''&&check.ok){
+    const avgs=fpGetAverages();
+    const cv=parseFloat(valNorm)||0;
+    const pvN=parseFloat(pv)||0;
+    const diff=Math.max(0,cv-pvN);
+    if(avgs&&avgs[wtField]>0&&diff>avgs[wtField]*ANOMALY_THRESHOLD){
+      const avgTxt=f.unit==='кВт·ч'?Math.round(avgs[wtField]):avgs[wtField].toFixed(2);
+      warnHtml='<div style="color:var(--yellow);font-size:12px;margin-bottom:8px;text-align:center">⚠ Обычно ~'+avgTxt+' '+f.unit+', сейчас заметно больше</div>';
+    }
+  }
+  const blocked=wtDraft!==''&&!check.ok;
+
   body.innerHTML=`
     <div style="text-align:center;margin-bottom:4px;font-size:12px;color:var(--muted)">${idx+1} из ${WT_FIELDS.length}</div>
     <div style="text-align:center;font-size:14px;color:var(--muted);margin-bottom:2px">${f.label}</div>
     <div style="text-align:center;font-size:24px;font-weight:800;margin-bottom:2px;min-height:30px">${wtDraft||'0'}${wtDraft?' <span style="font-size:14px;color:var(--muted)">'+f.unit+'</span>':''}</div>
+    ${warnHtml}
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:10px 0">
       ${['1','2','3','4','5','6','7','8','9',',','0','⌫'].map(k=>`<button onclick="wtKey('${k}')" style="padding:11px 0;font-size:18px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);color:var(--text);cursor:pointer">${k}</button>`).join('')}
     </div>
     <div style="display:flex;gap:7px;margin-bottom:8px">
       <button onclick="wtNav(-1)" ${idx===0?'disabled':''} style="flex:1;padding:9px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);color:var(--text);cursor:pointer">←</button>
+      <button onclick="wtToggleSkip()" ${(pv===undefined||pv===null||pv==='')?'disabled':''} style="flex:2;padding:9px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);color:var(--text);cursor:pointer">⏸ Без изменений</button>
       <button onclick="wtNav(1)" ${idx===WT_FIELDS.length-1?'disabled':''} style="flex:1;padding:9px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);color:var(--text);cursor:pointer">→</button>
     </div>
-    <button onclick="wtDone()" style="width:100%;padding:11px;border:none;border-radius:10px;background:var(--accent);color:#fff;font-weight:700;cursor:pointer">${idx===WT_FIELDS.length-1?'✓ Готово':'Далее →'}</button>
+    <button onclick="wtDone()" ${blocked?'disabled':''} style="width:100%;padding:11px;border:none;border-radius:10px;background:${blocked?'var(--border)':'var(--accent)'};color:${blocked?'var(--muted)':'#fff'};font-weight:700;cursor:${blocked?'default':'pointer'}">${idx===WT_FIELDS.length-1?'✓ Готово':'Далее →'}</button>
   `;
 }
 function wtKey(k){
@@ -5658,7 +5694,20 @@ function wtNav(dir){
   wtDraft=(el&&el.value!=='')?String(el.value):'';
   wtRender();
 }
+// "Без изменений" = перенести прошлое показание как текущее (нулевой расход).
+// Единственная осмысленная трактовка для счётчика — не "пропустить", а явное решение.
+function wtToggleSkip(){
+  const m=curMonth(),d=allData[m]||{};
+  const pv=d['prev-'+wtField];
+  if(pv===undefined||pv===null||pv==='')return;
+  wtDraft=String(pv).replace('.',',');
+  wtDone();
+}
 function wtDone(){
+  const m=curMonth(),d=allData[m]||{};
+  const pv=d['prev-'+wtField]!==undefined?d['prev-'+wtField]:'';
+  const check=validateMeterInput(wtField,wtDraft.replace(',','.'),pv);
+  if(wtDraft!==''&&!check.ok){wtRender();return;}
   wtSaveDraft();
   const idx=WT_FIELDS.findIndex(x=>x.id===wtField);
   if(idx<WT_FIELDS.length-1){
