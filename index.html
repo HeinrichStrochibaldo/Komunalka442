@@ -1583,18 +1583,6 @@ html.dev-mode #settings-btn{
   <div id="mpd-body" style="padding:16px;overflow-y:auto"></div>
 </div>
 
-<!-- Ветка А, Шаг 2 — реальный терминал ввода для блока "Вода" (ГВС+ХВС).
-     Полностью отдельный от #meterpad-demo: пишет прямо в fp-cgvs/fp-chvs
-     и вызывает существующий fpSync(), остальной FAB-флоу не тронут. -->
-<div id="water-terminal-backdrop" style="display:none;position:fixed;inset:0;z-index:309;background:rgba(0,0,0,.4)" onclick="closeWaterTerminal()"></div>
-<div id="water-terminal" style="display:none;position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:310;background:var(--surface);border:1px solid var(--border);border-radius:16px;width:min(calc(94vw - 150px),720px);box-shadow:0 8px 40px rgba(0,0,0,.5);flex-direction:column;max-height:85vh;overflow:hidden">
-  <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border)">
-    <div style="font-weight:700;font-size:15px">💧 Вода</div>
-    <button onclick="closeWaterTerminal()" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;line-height:1">×</button>
-  </div>
-  <div id="wt-body" style="padding:16px;overflow-y:auto"></div>
-</div>
-
 <!-- Pull-to-refresh indicator -->
 <div id="ptr-indicator"><span id="ptr-arrow">↓</span><span id="ptr-text">Потяни чтобы обновить</span></div>
 
@@ -5594,51 +5582,57 @@ function clearFpDraft(){
   localStorage.removeItem('kfpdraft');
 }
 
-/* Ветка А, Шаг 2 — терминал ввода для блока "Вода".
-   Пишет прямо в fp-cgvs/fp-chvs и зовёт существующий fpSync() —
-   весь дальнейший флоу (валидация, подтверждение, fpApply) не тронут. */
+/* Терминал ввода для блока "Вода" — пишет прямо в fpDraft.
+   Никакой зависимости от DOM-полей: fpGoConfirm/fpApply читают fpDraft напрямую. */
 const WT_FIELDS=[{id:'gvs',label:'ГВС',unit:'м³'},{id:'hvs',label:'ХВС',unit:'м³'}];
 let wtField='gvs', wtDraft='';
 
+// Плавный переход между "экранами" одного попапа (список ↔ терминал ↔ подтверждение).
+// Меряем высоту до и после смены контента, анимируем переход — без отдельных оверлеев.
+function fpMorphTo(renderFn){
+  const pop=document.getElementById('fab-popup');
+  if(!pop)return;
+  const oldH=pop.offsetHeight;
+  renderFn();
+  const newH=pop.offsetHeight;
+  pop.style.height=oldH+'px';
+  pop.style.overflow='hidden';
+  requestAnimationFrame(()=>{
+    const anim=pop.animate(
+      [{height:oldH+'px',opacity:.5},{height:newH+'px',opacity:1}],
+      {duration:240,easing:'cubic-bezier(.32,1,.52,1)'}
+    );
+    anim.onfinish=()=>{
+      pop.style.height='';
+      pop.style.overflow='';
+    };
+  });
+}
+
+function getFieldDraftVal(k){
+  if(fpDraft[k]!==undefined)return String(fpDraft[k]);
+  const d=allData[curMonth()]||{};
+  return d['cur-'+k]!==undefined?String(d['cur-'+k]):'';
+}
+
 function openWaterTerminal(k){
   wtField=k;
-  const el=document.getElementById('fp-c'+k);
-  wtDraft=(el&&el.value!=='')?String(el.value):'';
-  document.getElementById('water-terminal-backdrop').style.display='block';
-  const term=document.getElementById('water-terminal');
-  term.style.display='flex';
-  term.animate([
-    {opacity:0,transform:'translate(-50%,-50%) scale(.9)'},
-    {opacity:1,transform:'translate(-50%,-50%) scale(1)'}
-  ],{duration:220,easing:'cubic-bezier(.32,1,.52,1)'});
-  wtRender();
+  wtDraft=getFieldDraftVal(k);
+  fpMorphTo(wtRender);
 }
 function closeWaterTerminal(){
   wtSaveDraft();
-  const bd=document.getElementById('water-terminal-backdrop');
-  const term=document.getElementById('water-terminal');
-  const anim=term.animate([
-    {opacity:1,transform:'translate(-50%,-50%) scale(1)'},
-    {opacity:0,transform:'translate(-50%,-50%) scale(.92)'}
-  ],{duration:150,easing:'ease-in'});
-  anim.onfinish=()=>{
-    bd.style.display='none';
-    term.style.display='none';
-  };
+  fpMorphTo(fpShowScreen1);
 }
 function wtSaveDraft(){
-  const el=document.getElementById('fp-c'+wtField);
-  if(!el)return;
   if(wtDraft!==''){
-    const v=wtDraft.replace(',','.'); // number-инпут понимает только точку
-    el.value=v;
-    fpDraft[wtField]=parseFloat(v);
+    fpDraft[wtField]=parseFloat(wtDraft.replace(',','.'));
     saveFpDraft();
   }
-  fpSync(wtField);
 }
 function wtRender(){
-  const body=document.getElementById('wt-body');
+  const pop=document.getElementById('fab-popup');
+  if(!pop)return;
   const idx=WT_FIELDS.findIndex(x=>x.id===wtField);
   const f=WT_FIELDS[idx];
 
@@ -5662,20 +5656,26 @@ function wtRender(){
   }
   const blocked=wtDraft!==''&&!check.ok;
 
-  body.innerHTML=`
-    <div style="text-align:center;margin-bottom:4px;font-size:12px;color:var(--muted)">${idx+1} из ${WT_FIELDS.length}</div>
-    <div style="text-align:center;font-size:14px;color:var(--muted);margin-bottom:2px">${f.label}</div>
-    <div style="text-align:center;font-size:24px;font-weight:800;margin-bottom:2px;min-height:30px">${wtDraft||'0'}${wtDraft?' <span style="font-size:14px;color:var(--muted)">'+f.unit+'</span>':''}</div>
-    ${warnHtml}
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:10px 0">
-      ${['1','2','3','4','5','6','7','8','9',',','0','⌫'].map(k=>`<button onclick="wtKey('${k}')" style="padding:11px 0;font-size:18px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);color:var(--text);cursor:pointer">${k}</button>`).join('')}
+  pop.innerHTML=`
+    <div style="padding:14px 14px 0">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+        <button onclick="closeWaterTerminal()" style="background:none;border:none;color:var(--accent);font-size:13px;cursor:pointer;padding:0;font-family:inherit;white-space:nowrap">← К списку</button>
+        <div style="font-size:14px;font-weight:700;color:var(--text)">💧 Вода</div>
+      </div>
+      <div style="text-align:center;margin-bottom:4px;font-size:12px;color:var(--muted)">${idx+1} из ${WT_FIELDS.length}</div>
+      <div style="text-align:center;font-size:14px;color:var(--muted);margin-bottom:2px">${f.label}</div>
+      <div style="text-align:center;font-size:24px;font-weight:800;margin-bottom:2px;min-height:30px">${wtDraft||'0'}${wtDraft?' <span style="font-size:14px;color:var(--muted)">'+f.unit+'</span>':''}</div>
+      ${warnHtml}
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:10px 0">
+        ${['1','2','3','4','5','6','7','8','9',',','0','⌫'].map(k=>`<button onclick="wtKey('${k}')" style="padding:11px 0;font-size:18px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);color:var(--text);cursor:pointer">${k}</button>`).join('')}
+      </div>
+      <div style="display:flex;gap:7px;margin-bottom:8px">
+        <button onclick="wtNav(-1)" ${idx===0?'disabled':''} style="flex:1;padding:9px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);color:var(--text);cursor:pointer">←</button>
+        <button onclick="wtToggleSkip()" ${(pv===undefined||pv===null||pv==='')?'disabled':''} style="flex:2;padding:9px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);color:var(--text);cursor:pointer">⏸ Без изменений</button>
+        <button onclick="wtNav(1)" ${idx===WT_FIELDS.length-1?'disabled':''} style="flex:1;padding:9px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);color:var(--text);cursor:pointer">→</button>
+      </div>
+      <button onclick="wtDone()" ${blocked?'disabled':''} style="width:100%;padding:11px;margin-bottom:14px;border:none;border-radius:10px;background:${blocked?'var(--border)':'var(--accent)'};color:${blocked?'var(--muted)':'#fff'};font-weight:700;cursor:${blocked?'default':'pointer'}">${idx===WT_FIELDS.length-1?'✓ Готово':'Далее →'}</button>
     </div>
-    <div style="display:flex;gap:7px;margin-bottom:8px">
-      <button onclick="wtNav(-1)" ${idx===0?'disabled':''} style="flex:1;padding:9px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);color:var(--text);cursor:pointer">←</button>
-      <button onclick="wtToggleSkip()" ${(pv===undefined||pv===null||pv==='')?'disabled':''} style="flex:2;padding:9px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);color:var(--text);cursor:pointer">⏸ Без изменений</button>
-      <button onclick="wtNav(1)" ${idx===WT_FIELDS.length-1?'disabled':''} style="flex:1;padding:9px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);color:var(--text);cursor:pointer">→</button>
-    </div>
-    <button onclick="wtDone()" ${blocked?'disabled':''} style="width:100%;padding:11px;border:none;border-radius:10px;background:${blocked?'var(--border)':'var(--accent)'};color:${blocked?'var(--muted)':'#fff'};font-weight:700;cursor:${blocked?'default':'pointer'}">${idx===WT_FIELDS.length-1?'✓ Готово':'Далее →'}</button>
   `;
 }
 function wtKey(k){
@@ -5690,8 +5690,7 @@ function wtNav(dir){
   const newIdx=idx+dir;
   if(newIdx<0||newIdx>=WT_FIELDS.length)return;
   wtField=WT_FIELDS[newIdx].id;
-  const el=document.getElementById('fp-c'+wtField);
-  wtDraft=(el&&el.value!=='')?String(el.value):'';
+  wtDraft=getFieldDraftVal(wtField);
   wtRender();
 }
 // "Без изменений" = перенести прошлое показание как текущее (нулевой расход).
@@ -5712,83 +5711,146 @@ function wtDone(){
   const idx=WT_FIELDS.findIndex(x=>x.id===wtField);
   if(idx<WT_FIELDS.length-1){
     wtField=WT_FIELDS[idx+1].id;
-    const el=document.getElementById('fp-c'+wtField);
-    wtDraft=(el&&el.value!=='')?String(el.value):'';
+    wtDraft=getFieldDraftVal(wtField);
     wtRender();
   }else{
     closeWaterTerminal();
   }
 }
 
+/* Зеркало терминала "Вода" — для блока "Электричество" (Т1+Т2).
+   Пишет прямо в fpDraft, та же логика/валидация, без зависимости от DOM. */
+const ET_FIELDS=[{id:'t1',label:'Т1 (день)',unit:'кВт·ч'},{id:'t2',label:'Т2 (ночь)',unit:'кВт·ч'}];
+let etField='t1', etDraft='';
+
+function openElecTerminal(k){
+  etField=k;
+  etDraft=getFieldDraftVal(k);
+  fpMorphTo(etRender);
+}
+function closeElecTerminal(){
+  etSaveDraft();
+  fpMorphTo(fpShowScreen1);
+}
+function etSaveDraft(){
+  if(etDraft!==''){
+    fpDraft[etField]=parseFloat(etDraft.replace(',','.'));
+    saveFpDraft();
+  }
+}
+function etRender(){
+  const pop=document.getElementById('fab-popup');
+  if(!pop)return;
+  const idx=ET_FIELDS.findIndex(x=>x.id===etField);
+  const f=ET_FIELDS[idx];
+
+  const m=curMonth(),d=allData[m]||{};
+  const pv=d['prev-'+etField]!==undefined?d['prev-'+etField]:'';
+  const valNorm=etDraft.replace(',','.');
+  const check=validateMeterInput(etField,valNorm,pv);
+
+  let warnHtml='';
+  if(etDraft!==''&&!check.ok){
+    warnHtml='<div style="color:var(--red);font-size:12px;margin-bottom:8px;text-align:center">⚠ '+check.msg+'</div>';
+  } else if(etDraft!==''&&check.ok){
+    const avgs=fpGetAverages();
+    const cv=parseFloat(valNorm)||0;
+    const pvN=parseFloat(pv)||0;
+    const diff=Math.max(0,cv-pvN);
+    if(avgs&&avgs[etField]>0&&diff>avgs[etField]*ANOMALY_THRESHOLD){
+      const avgTxt=Math.round(avgs[etField]);
+      warnHtml='<div style="color:var(--yellow);font-size:12px;margin-bottom:8px;text-align:center">⚠ Обычно ~'+avgTxt+' '+f.unit+', сейчас заметно больше</div>';
+    }
+  }
+  const blocked=etDraft!==''&&!check.ok;
+
+  pop.innerHTML=`
+    <div style="padding:14px 14px 0">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+        <button onclick="closeElecTerminal()" style="background:none;border:none;color:var(--accent);font-size:13px;cursor:pointer;padding:0;font-family:inherit;white-space:nowrap">← К списку</button>
+        <div style="font-size:14px;font-weight:700;color:var(--text)">⚡ Электричество</div>
+      </div>
+      <div style="text-align:center;margin-bottom:4px;font-size:12px;color:var(--muted)">${idx+1} из ${ET_FIELDS.length}</div>
+      <div style="text-align:center;font-size:14px;color:var(--muted);margin-bottom:2px">${f.label}</div>
+      <div style="text-align:center;font-size:24px;font-weight:800;margin-bottom:2px;min-height:30px">${etDraft||'0'}${etDraft?' <span style="font-size:14px;color:var(--muted)">'+f.unit+'</span>':''}</div>
+      ${warnHtml}
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:10px 0">
+        ${['1','2','3','4','5','6','7','8','9',',','0','⌫'].map(k=>`<button onclick="etKey('${k}')" style="padding:11px 0;font-size:18px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);color:var(--text);cursor:pointer">${k}</button>`).join('')}
+      </div>
+      <div style="display:flex;gap:7px;margin-bottom:8px">
+        <button onclick="etNav(-1)" ${idx===0?'disabled':''} style="flex:1;padding:9px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);color:var(--text);cursor:pointer">←</button>
+        <button onclick="etToggleSkip()" ${(pv===undefined||pv===null||pv==='')?'disabled':''} style="flex:2;padding:9px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);color:var(--text);cursor:pointer">⏸ Без изменений</button>
+        <button onclick="etNav(1)" ${idx===ET_FIELDS.length-1?'disabled':''} style="flex:1;padding:9px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);color:var(--text);cursor:pointer">→</button>
+      </div>
+      <button onclick="etDone()" ${blocked?'disabled':''} style="width:100%;padding:11px;margin-bottom:14px;border:none;border-radius:10px;background:${blocked?'var(--border)':'var(--accent)'};color:${blocked?'var(--muted)':'#fff'};font-weight:700;cursor:${blocked?'default':'pointer'}">${idx===ET_FIELDS.length-1?'✓ Готово':'Далее →'}</button>
+    </div>
+  `;
+}
+function etKey(k){
+  if(k==='⌫'){etDraft=etDraft.slice(0,-1);}
+  else if(k===','){if(!etDraft.includes(','))etDraft+=',';}
+  else{etDraft+=k;}
+  etRender();
+}
+function etNav(dir){
+  etSaveDraft();
+  const idx=ET_FIELDS.findIndex(x=>x.id===etField);
+  const newIdx=idx+dir;
+  if(newIdx<0||newIdx>=ET_FIELDS.length)return;
+  etField=ET_FIELDS[newIdx].id;
+  etDraft=getFieldDraftVal(etField);
+  etRender();
+}
+function etToggleSkip(){
+  const m=curMonth(),d=allData[m]||{};
+  const pv=d['prev-'+etField];
+  if(pv===undefined||pv===null||pv==='')return;
+  etDraft=String(pv).replace('.',',');
+  etDone();
+}
+function etDone(){
+  const m=curMonth(),d=allData[m]||{};
+  const pv=d['prev-'+etField]!==undefined?d['prev-'+etField]:'';
+  const check=validateMeterInput(etField,etDraft.replace(',','.'),pv);
+  if(etDraft!==''&&!check.ok){etRender();return;}
+  etSaveDraft();
+  const idx=ET_FIELDS.findIndex(x=>x.id===etField);
+  if(idx<ET_FIELDS.length-1){
+    etField=ET_FIELDS[idx+1].id;
+    etDraft=getFieldDraftVal(etField);
+    etRender();
+  }else{
+    closeElecTerminal();
+  }
+}
+
 function fpShowScreen1(){
   const pop=document.getElementById('fab-popup');
   if(!pop)return;
-  const m=curMonth(),d=allData[m]||{};
 
-  const waterBlocks=['gvs','hvs'].map(k=>{
-    const labels={gvs:'🔴 ГВС',hvs:'🔵 ХВС'};
-    const serials={gvs:meter.sgvs||'',hvs:meter.shvs||''};
-    const pv=d['prev-'+k]!==undefined?d['prev-'+k]:'—';
-    const cv=fpDraft[k]!==undefined?fpDraft[k]:(d['cur-'+k]!==undefined?d['cur-'+k]:'');
-    return '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px">'+
-      '<div style="font-size:11px;font-weight:700;color:var(--label);margin-bottom:2px">'+labels[k]+'</div>'+
-      '<div style="font-size:9px;color:var(--muted);margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+serials[k]+'</div>'+
-      '<div style="font-size:10px;color:var(--muted);margin-bottom:4px">Пред.: <span style="font-weight:600;color:var(--text)">'+pv+(pv!=='—'?' м³':'')+'</span></div>'+
-      '<input type="number" id="fp-c'+k+'" step="0.001" value="'+cv+'" placeholder="Текущее" readonly onclick="openWaterTerminal(\''+k+'\')" style="width:100%;font-size:13px;padding:5px 7px;border-radius:6px;box-sizing:border-box;cursor:pointer">'+
-      '<div id="fp-v'+k+'" style="font-size:11px;color:var(--green);font-weight:600;text-align:center;margin-top:4px;min-height:14px">—</div>'+
-      '</div>';
-  }).join('');
+  const waterDone=['gvs','hvs'].filter(k=>getFieldDraftVal(k)!=='').length;
+  const elecDone=['t1','t2'].filter(k=>getFieldDraftVal(k)!=='').length;
+  const anyFilled=waterDone>0||elecDone>0;
 
-  const pvT1=d['prev-t1']!==undefined?d['prev-t1']:'—';
-  const pvT2=d['prev-t2']!==undefined?d['prev-t2']:'—';
-  const cvT1=fpDraft['t1']!==undefined?fpDraft['t1']:(d['cur-t1']!==undefined?d['cur-t1']:'');
-  const cvT2=fpDraft['t2']!==undefined?fpDraft['t2']:(d['cur-t2']!==undefined?d['cur-t2']:'');
-
-  const eeBlock=
-    '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px;margin-top:8px">'+
-      '<div style="font-size:11px;font-weight:700;color:var(--label);margin-bottom:2px">⚡ Электричество</div>'+
-      '<div style="font-size:9px;color:var(--muted);margin-bottom:8px">'+(meter.see||'')+'</div>'+
-      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
-        '<div>'+
-          '<div style="font-size:10px;font-weight:600;color:var(--muted);margin-bottom:4px">Т1 — ДЕНЬ</div>'+
-          '<div style="font-size:10px;color:var(--muted);margin-bottom:4px">Пред.: <span style="font-weight:600;color:var(--text)">'+pvT1+(pvT1!=='—'?' кВт·ч':'')+'</span></div>'+
-          '<input type="number" id="fp-ct1" step="1" value="'+cvT1+'" placeholder="Текущее" style="width:100%;font-size:13px;padding:5px 7px;border-radius:6px;box-sizing:border-box" oninput="fpSync(\'t1\')">'+
-          '<div id="fp-vt1" style="font-size:11px;color:var(--green);font-weight:600;text-align:center;margin-top:4px;min-height:14px">—</div>'+
-        '</div>'+
-        '<div>'+
-          '<div style="font-size:10px;font-weight:600;color:var(--muted);margin-bottom:4px">Т2 — НОЧЬ</div>'+
-          '<div style="font-size:10px;color:var(--muted);margin-bottom:4px">Пред.: <span style="font-weight:600;color:var(--text)">'+pvT2+(pvT2!=='—'?' кВт·ч':'')+'</span></div>'+
-          '<input type="number" id="fp-ct2" step="1" value="'+cvT2+'" placeholder="Текущее" style="width:100%;font-size:13px;padding:5px 7px;border-radius:6px;box-sizing:border-box" oninput="fpSync(\'t2\')">'+
-          '<div id="fp-vt2" style="font-size:11px;color:var(--green);font-weight:600;text-align:center;margin-top:4px;min-height:14px">—</div>'+
-        '</div>'+
-      '</div>'+
+  const blockRow=(icon,label,done,total,onclick)=>
+    '<div onclick="'+onclick+'" style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 6px;border-bottom:1px solid var(--border);cursor:pointer">'+
+      '<div style="display:flex;align-items:center;gap:10px;font-size:14px;min-width:0"><span style="font-size:18px;flex-shrink:0">'+icon+'</span><span>'+label+'</span></div>'+
+      '<div style="font-size:13px;font-weight:700;color:'+(done===total?'var(--green)':'var(--muted)')+';flex-shrink:0;white-space:nowrap">'+done+'/'+total+(done===total?' ✓':'')+'</div>'+
     '</div>';
 
   pop.innerHTML=
     '<div style="padding:14px 14px 0;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch">'+
     '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">'+
-      '<div style="font-size:14px;font-weight:700;color:var(--text)">⚡ Показания</div>'+
+      '<div style="font-size:14px;font-weight:700;color:var(--text)">Показания</div>'+
       '<button onclick="closeFabPopup()" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;padding:0 4px;line-height:1;font-family:inherit">×</button>'+
     '</div>'+
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+waterBlocks+'</div>'+
-    eeBlock+
+    blockRow('💧','Вода',waterDone,2,"openWaterTerminal('gvs')")+
+    blockRow('⚡','Электричество',elecDone,2,"openElecTerminal('t1')")+
     '</div>'+
-    '<button class="btn" style="width:calc(100% - 28px);margin:10px 14px 12px;padding:10px;font-size:13px;border-radius:10px" onclick="fpGoConfirm()">Далее →</button>';
-
-  ['gvs','hvs','t1','t2'].forEach(k=>fpSync(k));
+    '<div style="padding:14px">'+
+      '<button class="btn" style="width:100%;padding:11px;font-size:13px;border-radius:10px" onclick="fpMorphTo(fpGoConfirm)" '+(anyFilled?'':'disabled')+'>Далее →</button>'+
+    '</div>';
 }
-function fpSync(k){
-  const m=curMonth(),d=allData[m]||{};
-  const pv=d['prev-'+k]!==undefined?parseFloat(d['prev-'+k]):0;
-  const cel=document.getElementById('fp-c'+k);
-  const c=cel?parseFloat(cel.value)||0:0;
-  const v=Math.max(0,c-pv);
-  const el=document.getElementById('fp-v'+k);
-  const isEE=(k==='t1'||k==='t2');
-  if(el)el.textContent=v>0?(isEE?Math.round(v)+' кВт·ч':v.toLocaleString('ru-RU',{minimumFractionDigits:3,maximumFractionDigits:3})+' м³'):'—';
-  fpValidateField(k);
-}
-
 function validateMeterInput(k, value, prevValue){
   // Чистая функция — возвращает {ok, msg}
   if(value===''||value===null||value===undefined)return{ok:true,msg:''};
@@ -5799,36 +5861,6 @@ function validateMeterInput(k, value, prevValue){
   const pv=parseFloat(prevValue)||0;
   if(pv>0&&v<pv)return{ok:false,msg:'Меньше предыдущего ('+pv+')'};
   return{ok:true,msg:''};
-}
-
-function fpValidateField(k){
-  const m=curMonth(),d=allData[m]||{};
-  const pv=d['prev-'+k]!==undefined?d['prev-'+k]:'';
-  const cel=document.getElementById('fp-c'+k);
-  if(!cel)return true;
-  const result=validateMeterInput(k,cel.value,pv);
-  // Находим или создаём блок ошибки под полем
-  const errId='fp-err-'+k;
-  let errEl=document.getElementById(errId);
-  if(!errEl){
-    errEl=document.createElement('div');
-    errEl.id=errId;
-    errEl.style.cssText='font-size:10px;color:var(--red);min-height:12px;margin-top:2px';
-    cel.parentNode.insertBefore(errEl,cel.nextSibling);
-  }
-  if(!result.ok){
-    cel.style.borderColor='var(--red)';
-    errEl.textContent=result.msg;
-  } else {
-    cel.style.borderColor='';
-    errEl.textContent='';
-  }
-  return result.ok;
-}
-
-function fpValidateAll(){
-  const results=['gvs','hvs','t1','t2'].map(k=>fpValidateField(k));
-  return results.every(Boolean);
 }
 
 function fpGetAverages(){
@@ -5849,18 +5881,9 @@ function fpGetAverages(){
 function fpGoConfirm(){
   const pop=document.getElementById('fab-popup');
   if(!pop)return;
-  // Сначала проверяем что поля валидны (отрицательные/меньше предыдущего и т.п.)
-  if(!fpValidateAll())return;
-  // Сохраняем введённые значения в черновик
-  ['gvs','hvs','t1','t2'].forEach(k=>{
-    const cel=document.getElementById('fp-c'+k);
-    if(cel&&cel.value!=='')fpDraft[k]=parseFloat(cel.value);
-    else delete fpDraft[k];
-  });
-  saveFpDraft();
   // Закон 8: нельзя перейти к подтверждению, если нет ни одного
-  // введённого показания (все cur-* либо пусты, либо равны нулю).
-  // Один реальный показатель ≥0 — уже достаточно (счётчик может быть не задействован).
+  // введённого показания. Валидация каждого поля уже произошла в моменте
+  // ввода внутри терминала (Шаг 4) — здесь просто читаем готовый fpDraft.
   const allZero=['gvs','hvs','t1','t2'].every(k=>{
     const v=fpDraft[k];
     return v===undefined||v===0;
@@ -5881,8 +5904,7 @@ function fpGoConfirm(){
   const rows=keys.map(k=>{
     const unit=units[k];
     const pv=d['prev-'+k]!==undefined?parseFloat(d['prev-'+k]):0;
-    const cel=document.getElementById('fp-c'+k);
-    const cv=cel?parseFloat(cel.value)||0:0;
+    const cv=fpDraft[k]!==undefined?fpDraft[k]:0;
     const diff=Math.max(0,cv-pv);
     diffs[k]=diff;
     const isEE=(k==='t1'||k==='t2');
@@ -5921,7 +5943,7 @@ function fpGoConfirm(){
   pop.innerHTML=
     '<div style="padding:14px 14px 0;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch">'+
     '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">'+
-      '<button onclick="fpShowScreen1()" style="background:none;border:none;color:var(--accent);font-size:13px;cursor:pointer;padding:0;font-family:inherit;white-space:nowrap">← Назад</button>'+
+      '<button onclick="fpMorphTo(fpShowScreen1)" style="background:none;border:none;color:var(--accent);font-size:13px;cursor:pointer;padding:0;font-family:inherit;white-space:nowrap">← Назад</button>'+
       '<div style="font-size:14px;font-weight:700;color:var(--text)">Подтверждение</div>'+
     '</div>'+
     '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:14px">'+
@@ -5931,7 +5953,7 @@ function fpGoConfirm(){
     anomHtml+
     '</div>'+
     '<div style="display:flex;gap:8px;padding:0 14px 14px">'+
-      '<button class="btn btn-ghost" style="flex:1;padding:10px;font-size:13px" onclick="fpShowScreen1()">Нет</button>'+
+      '<button class="btn btn-ghost" style="flex:1;padding:10px;font-size:13px" onclick="fpMorphTo(fpShowScreen1)">Нет</button>'+
       '<button class="btn" style="flex:1;padding:10px;font-size:13px" onclick="fpApply()">Да</button>'+
     '</div>';
 }
@@ -5972,8 +5994,6 @@ function closeFabPopup(){
   },150);
   if(bd)bd.style.display='none';
 }
-
-/* fpSync и fpApply перенесены выше */
 
 
 /* ── Режим разработчика ── */
@@ -6517,7 +6537,7 @@ function renderDev(){
     'renderQA','setQA','renderDev','updateOnlineStatus','checkTariffSuggestion',
     'dismissTariffAlert','showPWAInstall','triggerPWAInstall','closePWAToast',
     'updateThemeColor','makeCopyable','updateSavings','openFabPopup','closeFabPopup',
-    'fpSync','fpApply','tickNumber',
+    'fpApply','tickNumber',
   ];
   let html='<table style="width:100%;border-collapse:collapse;font-size:11px">';
   html+='<tr style="color:var(--label);border-bottom:1px solid var(--border)"><th style="text-align:left;padding:4px">Функция</th><th>Статус</th></tr>';
