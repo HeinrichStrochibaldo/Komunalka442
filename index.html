@@ -1411,8 +1411,8 @@ html.dev-mode #settings-btn{
           <tbody>
             <tr><td class="td-name" data-tip="Капитальный ремонт&#10;Фиксированная сумма">Капремонт</td><td><input type="number" id="t-kaprem" step="0.01" oninput="onInput()"></td><td class="td-dash">фикс.</td><td class="td-sum" id="s-kaprem" data-tip="= тариф (фикс.)">—</td><td><span class="badge badge-i" data-tip="Платишь ты">Я</span></td></tr>
             <tr><td class="td-name" data-tip="Горячее водоснабжение (вода)&#10;Тариф × объём ГВС">ГВС (вода)</td><td><input type="number" id="t-gvs-voda" step="0.0001" oninput="onInput()"></td><td class="td-auto" id="d-gvs-voda">—</td><td class="td-sum" id="s-gvs-voda" data-tip="= тариф × объём ГВС">—</td><td><span class="badge badge-v" data-tip="Платит Вадимовна">В</span></td></tr>
-            <tr><td class="td-name" data-tip="Горячее водоснабжение (подогрев)&#10;Тариф × объём в Гкал">ГВС (подогрев)</td><td><input type="number" id="t-gvs-pod" step="0.000001" oninput="onInput()"></td><td><input type="number" id="v-gvs-pod" step="0.000001" oninput="onInput()"></td><td class="td-sum" id="s-gvs-pod" data-tip="= тариф × объём Гкал">—</td><td><span class="badge badge-v" data-tip="Платит Вадимовна">В</span></td></tr>
-            <tr><td class="td-name" data-tip="Отопление&#10;Тариф × объём в Гкал">Отопление</td><td><input type="number" id="t-otop" step="0.0001" oninput="onInput()"></td><td><input type="number" id="v-otop" step="0.01" oninput="onInput()"></td><td class="td-sum" id="s-otop" data-tip="= тариф × объём Гкал">—</td><td><span class="badge badge-v" data-tip="Платит Вадимовна">В</span></td></tr>
+            <tr><td class="td-name" data-tip="Горячее водоснабжение (подогрев)&#10;Тариф × объём в Гкал">ГВС (подогрев)</td><td><input type="number" id="t-gvs-pod" step="0.000001" oninput="onInput()"></td><td><input type="number" id="v-gvs-pod" step="0.000001" readonly onclick="cmFieldTap()"></td><td class="td-sum" id="s-gvs-pod" data-tip="= тариф × объём Гкал">—</td><td><span class="badge badge-v" data-tip="Платит Вадимовна">В</span></td></tr>
+            <tr><td class="td-name" data-tip="Отопление&#10;Тариф × объём в Гкал">Отопление</td><td><input type="number" id="t-otop" step="0.0001" oninput="onInput()"></td><td><input type="number" id="v-otop" step="0.01" readonly onclick="cmFieldTap()"></td><td class="td-sum" id="s-otop" data-tip="= тариф × объём Гкал">—</td><td><span class="badge badge-v" data-tip="Платит Вадимовна">В</span></td></tr>
             <tr><td class="td-name" data-tip="Холодное водоснабжение&#10;Тариф × объём ХВС">ХВС</td><td><input type="number" id="t-hvs" step="0.0001" oninput="onInput()"></td><td class="td-auto" id="d-hvs">—</td><td class="td-sum" id="s-hvs" data-tip="= тариф × объём ХВС">—</td><td><span class="badge badge-v" data-tip="Платит Вадимовна">В</span></td></tr>
             <tr><td class="td-name" data-tip="Водоотведение (канализация)&#10;Тариф × (ГВС + ХВС)">Водоотведение</td><td><input type="number" id="t-vodo" step="0.0001" oninput="onInput()"></td><td class="td-auto" id="d-vodo">—</td><td class="td-sum" id="s-vodo" data-tip="= тариф × (ГВС + ХВС)">—</td><td><span class="badge badge-v" data-tip="Платит Вадимовна">В</span></td></tr>
           </tbody>
@@ -1432,12 +1432,12 @@ html.dev-mode #settings-btn{
             <tr><td class="td-name" data-tip="Обслуживание систем безопасности&#10;Фикс.">Обслуж. систем безопасности</td><td><input type="number" id="t-bezop" step="0.01" oninput="onInput()"></td><td class="td-dash">фикс.</td><td class="td-sum" id="s-bezop">—</td><td><span class="badge badge-i" data-tip="Платишь ты">Я</span></td></tr>
             <tr><td class="td-name" data-tip="Твёрдые коммунальные отходы&#10;Фикс.">Обращение с ТКО</td><td><input type="number" id="t-tko" step="0.01" oninput="onInput()"></td><td class="td-dash">фикс.</td><td class="td-sum" id="s-tko">—</td><td><span class="badge badge-i" data-tip="Платишь ты">Я</span></td></tr>
             <tr><td class="td-name" data-tip="Кабельное вещание&#10;Фикс.">ТВ (кабельное)</td><td><input type="number" id="t-tv" step="0.01" oninput="onInput()"></td><td class="td-dash">фикс.</td><td class="td-sum" id="s-tv">—</td><td><span class="badge badge-i" data-tip="Платишь ты">Я</span></td></tr>
-            <tr><td class="td-dim" data-tip="Общедомовая ЭЭ День · Т1 × объём">ЭЭ на сод. общ. имущ. (день)</td><td><input type="number" id="t-oi-ee-d" step="0.01" oninput="onInput()"></td><td><input type="number" id="v-oi-ee-d" step="0.0001" oninput="onInput()"></td><td class="td-sum" id="s-oi-ee-d">—</td><td><span class="badge badge-i" data-tip="Платишь ты">Я</span></td></tr>
-            <tr><td class="td-dim" data-tip="Общедомовая ЭЭ Ночь · Т2 × объём">ЭЭ на сод. общ. имущ. (ночь)</td><td><input type="number" id="t-oi-ee-n" step="0.01" oninput="onInput()"></td><td><input type="number" id="v-oi-ee-n" step="0.0001" oninput="onInput()"></td><td class="td-sum" id="s-oi-ee-n">—</td><td><span class="badge badge-i" data-tip="Платишь ты">Я</span></td></tr>
-            <tr><td class="td-dim" data-tip="Водоотведение на содержание ОИ">ВО на сод. общ. имущ.</td><td><input type="number" id="t-oi-vo" step="0.01" oninput="onInput()"></td><td><input type="number" id="v-oi-vo" step="0.001" oninput="onInput()"></td><td class="td-sum" id="s-oi-vo">—</td><td><span class="badge badge-i" data-tip="Платишь ты">Я</span></td></tr>
-            <tr><td class="td-dim" data-tip="ГВС вода на содержание ОИ">ГВС (вода) на сод. общ. имущ.</td><td><input type="number" id="t-oi-gvs" step="0.01" oninput="onInput()"></td><td><input type="number" id="v-oi-gvs" step="0.001" oninput="onInput()"></td><td class="td-sum" id="s-oi-gvs">—</td><td><span class="badge badge-i" data-tip="Платишь ты">Я</span></td></tr>
-            <tr><td class="td-dim" data-tip="ГВС подогрев на содержание ОИ">ГВС (подогрев) на сод. общ. имущ.</td><td><input type="number" id="t-oi-gvsp" step="0.01" oninput="onInput()"></td><td><input type="number" id="v-oi-gvsp" step="0.001" oninput="onInput()"></td><td class="td-sum" id="s-oi-gvsp">—</td><td><span class="badge badge-i" data-tip="Платишь ты">Я</span></td></tr>
-            <tr><td class="td-dim" data-tip="ХВС на содержание ОИ">ХВС на сод. общ. имущ.</td><td><input type="number" id="t-oi-hvs" step="0.01" oninput="onInput()"></td><td><input type="number" id="v-oi-hvs" step="0.001" oninput="onInput()"></td><td class="td-sum" id="s-oi-hvs">—</td><td><span class="badge badge-i" data-tip="Платишь ты">Я</span></td></tr>
+            <tr><td class="td-dim" data-tip="Общедомовая ЭЭ День · Т1 × объём">ЭЭ на сод. общ. имущ. (день)</td><td><input type="number" id="t-oi-ee-d" step="0.01" oninput="onInput()"></td><td><input type="number" id="v-oi-ee-d" step="0.0001" readonly onclick="cmFieldTap()"></td><td class="td-sum" id="s-oi-ee-d">—</td><td><span class="badge badge-i" data-tip="Платишь ты">Я</span></td></tr>
+            <tr><td class="td-dim" data-tip="Общедомовая ЭЭ Ночь · Т2 × объём">ЭЭ на сод. общ. имущ. (ночь)</td><td><input type="number" id="t-oi-ee-n" step="0.01" oninput="onInput()"></td><td><input type="number" id="v-oi-ee-n" step="0.0001" readonly onclick="cmFieldTap()"></td><td class="td-sum" id="s-oi-ee-n">—</td><td><span class="badge badge-i" data-tip="Платишь ты">Я</span></td></tr>
+            <tr><td class="td-dim" data-tip="Водоотведение на содержание ОИ">ВО на сод. общ. имущ.</td><td><input type="number" id="t-oi-vo" step="0.01" oninput="onInput()"></td><td><input type="number" id="v-oi-vo" step="0.001" readonly onclick="cmFieldTap()"></td><td class="td-sum" id="s-oi-vo">—</td><td><span class="badge badge-i" data-tip="Платишь ты">Я</span></td></tr>
+            <tr><td class="td-dim" data-tip="ГВС вода на содержание ОИ">ГВС (вода) на сод. общ. имущ.</td><td><input type="number" id="t-oi-gvs" step="0.01" oninput="onInput()"></td><td><input type="number" id="v-oi-gvs" step="0.001" readonly onclick="cmFieldTap()"></td><td class="td-sum" id="s-oi-gvs">—</td><td><span class="badge badge-i" data-tip="Платишь ты">Я</span></td></tr>
+            <tr><td class="td-dim" data-tip="ГВС подогрев на содержание ОИ">ГВС (подогрев) на сод. общ. имущ.</td><td><input type="number" id="t-oi-gvsp" step="0.01" oninput="onInput()"></td><td><input type="number" id="v-oi-gvsp" step="0.001" readonly onclick="cmFieldTap()"></td><td class="td-sum" id="s-oi-gvsp">—</td><td><span class="badge badge-i" data-tip="Платишь ты">Я</span></td></tr>
+            <tr><td class="td-dim" data-tip="ХВС на содержание ОИ">ХВС на сод. общ. имущ.</td><td><input type="number" id="t-oi-hvs" step="0.01" oninput="onInput()"></td><td><input type="number" id="v-oi-hvs" step="0.001" readonly onclick="cmFieldTap()"></td><td class="td-sum" id="s-oi-hvs">—</td><td><span class="badge badge-i" data-tip="Платишь ты">Я</span></td></tr>
           </tbody>
         </table>
       </div>
@@ -5582,11 +5582,6 @@ function clearFpDraft(){
   localStorage.removeItem('kfpdraft');
 }
 
-/* Терминал ввода для блока "Вода" — пишет прямо в fpDraft.
-   Никакой зависимости от DOM-полей: fpGoConfirm/fpApply читают fpDraft напрямую. */
-const WT_FIELDS=[{id:'gvs',label:'ГВС',unit:'м³'},{id:'hvs',label:'ХВС',unit:'м³'}];
-let wtField='gvs', wtDraft='';
-
 // Плавный переход между "экранами" одного попапа (список ↔ терминал ↔ подтверждение).
 // Меряем высоту до и после смены контента, анимируем переход — без отдельных оверлеев.
 function fpMorphTo(renderFn){
@@ -5609,218 +5604,184 @@ function fpMorphTo(renderFn){
   });
 }
 
-function getFieldDraftVal(k){
-  if(fpDraft[k]!==undefined)return String(fpDraft[k]);
+/* ============================================================
+   Единый движок ввода для всех 4 блоков FAB (Ветка А).
+   Раньше Вода/Электричество имели по своему набору функций —
+   при добавлении МосОблЕИРЦ/Пик-Комфорт это превратилось бы в
+   4 копии одного и того же. Один параметризованный движок вместо этого.
+
+   "kind":
+   - meter   — накопительный счётчик. Reference = prev-{key} В ЭТОМ месяце.
+               Реальное поле на главном экране: cur-{key}.
+   - receipt — прямая цифра с квитанции, без накопления. Reference =
+               то же поле {key} в ПРОШЛОМ месяце (просто для справки/
+               сравнения на жёлтое предупреждение, не блокирует ввод).
+               Реальное поле на главном экране: v-{key}.
+   ============================================================ */
+const FAB_BLOCKS=[
+  {id:'voda',icon:'💧',label:'Вода',fields:[
+    {key:'gvs',label:'ГВС',unit:'м³',kind:'meter'},
+    {key:'hvs',label:'ХВС',unit:'м³',kind:'meter'}
+  ]},
+  {id:'elec',icon:'⚡',label:'Электричество',fields:[
+    {key:'t1',label:'Т1 (день)',unit:'кВт·ч',kind:'meter'},
+    {key:'t2',label:'Т2 (ночь)',unit:'кВт·ч',kind:'meter'}
+  ]},
+  {id:'mosob',icon:'📄',label:'МосОблЕИРЦ',fields:[
+    {key:'otop',label:'Отопление',unit:'Гкал',kind:'receipt'},
+    {key:'gvs-pod',label:'ГВС (подогрев)',unit:'Гкал',kind:'receipt'}
+  ]},
+  {id:'pik',icon:'🏢',label:'Пик-Комфорт',fields:[
+    {key:'oi-ee-d',label:'ЭЭ ОДН (день)',unit:'кВт·ч',kind:'receipt'},
+    {key:'oi-ee-n',label:'ЭЭ ОДН (ночь)',unit:'кВт·ч',kind:'receipt'},
+    {key:'oi-vo',label:'Водоотведение ОИ',unit:'м³',kind:'receipt'},
+    {key:'oi-gvs',label:'ГВС-вода ОИ',unit:'м³',kind:'receipt'},
+    {key:'oi-gvsp',label:'ГВС-подогрев ОИ',unit:'Гкал',kind:'receipt'},
+    {key:'oi-hvs',label:'ХВС ОИ',unit:'м³',kind:'receipt'}
+  ]}
+];
+
+let fpBlock=null, fpFieldIdx=0, fpDraftVal='';
+
+function getFieldDraftVal(field){
+  if(fpDraft[field.key]!==undefined)return String(fpDraft[field.key]);
   const d=allData[curMonth()]||{};
-  return d['cur-'+k]!==undefined?String(d['cur-'+k]):'';
+  const domKey=field.kind==='meter'?'cur-'+field.key:'v-'+field.key;
+  return d[domKey]!==undefined?String(d[domKey]):'';
 }
 
-function openWaterTerminal(k){
-  wtField=k;
-  wtDraft=getFieldDraftVal(k);
-  fpMorphTo(wtRender);
+// "Предыдущее" для отображения/жёлтого порога — разный смысл по kind, см. шапку файла.
+function getFieldReference(field){
+  const d=allData[curMonth()]||{};
+  if(field.kind==='meter'){
+    return d['prev-'+field.key]!==undefined?d['prev-'+field.key]:'';
+  }
+  const pm=prevMK(curMonth());
+  if(!pm)return '';
+  const pd=allData[pm]||{};
+  return pd['v-'+field.key]!==undefined?pd['v-'+field.key]:'';
 }
-function closeWaterTerminal(){
-  wtSaveDraft();
+
+// Среднее по последним месяцам — для meter считаем расход (cur-prev), для receipt берём значение прямо.
+function fpGetFieldAverage(field){
+  const prevMonths=MK.filter(m=>allData[m]&&m!==curMonth()).slice(-3);
+  if(prevMonths.length<2)return null;
+  let sum=0,count=0;
+  prevMonths.forEach(m=>{
+    const d=allData[m];
+    if(field.kind==='meter'){
+      const cur=parseFloat(d['cur-'+field.key]),prev=parseFloat(d['prev-'+field.key]);
+      if(!isNaN(cur)&&!isNaN(prev)){sum+=Math.max(0,cur-prev);count++;}
+    } else {
+      const v=parseFloat(d['v-'+field.key]);
+      if(!isNaN(v)){sum+=v;count++;}
+    }
+  });
+  return count>=2?sum/count:null;
+}
+
+function fpOpenBlock(blockId,startKey){
+  fpBlock=FAB_BLOCKS.find(b=>b.id===blockId);
+  if(!fpBlock)return;
+  fpFieldIdx=Math.max(0,fpBlock.fields.findIndex(f=>f.key===startKey));
+  fpDraftVal=getFieldDraftVal(fpBlock.fields[fpFieldIdx]);
+  fpMorphTo(fpRenderField);
+}
+function fpCloseBlock(){
+  fpSaveFieldDraft();
   fpMorphTo(fpShowScreen1);
 }
-function wtSaveDraft(){
-  if(wtDraft!==''){
-    fpDraft[wtField]=parseFloat(wtDraft.replace(',','.'));
+function fpSaveFieldDraft(){
+  if(!fpBlock)return;
+  if(fpDraftVal!==''){
+    const field=fpBlock.fields[fpFieldIdx];
+    fpDraft[field.key]=parseFloat(fpDraftVal.replace(',','.'));
     saveFpDraft();
   }
 }
-function wtRender(){
+function fpRenderField(){
   const pop=document.getElementById('fab-popup');
-  if(!pop)return;
-  const idx=WT_FIELDS.findIndex(x=>x.id===wtField);
-  const f=WT_FIELDS[idx];
-
-  const m=curMonth(),d=allData[m]||{};
-  const pv=d['prev-'+wtField]!==undefined?d['prev-'+wtField]:'';
-  const valNorm=wtDraft.replace(',','.');
-  const check=validateMeterInput(wtField,valNorm,pv);
+  if(!pop||!fpBlock)return;
+  const field=fpBlock.fields[fpFieldIdx];
+  const ref=getFieldReference(field);
+  const valNorm=fpDraftVal.replace(',','.');
+  // Квитанции не блокируем правилом "меньше предыдущего" — это не накопление.
+  const refForCheck=field.kind==='meter'?ref:undefined;
+  const check=validateMeterInput(field.key,valNorm,refForCheck);
 
   let warnHtml='';
-  if(wtDraft!==''&&!check.ok){
+  if(fpDraftVal!==''&&!check.ok){
     warnHtml='<div style="color:var(--red);font-size:12px;margin-bottom:8px;text-align:center">⚠ '+check.msg+'</div>';
-  } else if(wtDraft!==''&&check.ok){
-    const avgs=fpGetAverages();
+  } else if(fpDraftVal!==''&&check.ok){
+    const avg=fpGetFieldAverage(field);
     const cv=parseFloat(valNorm)||0;
-    const pvN=parseFloat(pv)||0;
-    const diff=Math.max(0,cv-pvN);
-    if(avgs&&avgs[wtField]>0&&diff>avgs[wtField]*ANOMALY_THRESHOLD){
-      const avgTxt=f.unit==='кВт·ч'?Math.round(avgs[wtField]):avgs[wtField].toFixed(2);
-      warnHtml='<div style="color:var(--yellow);font-size:12px;margin-bottom:8px;text-align:center">⚠ Обычно ~'+avgTxt+' '+f.unit+', сейчас заметно больше</div>';
+    const refN=parseFloat(ref)||0;
+    const diff=field.kind==='meter'?Math.max(0,cv-refN):cv;
+    if(avg&&avg>0&&diff>avg*ANOMALY_THRESHOLD){
+      const avgTxt=field.unit==='кВт·ч'?Math.round(avg):avg.toFixed(2);
+      warnHtml='<div style="color:var(--yellow);font-size:12px;margin-bottom:8px;text-align:center">⚠ Обычно ~'+avgTxt+' '+field.unit+', сейчас заметно больше</div>';
     }
   }
-  const blocked=wtDraft!==''&&!check.ok;
+  const blocked=fpDraftVal!==''&&!check.ok;
+  const refLabel=field.kind==='meter'?'Пред. показание':'Прошлый месяц';
 
   pop.innerHTML=`
     <div style="padding:14px 14px 0">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
-        <button onclick="closeWaterTerminal()" style="background:none;border:none;color:var(--accent);font-size:13px;cursor:pointer;padding:0;font-family:inherit;white-space:nowrap">← К списку</button>
-        <div style="font-size:14px;font-weight:700;color:var(--text)">💧 Вода</div>
+        <button onclick="fpCloseBlock()" style="background:none;border:none;color:var(--accent);font-size:13px;cursor:pointer;padding:0;font-family:inherit;white-space:nowrap">← К списку</button>
+        <div style="font-size:14px;font-weight:700;color:var(--text)">${fpBlock.icon} ${fpBlock.label}</div>
       </div>
-      <div style="text-align:center;margin-bottom:4px;font-size:12px;color:var(--muted)">${idx+1} из ${WT_FIELDS.length}</div>
-      <div style="text-align:center;font-size:14px;color:var(--muted);margin-bottom:2px">${f.label}</div>
-      <div style="text-align:center;font-size:24px;font-weight:800;margin-bottom:2px;min-height:30px">${wtDraft||'0'}${wtDraft?' <span style="font-size:14px;color:var(--muted)">'+f.unit+'</span>':''}</div>
+      <div style="text-align:center;margin-bottom:4px;font-size:12px;color:var(--muted)">${fpFieldIdx+1} из ${fpBlock.fields.length}</div>
+      <div style="text-align:center;font-size:14px;color:var(--muted);margin-bottom:2px">${field.label}</div>
+      ${ref!==''?'<div style="text-align:center;font-size:11px;color:var(--muted);margin-bottom:2px">'+refLabel+': '+ref+' '+field.unit+'</div>':''}
+      <div style="text-align:center;font-size:24px;font-weight:800;margin-bottom:2px;min-height:30px">${fpDraftVal||'0'}${fpDraftVal?' <span style="font-size:14px;color:var(--muted)">'+field.unit+'</span>':''}</div>
       ${warnHtml}
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:10px 0">
-        ${['1','2','3','4','5','6','7','8','9',',','0','⌫'].map(k=>`<button onclick="wtKey('${k}')" style="padding:11px 0;font-size:18px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);color:var(--text);cursor:pointer">${k}</button>`).join('')}
+        ${['1','2','3','4','5','6','7','8','9',',','0','⌫'].map(k=>`<button onclick="fpKey('${k}')" style="padding:11px 0;font-size:18px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);color:var(--text);cursor:pointer">${k}</button>`).join('')}
       </div>
       <div style="display:flex;gap:7px;margin-bottom:8px">
-        <button onclick="wtNav(-1)" ${idx===0?'disabled':''} style="flex:1;padding:9px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);color:var(--text);cursor:pointer">←</button>
-        <button onclick="wtToggleSkip()" ${(pv===undefined||pv===null||pv==='')?'disabled':''} style="flex:2;padding:9px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);color:var(--text);cursor:pointer">⏸ Без изменений</button>
-        <button onclick="wtNav(1)" ${idx===WT_FIELDS.length-1?'disabled':''} style="flex:1;padding:9px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);color:var(--text);cursor:pointer">→</button>
+        <button onclick="fpNav(-1)" ${fpFieldIdx===0?'disabled':''} style="flex:1;padding:9px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);color:var(--text);cursor:pointer">←</button>
+        <button onclick="fpToggleSkip()" ${ref===''?'disabled':''} style="flex:2;padding:9px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);color:var(--text);cursor:pointer">⏸ Без изменений</button>
+        <button onclick="fpNav(1)" ${fpFieldIdx===fpBlock.fields.length-1?'disabled':''} style="flex:1;padding:9px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);color:var(--text);cursor:pointer">→</button>
       </div>
-      <button onclick="wtDone()" ${blocked?'disabled':''} style="width:100%;padding:11px;margin-bottom:14px;border:none;border-radius:10px;background:${blocked?'var(--border)':'var(--accent)'};color:${blocked?'var(--muted)':'#fff'};font-weight:700;cursor:${blocked?'default':'pointer'}">${idx===WT_FIELDS.length-1?'✓ Готово':'Далее →'}</button>
+      <button onclick="fpDone()" ${blocked?'disabled':''} style="width:100%;padding:11px;margin-bottom:14px;border:none;border-radius:10px;background:${blocked?'var(--border)':'var(--accent)'};color:${blocked?'var(--muted)':'#fff'};font-weight:700;cursor:${blocked?'default':'pointer'}">${fpFieldIdx===fpBlock.fields.length-1?'✓ Готово':'Далее →'}</button>
     </div>
   `;
 }
-function wtKey(k){
-  if(k==='⌫'){wtDraft=wtDraft.slice(0,-1);}
-  else if(k===','){if(!wtDraft.includes(','))wtDraft+=',';}
-  else{wtDraft+=k;}
-  wtRender();
+function fpKey(k){
+  if(k==='⌫'){fpDraftVal=fpDraftVal.slice(0,-1);}
+  else if(k===','){if(!fpDraftVal.includes(','))fpDraftVal+=',';}
+  else{fpDraftVal+=k;}
+  fpRenderField();
 }
-function wtNav(dir){
-  wtSaveDraft();
-  const idx=WT_FIELDS.findIndex(x=>x.id===wtField);
-  const newIdx=idx+dir;
-  if(newIdx<0||newIdx>=WT_FIELDS.length)return;
-  wtField=WT_FIELDS[newIdx].id;
-  wtDraft=getFieldDraftVal(wtField);
-  wtRender();
+function fpNav(dir){
+  fpSaveFieldDraft();
+  const newIdx=fpFieldIdx+dir;
+  if(newIdx<0||newIdx>=fpBlock.fields.length)return;
+  fpFieldIdx=newIdx;
+  fpDraftVal=getFieldDraftVal(fpBlock.fields[fpFieldIdx]);
+  fpRenderField();
 }
-// "Без изменений" = перенести прошлое показание как текущее (нулевой расход).
-// Единственная осмысленная трактовка для счётчика — не "пропустить", а явное решение.
-function wtToggleSkip(){
-  const m=curMonth(),d=allData[m]||{};
-  const pv=d['prev-'+wtField];
-  if(pv===undefined||pv===null||pv==='')return;
-  wtDraft=String(pv).replace('.',',');
-  wtDone();
+function fpToggleSkip(){
+  const field=fpBlock.fields[fpFieldIdx];
+  const ref=getFieldReference(field);
+  if(ref===undefined||ref===null||ref==='')return;
+  fpDraftVal=String(ref).replace('.',',');
+  fpDone();
 }
-function wtDone(){
-  const m=curMonth(),d=allData[m]||{};
-  const pv=d['prev-'+wtField]!==undefined?d['prev-'+wtField]:'';
-  const check=validateMeterInput(wtField,wtDraft.replace(',','.'),pv);
-  if(wtDraft!==''&&!check.ok){wtRender();return;}
-  wtSaveDraft();
-  const idx=WT_FIELDS.findIndex(x=>x.id===wtField);
-  if(idx<WT_FIELDS.length-1){
-    wtField=WT_FIELDS[idx+1].id;
-    wtDraft=getFieldDraftVal(wtField);
-    wtRender();
+function fpDone(){
+  const field=fpBlock.fields[fpFieldIdx];
+  const ref=getFieldReference(field);
+  const refForCheck=field.kind==='meter'?ref:undefined;
+  const check=validateMeterInput(field.key,fpDraftVal.replace(',','.'),refForCheck);
+  if(fpDraftVal!==''&&!check.ok){fpRenderField();return;}
+  fpSaveFieldDraft();
+  if(fpFieldIdx<fpBlock.fields.length-1){
+    fpFieldIdx++;
+    fpDraftVal=getFieldDraftVal(fpBlock.fields[fpFieldIdx]);
+    fpRenderField();
   }else{
-    closeWaterTerminal();
-  }
-}
-
-/* Зеркало терминала "Вода" — для блока "Электричество" (Т1+Т2).
-   Пишет прямо в fpDraft, та же логика/валидация, без зависимости от DOM. */
-const ET_FIELDS=[{id:'t1',label:'Т1 (день)',unit:'кВт·ч'},{id:'t2',label:'Т2 (ночь)',unit:'кВт·ч'}];
-let etField='t1', etDraft='';
-
-function openElecTerminal(k){
-  etField=k;
-  etDraft=getFieldDraftVal(k);
-  fpMorphTo(etRender);
-}
-function closeElecTerminal(){
-  etSaveDraft();
-  fpMorphTo(fpShowScreen1);
-}
-function etSaveDraft(){
-  if(etDraft!==''){
-    fpDraft[etField]=parseFloat(etDraft.replace(',','.'));
-    saveFpDraft();
-  }
-}
-function etRender(){
-  const pop=document.getElementById('fab-popup');
-  if(!pop)return;
-  const idx=ET_FIELDS.findIndex(x=>x.id===etField);
-  const f=ET_FIELDS[idx];
-
-  const m=curMonth(),d=allData[m]||{};
-  const pv=d['prev-'+etField]!==undefined?d['prev-'+etField]:'';
-  const valNorm=etDraft.replace(',','.');
-  const check=validateMeterInput(etField,valNorm,pv);
-
-  let warnHtml='';
-  if(etDraft!==''&&!check.ok){
-    warnHtml='<div style="color:var(--red);font-size:12px;margin-bottom:8px;text-align:center">⚠ '+check.msg+'</div>';
-  } else if(etDraft!==''&&check.ok){
-    const avgs=fpGetAverages();
-    const cv=parseFloat(valNorm)||0;
-    const pvN=parseFloat(pv)||0;
-    const diff=Math.max(0,cv-pvN);
-    if(avgs&&avgs[etField]>0&&diff>avgs[etField]*ANOMALY_THRESHOLD){
-      const avgTxt=Math.round(avgs[etField]);
-      warnHtml='<div style="color:var(--yellow);font-size:12px;margin-bottom:8px;text-align:center">⚠ Обычно ~'+avgTxt+' '+f.unit+', сейчас заметно больше</div>';
-    }
-  }
-  const blocked=etDraft!==''&&!check.ok;
-
-  pop.innerHTML=`
-    <div style="padding:14px 14px 0">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
-        <button onclick="closeElecTerminal()" style="background:none;border:none;color:var(--accent);font-size:13px;cursor:pointer;padding:0;font-family:inherit;white-space:nowrap">← К списку</button>
-        <div style="font-size:14px;font-weight:700;color:var(--text)">⚡ Электричество</div>
-      </div>
-      <div style="text-align:center;margin-bottom:4px;font-size:12px;color:var(--muted)">${idx+1} из ${ET_FIELDS.length}</div>
-      <div style="text-align:center;font-size:14px;color:var(--muted);margin-bottom:2px">${f.label}</div>
-      <div style="text-align:center;font-size:24px;font-weight:800;margin-bottom:2px;min-height:30px">${etDraft||'0'}${etDraft?' <span style="font-size:14px;color:var(--muted)">'+f.unit+'</span>':''}</div>
-      ${warnHtml}
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:10px 0">
-        ${['1','2','3','4','5','6','7','8','9',',','0','⌫'].map(k=>`<button onclick="etKey('${k}')" style="padding:11px 0;font-size:18px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);color:var(--text);cursor:pointer">${k}</button>`).join('')}
-      </div>
-      <div style="display:flex;gap:7px;margin-bottom:8px">
-        <button onclick="etNav(-1)" ${idx===0?'disabled':''} style="flex:1;padding:9px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);color:var(--text);cursor:pointer">←</button>
-        <button onclick="etToggleSkip()" ${(pv===undefined||pv===null||pv==='')?'disabled':''} style="flex:2;padding:9px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);color:var(--text);cursor:pointer">⏸ Без изменений</button>
-        <button onclick="etNav(1)" ${idx===ET_FIELDS.length-1?'disabled':''} style="flex:1;padding:9px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);color:var(--text);cursor:pointer">→</button>
-      </div>
-      <button onclick="etDone()" ${blocked?'disabled':''} style="width:100%;padding:11px;margin-bottom:14px;border:none;border-radius:10px;background:${blocked?'var(--border)':'var(--accent)'};color:${blocked?'var(--muted)':'#fff'};font-weight:700;cursor:${blocked?'default':'pointer'}">${idx===ET_FIELDS.length-1?'✓ Готово':'Далее →'}</button>
-    </div>
-  `;
-}
-function etKey(k){
-  if(k==='⌫'){etDraft=etDraft.slice(0,-1);}
-  else if(k===','){if(!etDraft.includes(','))etDraft+=',';}
-  else{etDraft+=k;}
-  etRender();
-}
-function etNav(dir){
-  etSaveDraft();
-  const idx=ET_FIELDS.findIndex(x=>x.id===etField);
-  const newIdx=idx+dir;
-  if(newIdx<0||newIdx>=ET_FIELDS.length)return;
-  etField=ET_FIELDS[newIdx].id;
-  etDraft=getFieldDraftVal(etField);
-  etRender();
-}
-function etToggleSkip(){
-  const m=curMonth(),d=allData[m]||{};
-  const pv=d['prev-'+etField];
-  if(pv===undefined||pv===null||pv==='')return;
-  etDraft=String(pv).replace('.',',');
-  etDone();
-}
-function etDone(){
-  const m=curMonth(),d=allData[m]||{};
-  const pv=d['prev-'+etField]!==undefined?d['prev-'+etField]:'';
-  const check=validateMeterInput(etField,etDraft.replace(',','.'),pv);
-  if(etDraft!==''&&!check.ok){etRender();return;}
-  etSaveDraft();
-  const idx=ET_FIELDS.findIndex(x=>x.id===etField);
-  if(idx<ET_FIELDS.length-1){
-    etField=ET_FIELDS[idx+1].id;
-    etDraft=getFieldDraftVal(etField);
-    etRender();
-  }else{
-    closeElecTerminal();
+    fpCloseBlock();
   }
 }
 
@@ -5828,15 +5789,16 @@ function fpShowScreen1(){
   const pop=document.getElementById('fab-popup');
   if(!pop)return;
 
-  const waterDone=['gvs','hvs'].filter(k=>getFieldDraftVal(k)!=='').length;
-  const elecDone=['t1','t2'].filter(k=>getFieldDraftVal(k)!=='').length;
-  const anyFilled=waterDone>0||elecDone>0;
+  const anyFilled=FAB_BLOCKS.some(b=>b.fields.some(f=>getFieldDraftVal(f)!==''));
 
-  const blockRow=(icon,label,done,total,onclick)=>
-    '<div onclick="'+onclick+'" style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 6px;border-bottom:1px solid var(--border);cursor:pointer">'+
-      '<div style="display:flex;align-items:center;gap:10px;font-size:14px;min-width:0"><span style="font-size:18px;flex-shrink:0">'+icon+'</span><span>'+label+'</span></div>'+
+  const blockRow=(b)=>{
+    const done=b.fields.filter(f=>getFieldDraftVal(f)!=='').length;
+    const total=b.fields.length;
+    return '<div onclick="fpOpenBlock(\''+b.id+'\',\''+b.fields[0].key+'\')" style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 6px;border-bottom:1px solid var(--border);cursor:pointer">'+
+      '<div style="display:flex;align-items:center;gap:10px;font-size:14px;min-width:0"><span style="font-size:18px;flex-shrink:0">'+b.icon+'</span><span>'+b.label+'</span></div>'+
       '<div style="font-size:13px;font-weight:700;color:'+(done===total?'var(--green)':'var(--muted)')+';flex-shrink:0;white-space:nowrap">'+done+'/'+total+(done===total?' ✓':'')+'</div>'+
     '</div>';
+  };
 
   pop.innerHTML=
     '<div style="padding:14px 14px 0;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch">'+
@@ -5844,8 +5806,7 @@ function fpShowScreen1(){
       '<div style="font-size:14px;font-weight:700;color:var(--text)">Показания</div>'+
       '<button onclick="closeFabPopup()" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;padding:0 4px;line-height:1;font-family:inherit">×</button>'+
     '</div>'+
-    blockRow('💧','Вода',waterDone,2,"openWaterTerminal('gvs')")+
-    blockRow('⚡','Электричество',elecDone,2,"openElecTerminal('t1')")+
+    FAB_BLOCKS.map(blockRow).join('')+
     '</div>'+
     '<div style="padding:14px">'+
       '<button class="btn" style="width:100%;padding:11px;font-size:13px;border-radius:10px" onclick="fpMorphTo(fpGoConfirm)" '+(anyFilled?'':'disabled')+'>Далее →</button>'+
@@ -5881,63 +5842,60 @@ function fpGetAverages(){
 function fpGoConfirm(){
   const pop=document.getElementById('fab-popup');
   if(!pop)return;
-  // Закон 8: нельзя перейти к подтверждению, если нет ни одного
-  // введённого показания. Валидация каждого поля уже произошла в моменте
-  // ввода внутри терминала (Шаг 4) — здесь просто читаем готовый fpDraft.
-  const allZero=['gvs','hvs','t1','t2'].every(k=>{
-    const v=fpDraft[k];
-    return v===undefined||v===0;
-  });
-  if(allZero){
+  const allFields=FAB_BLOCKS.flatMap(b=>b.fields);
+  // Закон 8 (обобщённый): нельзя перейти к подтверждению, если вообще ничего
+  // не введено — но теперь это "хоть что-то из ЛЮБОГО блока", не только счётчики.
+  const filledFields=allFields.filter(f=>fpDraft[f.key]!==undefined);
+  if(filledFields.length===0){
     showFabToast('Введите хотя бы одно показание');
     haptic([40,30,40]);
     return;
   }
-  const m=curMonth(),d=allData[m]||{};
-  const keys=['gvs','hvs','t1','t2'];
-  const labels={gvs:'🔴 ГВС',hvs:'🔵 ХВС',t1:'⚡ Т1 День',t2:'⚡ Т2 Ночь'};
-  const units={gvs:' м³',hvs:' м³',t1:' кВт·ч',t2:' кВт·ч'};
 
-  // Считаем diffs и проверяем аномалии
-  const avgs=fpGetAverages();
-  const diffs={};
-  const rows=keys.map(k=>{
-    const unit=units[k];
-    const pv=d['prev-'+k]!==undefined?parseFloat(d['prev-'+k]):0;
-    const cv=fpDraft[k]!==undefined?fpDraft[k]:0;
-    const diff=Math.max(0,cv-pv);
-    diffs[k]=diff;
-    const isEE=(k==='t1'||k==='t2');
-    const isAnom=avgs&&avgs[k]>0&&diff>avgs[k]*ANOMALY_THRESHOLD;
-    return '<div style="display:grid;grid-template-columns:80px 1fr auto;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);gap:4px">'+
-      '<span style="font-size:12px;color:var(--muted)">'+labels[k]+'</span>'+
-      '<span style="font-size:12px;text-align:right">'+
-        '<span style="color:var(--muted)">'+pv+'</span>'+
-        '<span style="color:var(--label);margin:0 5px">→</span>'+
-        '<span style="font-weight:700;color:'+(isAnom?'var(--yellow)':'var(--text)')+'">'+cv+'</span>'+
-      '</span>'+
-      '<span style="font-size:11px;color:'+(isAnom?'var(--yellow)':'var(--green)')+';font-weight:600;white-space:nowrap;text-align:right;min-width:64px">'+
-        (diff>0?'+'+(isEE?Math.round(diff):diff.toLocaleString('ru-RU',{minimumFractionDigits:3,maximumFractionDigits:3}))+unit:'')+
-      '</span>'+
+  const rows=filledFields.map(f=>{
+    const ref=getFieldReference(f);
+    const cv=fpDraft[f.key];
+    const refN=parseFloat(ref)||0;
+    const diff=f.kind==='meter'?Math.max(0,cv-refN):cv;
+    const avg=fpGetFieldAverage(f);
+    const isAnom=avg&&avg>0&&diff>avg*ANOMALY_THRESHOLD;
+    const unit=' '+f.unit;
+    const fmtNum=v=>f.unit==='кВт·ч'?Math.round(v):v.toLocaleString('ru-RU',{minimumFractionDigits:0,maximumFractionDigits:3});
+    if(f.kind==='meter'){
+      return '<div style="display:grid;grid-template-columns:90px 1fr auto;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);gap:4px">'+
+        '<span style="font-size:12px;color:var(--muted)">'+f.label+'</span>'+
+        '<span style="font-size:12px;text-align:right">'+
+          '<span style="color:var(--muted)">'+(ref!==''?ref:'—')+'</span>'+
+          '<span style="color:var(--label);margin:0 5px">→</span>'+
+          '<span style="font-weight:700;color:'+(isAnom?'var(--yellow)':'var(--text)')+'">'+cv+'</span>'+
+        '</span>'+
+        '<span style="font-size:11px;color:'+(isAnom?'var(--yellow)':'var(--green)')+';font-weight:600;white-space:nowrap;text-align:right;min-width:64px">'+
+          (diff>0?'+'+fmtNum(diff)+unit:'')+
+        '</span>'+
+      '</div>';
+    }
+    return '<div style="display:grid;grid-template-columns:90px 1fr;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);gap:4px">'+
+      '<span style="font-size:12px;color:var(--muted)">'+f.label+'</span>'+
+      '<span style="font-size:13px;font-weight:700;text-align:right;color:'+(isAnom?'var(--yellow)':'var(--text)')+'">'+cv+unit+'</span>'+
     '</div>';
   }).join('');
 
-  // Строим блок предупреждений
+  const anomLines=filledFields.map(f=>{
+    const ref=getFieldReference(f);
+    const cv=fpDraft[f.key];
+    const refN=parseFloat(ref)||0;
+    const diff=f.kind==='meter'?Math.max(0,cv-refN):cv;
+    const avg=fpGetFieldAverage(f);
+    if(!(avg&&avg>0&&diff>avg*ANOMALY_THRESHOLD))return null;
+    const fmtNum=v=>f.unit==='кВт·ч'?Math.round(v):v.toFixed(2);
+    return '<div style="font-size:11px;color:var(--yellow);margin-top:3px">'+f.label+': обычно ~'+fmtNum(avg)+' '+f.unit+', сейчас '+fmtNum(diff)+' '+f.unit+'</div>';
+  }).filter(Boolean);
   let anomHtml='';
-  if(avgs){
-    const anomLines=keys.filter(k=>avgs[k]>0&&diffs[k]>avgs[k]*ANOMALY_THRESHOLD).map(k=>{
-      const isEE=(k==='t1'||k==='t2');
-      const unit=units[k];
-      const avg=isEE?Math.round(avgs[k]):avgs[k].toFixed(2);
-      const cur=isEE?Math.round(diffs[k]):diffs[k].toFixed(2);
-      return '<div style="font-size:11px;color:var(--yellow);margin-top:3px">'+labels[k]+': обычно ~'+avg+unit+', сейчас '+cur+unit+'</div>';
-    });
-    if(anomLines.length>0){
-      anomHtml='<div style="background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.3);border-radius:10px;padding:10px 12px;margin-bottom:14px">'+
-        '<div style="font-size:12px;font-weight:700;color:var(--yellow);margin-bottom:2px">⚠️ Проверьте показания</div>'+
-        anomLines.join('')+
-      '</div>';
-    }
+  if(anomLines.length>0){
+    anomHtml='<div style="background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.3);border-radius:10px;padding:10px 12px;margin-bottom:14px">'+
+      '<div style="font-size:12px;font-weight:700;color:var(--yellow);margin-bottom:2px">⚠️ Проверьте показания</div>'+
+      anomLines.join('')+
+    '</div>';
   }
 
   pop.innerHTML=
@@ -5960,22 +5918,37 @@ function fpGoConfirm(){
 
 function fpApply(){
   haptic([50,30,100]);
-  // Берём значения из fpDraft (на экране подтверждения DOM полей уже нет)
-  ['gvs','hvs','t1','t2'].forEach(k=>{
-    const val=fpDraft[k]!==undefined?fpDraft[k]:null;
-    const ce=document.getElementById('cur-'+k);
-    if(ce&&val!==null){ce.value=val;ce.classList.add('changed');}
+  // Берём значения из fpDraft (на экране подтверждения DOM полей уже нет).
+  // meter пишем в cur-{key} (главный экран), receipt — в v-{key} (тарифная таблица).
+  const allFields=FAB_BLOCKS.flatMap(b=>b.fields);
+  let meterTouched=false;
+  allFields.forEach(f=>{
+    const val=fpDraft[f.key];
+    if(val===undefined)return;
+    const domId=(f.kind==='meter'?'cur-':'v-')+f.key;
+    const ce=document.getElementById(domId);
+    if(ce){ce.value=val;ce.classList.add('changed');}
+    if(f.kind==='meter')meterTouched=true;
   });
   onInput();
   closeFabPopup();
   clearFpDraft();
-  // Фиксируем показания
+  // Подтверждаем и фиксируем только то, что заполнено в этой сессии.
+  // Счётчики (meter) — отдельная фиксация, как и раньше. Квитанции (receipt)
+  // просто сохраняются; их собственная фиксация — отдельный будущий шаг.
   setTimeout(()=>{
-    confirmAccept();
-    autoSave().then(()=>{
-      fabSaved();
-      showFabToast('Показания зафиксированы');
-    });
+    if(meterTouched){
+      confirmAccept();
+      autoSave().then(()=>{
+        fabSaved();
+        showFabToast('Показания зафиксированы');
+      });
+    } else {
+      autoSave().then(()=>{
+        fabSaved();
+        showFabToast('Сохранено');
+      });
+    }
   },300);
 }
 
