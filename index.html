@@ -3067,7 +3067,20 @@ function applySettings(){
 
 function setAccent(color,el){settings.accent=color;document.querySelectorAll('.color-swatch').forEach(d=>d.classList.remove('active'));el.classList.add('active');localStorage.setItem('ksettings',JSON.stringify(settings));applySettings();}
 function setPattern(p,elId){settings.pattern=p;['pat-none','pat-dots','pat-lines','pat-grid'].forEach(id=>{const e=document.getElementById(id);if(e)e.classList.toggle('active',id===elId);});localStorage.setItem('ksettings',JSON.stringify(settings));applySettings();}
-function toggleMeterEdit(){document.getElementById('meter-fields').style.display=document.getElementById('unlock-meters').checked?'block':'none';if(document.getElementById('unlock-meters').checked)alert('⚠ Внимание! Изменение серийных номеров и дат поверки необратимо.');}
+// Сохранение серийных номеров/дат поверки — раньше этого пути не существовало
+// вообще (kmeter читался, но никогда не записывался). См. разбор "Поверки".
+function saveMeterInfo(btn){
+  meter.sgvs=document.getElementById('set-sgvs').value||meter.sgvs;
+  meter.shvs=document.getElementById('set-shvs').value||meter.shvs;
+  meter.see=document.getElementById('set-see').value||meter.see;
+  meter.vgvs=document.getElementById('set-vgvs').value||meter.vgvs;
+  meter.vhvs=document.getElementById('set-vhvs').value||meter.vhvs;
+  meter.vee=document.getElementById('set-vee').value||meter.vee;
+  localStorage.setItem('kmeter',JSON.stringify(meter));
+  updateVerify();
+  haptic(50);
+  if(btn)showBtnToast(btn,'Сохранено');
+}
 
 function renderVersionList(){
   const list=document.getElementById('version-list');if(!list)return;
@@ -5082,7 +5095,7 @@ function openSection(name){
   } else if(name==='settings'){
     if(title)title.textContent='⚙️ Настройки';
     _buildSettingsContent(content);
-    renderVersionList();
+    applySettings();
   }
 
   overlay.classList.add('open');
@@ -5371,6 +5384,30 @@ function _buildSettingsContent(content){
       <div class="set-row"><label>Все ставки расчётов</label>
         <button class="btn btn-ghost btn-sm" onclick="openTariffsOverlay()">Открыть →</button>
       </div>
+    </div>
+
+    <!-- 🔧 Поверка счётчиков -->
+    <div class="set-section">
+      <div class="set-section-title">🔧 Поверка счётчиков</div>
+      <div class="set-row" style="flex-direction:column;align-items:stretch;gap:6px">
+        <label>ГВС — серийный номер</label>
+        <input type="text" id="set-sgvs" placeholder="Модель · номер">
+        <label style="margin-top:4px">ГВС — поверка действует до</label>
+        <input type="date" id="set-vgvs">
+      </div>
+      <div class="set-row" style="flex-direction:column;align-items:stretch;gap:6px;margin-top:10px">
+        <label>ХВС — серийный номер</label>
+        <input type="text" id="set-shvs" placeholder="Модель · номер">
+        <label style="margin-top:4px">ХВС — поверка действует до</label>
+        <input type="date" id="set-vhvs">
+      </div>
+      <div class="set-row" style="flex-direction:column;align-items:stretch;gap:6px;margin-top:10px">
+        <label>Электричество — серийный номер</label>
+        <input type="text" id="set-see" placeholder="Модель · номер">
+        <label style="margin-top:4px">Электричество — поверка действует до</label>
+        <input type="date" id="set-vee">
+      </div>
+      <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:12px" onclick="saveMeterInfo(this)">💾 Сохранить</button>
     </div>
 
     <!-- 📞 Контакты -->
