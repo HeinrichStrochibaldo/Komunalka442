@@ -1128,6 +1128,8 @@ input.meter-locked:focus { border-color: var(--border) !important; }
 }
 #tariffs-overlay-content { padding: 20px 20px 100px; }
 .tar-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.tar-row-label { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.tar-hist { font-size: 10px; color: var(--muted); margin-top: 2px; min-height: 12px; }
 .tar-row label { font-size: 13px; color: var(--text); flex: 1; }
 .tar-row input { width: 90px; font-size: 13px; padding: 6px 8px; border-radius: 7px; box-sizing: border-box; text-align: right; }
 
@@ -1617,33 +1619,33 @@ html.dev-mode #settings-btn{
   </div>
   <div id="tariffs-overlay-content">
     <div class="sec-title">💧 Вода</div>
-    <div class="tar-row"><label>ГВС (вода)</label><input type="number" id="t-gvs-voda" step="0.0001" oninput="onInput()"></div>
-    <div class="tar-row"><label>ХВС</label><input type="number" id="t-hvs" step="0.0001" oninput="onInput()"></div>
-    <div class="tar-row"><label>Водоотведение</label><input type="number" id="t-vodo" step="0.0001" oninput="onInput()"></div>
+    <div class="tar-row"><div class="tar-row-label"><label>ГВС (вода)</label><div class="tar-hist" id="tarhist-gvs-voda"></div></div><input type="number" id="t-gvs-voda" step="0.0001" oninput="onInput()"></div>
+    <div class="tar-row"><div class="tar-row-label"><label>ХВС</label><div class="tar-hist" id="tarhist-hvs"></div></div><input type="number" id="t-hvs" step="0.0001" oninput="onInput()"></div>
+    <div class="tar-row"><div class="tar-row-label"><label>Водоотведение</label><div class="tar-hist" id="tarhist-vodo"></div></div><input type="number" id="t-vodo" step="0.0001" oninput="onInput()"></div>
 
     <div class="sec-title" style="margin-top:20px">📄 МосОблЕИРЦ</div>
-    <div class="tar-row"><label>Капремонт (фикс.)</label><input type="number" id="t-kaprem" step="0.01" oninput="onInput()"></div>
-    <div class="tar-row"><label>ГВС (подогрев)</label><input type="number" id="t-gvs-pod" step="0.000001" oninput="onInput()"></div>
-    <div class="tar-row"><label>Отопление</label><input type="number" id="t-otop" step="0.0001" oninput="onInput()"></div>
+    <div class="tar-row"><div class="tar-row-label"><label>Капремонт (фикс.)</label><div class="tar-hist" id="tarhist-kaprem"></div></div><input type="number" id="t-kaprem" step="0.01" oninput="onInput()"></div>
+    <div class="tar-row"><div class="tar-row-label"><label>ГВС (подогрев)</label><div class="tar-hist" id="tarhist-gvs-pod"></div></div><input type="number" id="t-gvs-pod" step="0.000001" oninput="onInput()"></div>
+    <div class="tar-row"><div class="tar-row-label"><label>Отопление</label><div class="tar-hist" id="tarhist-otop"></div></div><input type="number" id="t-otop" step="0.0001" oninput="onInput()"></div>
 
     <div class="sec-title" style="margin-top:20px">⚡ Электричество</div>
-    <div class="tar-row"><label>Т1 (день)</label><input type="number" id="t-t1" step="0.01" oninput="onInput()"></div>
-    <div class="tar-row"><label>Т2 (ночь)</label><input type="number" id="t-t2" step="0.01" oninput="onInput()"></div>
+    <div class="tar-row"><div class="tar-row-label"><label>Т1 (день)</label><div class="tar-hist" id="tarhist-t1"></div></div><input type="number" id="t-t1" step="0.01" oninput="onInput()"></div>
+    <div class="tar-row"><div class="tar-row-label"><label>Т2 (ночь)</label><div class="tar-hist" id="tarhist-t2"></div></div><input type="number" id="t-t2" step="0.01" oninput="onInput()"></div>
 
     <div class="sec-title" style="margin-top:20px">🏢 Пик-Комфорт</div>
-    <div class="tar-row"><label>Содержание помещения (фикс.)</label><input type="number" id="t-soderzh" step="0.01" oninput="onInput()"></div>
-    <div class="tar-row"><label>Обслуж. систем безопасности (фикс.)</label><input type="number" id="t-bezop" step="0.01" oninput="onInput()"></div>
-    <div class="tar-row"><label>Обращение с ТКО (фикс.)</label><input type="number" id="t-tko" step="0.01" oninput="onInput()"></div>
-    <div class="tar-row"><label>ТВ (кабельное, фикс.)</label><input type="number" id="t-tv" step="0.01" oninput="onInput()"></div>
-    <div class="tar-row"><label>ЭЭ ОДН (день)</label><input type="number" id="t-oi-ee-d" step="0.01" oninput="onInput()"></div>
-    <div class="tar-row"><label>ЭЭ ОДН (ночь)</label><input type="number" id="t-oi-ee-n" step="0.01" oninput="onInput()"></div>
-    <div class="tar-row"><label>Водоотведение ОИ</label><input type="number" id="t-oi-vo" step="0.01" oninput="onInput()"></div>
-    <div class="tar-row"><label>ГВС-вода ОИ</label><input type="number" id="t-oi-gvs" step="0.01" oninput="onInput()"></div>
-    <div class="tar-row"><label>ГВС-подогрев ОИ</label><input type="number" id="t-oi-gvsp" step="0.01" oninput="onInput()"></div>
-    <div class="tar-row"><label>ХВС ОИ</label><input type="number" id="t-oi-hvs" step="0.01" oninput="onInput()"></div>
+    <div class="tar-row"><div class="tar-row-label"><label>Содержание помещения (фикс.)</label><div class="tar-hist" id="tarhist-soderzh"></div></div><input type="number" id="t-soderzh" step="0.01" oninput="onInput()"></div>
+    <div class="tar-row"><div class="tar-row-label"><label>Обслуж. систем безопасности (фикс.)</label><div class="tar-hist" id="tarhist-bezop"></div></div><input type="number" id="t-bezop" step="0.01" oninput="onInput()"></div>
+    <div class="tar-row"><div class="tar-row-label"><label>Обращение с ТКО (фикс.)</label><div class="tar-hist" id="tarhist-tko"></div></div><input type="number" id="t-tko" step="0.01" oninput="onInput()"></div>
+    <div class="tar-row"><div class="tar-row-label"><label>ТВ (кабельное, фикс.)</label><div class="tar-hist" id="tarhist-tv"></div></div><input type="number" id="t-tv" step="0.01" oninput="onInput()"></div>
+    <div class="tar-row"><div class="tar-row-label"><label>ЭЭ ОДН (день)</label><div class="tar-hist" id="tarhist-oi-ee-d"></div></div><input type="number" id="t-oi-ee-d" step="0.01" oninput="onInput()"></div>
+    <div class="tar-row"><div class="tar-row-label"><label>ЭЭ ОДН (ночь)</label><div class="tar-hist" id="tarhist-oi-ee-n"></div></div><input type="number" id="t-oi-ee-n" step="0.01" oninput="onInput()"></div>
+    <div class="tar-row"><div class="tar-row-label"><label>Водоотведение ОИ</label><div class="tar-hist" id="tarhist-oi-vo"></div></div><input type="number" id="t-oi-vo" step="0.01" oninput="onInput()"></div>
+    <div class="tar-row"><div class="tar-row-label"><label>ГВС-вода ОИ</label><div class="tar-hist" id="tarhist-oi-gvs"></div></div><input type="number" id="t-oi-gvs" step="0.01" oninput="onInput()"></div>
+    <div class="tar-row"><div class="tar-row-label"><label>ГВС-подогрев ОИ</label><div class="tar-hist" id="tarhist-oi-gvsp"></div></div><input type="number" id="t-oi-gvsp" step="0.01" oninput="onInput()"></div>
+    <div class="tar-row"><div class="tar-row-label"><label>ХВС ОИ</label><div class="tar-hist" id="tarhist-oi-hvs"></div></div><input type="number" id="t-oi-hvs" step="0.01" oninput="onInput()"></div>
 
     <div class="sec-title" style="margin-top:20px">🌐 Интернет</div>
-    <div class="tar-row"><label>Абонентская плата (фикс.)</label><input type="number" id="t-inet" step="0.01" oninput="onInput()"></div>
+    <div class="tar-row"><div class="tar-row-label"><label>Абонентская плата (фикс.)</label><div class="tar-hist" id="tarhist-inet"></div></div><input type="number" id="t-inet" step="0.01" oninput="onInput()"></div>
   </div>
 </div>
 <div id="meterpad-demo" style="display:none;position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:300;background:var(--surface);border:1px solid var(--border);border-radius:16px;width:min(calc(94vw - 150px),720px);box-shadow:0 8px 40px rgba(0,0,0,.5);flex-direction:column;max-height:85vh;overflow:hidden">
@@ -5094,18 +5096,73 @@ function closeSectionOverlay(){
   document.body.style.overflow='';
 }
 
+/* Ветка В.2 — история ставок. Снимок при открытии, сравнение при закрытии:
+   запись добавляется только в историю РЕАЛЬНО изменившихся ставок, не на
+   каждое нажатие клавиши. Базовая точка — май 2026 (см. seedTariffHistoryBase). */
+function getTariffHistory(){
+  try{return JSON.parse(localStorage.getItem('ktarhist')||'{}');}catch(e){return{};}
+}
+function saveTariffHistory(h){
+  try{localStorage.setItem('ktarhist',JSON.stringify(h));}catch(e){}
+}
+function seedTariffHistoryBase(){
+  const base=allData['2026-05'];
+  if(!base)return;
+  const hist=getTariffHistory();
+  let changed=false;
+  TARIFF_IDS.forEach(id=>{
+    const k=id.slice(2);
+    if(!hist[k]&&base[id]!==undefined){
+      hist[k]=[{value:base[id],date:'2026-05-01'}];
+      changed=true;
+    }
+  });
+  if(changed)saveTariffHistory(hist);
+}
+function renderTariffHistoryHints(){
+  const hist=getTariffHistory();
+  TARIFF_IDS.forEach(id=>{
+    const k=id.slice(2);
+    const el=document.getElementById('tarhist-'+k);
+    if(!el)return;
+    const h=hist[k];
+    if(!h||h.length<2){el.textContent='';return;}
+    const last=h[h.length-1],prev=h[h.length-2];
+    const ds=new Date(last.date).toLocaleDateString('ru-RU',{day:'numeric',month:'short',year:'numeric'});
+    el.textContent='посл. изм.: '+ds+' (было '+prev.value+')';
+  });
+}
+
+let tarSnapshot=null;
 function openTariffsOverlay(){
   haptic(30);
   const overlay=document.getElementById('tariffs-overlay');
   if(!overlay)return;
+  tarSnapshot={};
+  TARIFF_IDS.forEach(id=>{tarSnapshot[id.slice(2)]=gv(id);});
   overlay.classList.add('open');
   document.body.style.overflow='hidden';
+  renderTariffHistoryHints();
 }
 function closeTariffsOverlay(){
   haptic(20);
   const overlay=document.getElementById('tariffs-overlay');
   if(overlay)overlay.classList.remove('open');
   document.body.style.overflow='';
+  if(tarSnapshot){
+    const hist=getTariffHistory();
+    let changed=false;
+    TARIFF_IDS.forEach(id=>{
+      const k=id.slice(2),newVal=gv(id);
+      if(newVal!==tarSnapshot[k]){
+        if(!hist[k])hist[k]=[];
+        hist[k].push({value:newVal,date:new Date().toISOString().slice(0,10)});
+        changed=true;
+      }
+    });
+    if(changed)saveTariffHistory(hist);
+  }
+  tarSnapshot=null;
 }
 
 
@@ -6771,7 +6828,7 @@ function openArtifact(){
   switchTab('entry');
 
  // всегда стартуем с Ввода
-  fbLoad();
+  fbLoad().then(seedTariffHistoryBase);
 })();
 
 </script>
