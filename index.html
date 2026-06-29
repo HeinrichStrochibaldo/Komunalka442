@@ -1685,6 +1685,29 @@ html.dev-mode #settings-btn{
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script>
+/* ============================================================
+   СПРАВОЧНИК КЛЮЧЕЙ localStorage (свод от ревизии, см. историю проекта)
+   ============================================================
+   kv5               — основные данные приложения (allData, все месяцы)
+   ksettings         — настройки (имена, тема, акцент, паттерн, devMode)
+   ktheme            — текущая тема (light/dark), отдельно от ksettings
+   kmeter            — серийные номера и даты поверки счётчиков
+   kversions         — история версий/снимков для отката
+   kxp / kxp_log     — общий XP и журнал начислений
+   kachs             — разблокированные достижения
+   kstreak_best      — лучший стрик оплат (текущая схема)
+   kevents           — журнал событий квартиры (без UI, копится на будущее)
+   kfpdraft          — черновик ввода показаний в FAB, переживает закрытие
+   ktarhist          — история изменений тарифных ставок (от мая 2026)
+   ktariff_dismissed — отметка "не напоминать про этот тариф" (checkTariffSuggestion)
+   kfirst_run        — флаг первого запуска (онбординг)
+   k_cleaned_v2      — флаг "разовая миграция уже прогнана"; удаляется при полном сбросе
+   doomData          — состояние пасхалки DOOMUNALKA (разблокировка, статистика)
+
+   Только удаляются (одноразовая очистка осиротевших ключей старых версий,
+   сами больше никогда не пишутся/не читаются — это ожидаемо, не баг):
+   kdyn_seen, khist_seen, kstreak, kstreakDate
+   ============================================================ */
 /* ═══ ДИАГНОСТИКА ═══ */
 var _log = [];
 function _dbg(msg) {
@@ -1757,6 +1780,20 @@ const ACHS=[
   {id:'toasty_catch',icon:'👆',name:'Поймал!',desc:'Поймал Toasty тапом',xp:40},
   {id:'birthday',icon:'🎂',name:'С днём рождения!',desc:'Открыл трекер в свой день рождения',xp:100},
   {id:'newyear',icon:'🎉',name:'С новым годом!',desc:'Открыл трекер 1 января',xp:50},
+  // Новые — привязаны к MeterPad/Тарифам/Поверкам
+  {id:'perfect_month',icon:'✨',name:'Идеальный месяц',desc:'Все 4 блока заполнены за один заход в FAB',xp:60},
+  {id:'pik_six',icon:'🏢',name:'Шесть из шести',desc:'Заполнил весь Пик-Комфорт с первого раза',xp:40},
+  {id:'calm_skip',icon:'⏸',name:'Спокойствие',desc:'Воспользовался «Без изменений»',xp:15},
+  {id:'cycle_done',icon:'🔄',name:'Цикл завершён',desc:'Все показания месяца заполнены',xp:50},
+  {id:'accountant',icon:'📊',name:'Бухгалтер',desc:'Заглянул в «Тарифы»',xp:15},
+  {id:'tariff_update',icon:'✏️',name:'Актуализация',desc:'Изменил тарифную ставку',xp:30},
+  {id:'chronicler',icon:'📜',name:'Хронист',desc:'У тарифа накопилось 5+ записей истории',xp:50},
+  {id:'thorough',icon:'🔍',name:'Дотошный',desc:'Развернул полную историю тарифа',xp:15},
+  {id:'metrolog',icon:'🔧',name:'Метролог',desc:'Сохранил данные поверки счётчика',xp:25},
+  {id:'just_in_time',icon:'⏰',name:'Успел',desc:'Обновил поверку до того, как она просрочилась',xp:40},
+  {id:'rehab',icon:'🩹',name:'Реабилитация',desc:'Устранил просроченную поверку',xp:50},
+  {id:'house_master',icon:'🏠',name:'Хозяин дома',desc:'За один визит — показания, тарифы и поверки',xp:75},
+  {id:'full_set',icon:'🎯',name:'Полный комплект',desc:'Месяц заполнен, оплачен и без аномалий',xp:100},
 ];
 
 /* ============================================================ STATE ============================================================ */
@@ -1765,6 +1802,11 @@ let settings={nameV:'Вадимовна',nameMe:'Я',area:27,title:'Коммун
 let meter={sgvs:'ПУЛЬСАР · 19-3097262',shvs:'ПУЛЬСАР · 19-3097272',see:'Меркурий-200.02 · 41804817',vgvs:'2026-07-13',vhvs:'2027-03-13',vee:'2036-01-01'};
 let versions=[], autoTimer=null;
 let konamiSeq=[];
+// Для ачивки "Хозяин дома" — три области тронуты за один визит (сбрасывается при перезагрузке)
+let sessionTouched={fab:false,tariffs:false,meter:false};
+function checkHouseMaster(){
+  if(sessionTouched.fab&&sessionTouched.tariffs&&sessionTouched.meter)unlockAch('house_master');
+}
 /* ============================================================
    DOOMUNALKA — Закон 1: полная изоляция данных.
    Этот контейнер никогда не пересекается с allData/settings/XP коммуналки.
@@ -2005,7 +2047,7 @@ function render(){
   ['kaprem','gvs-voda','gvs-pod','otop','hvs','vodo','soderzh','bezop','tko','tv','oi-ee-d','oi-ee-n','oi-vo','oi-gvs','oi-gvsp','oi-hvs','t1','t2','inet'].forEach(id=>{const e=document.getElementById('tdisp-'+id);if(e){const v=gv('t-'+id);const vs=v>0?v.toLocaleString('ru-RU',{maximumFractionDigits:6}):'—';e.textContent=vs;e.setAttribute('data-tip',(v>0?'Ставка: '+vs:'Ставка не задана')+'\nИзменить — в Настройках → Тарифы');}});
   setT('tot-mosob',c.mosob>0?fmt(c.mosob):'—');setT('tot-pik',c.pik>0?fmt(c.pik):'—');setT('tot-mosen',c.ee>0?fmt(c.ee):'—');setT('tot-inet',c.inet>0?fmt(c.inet):'—');
   setT('ft-grand',c.grand>0?fmt(c.grand):'—');setT('ft-v',c.vadim>0?fmt(c.vadim):'—');setT('ft-me',c.me>0?fmt(c.me):'—');
-  highlightTariffs();checkAnomaly(c);updatePaidUI(c);
+  highlightTariffs();updatePaidUI(c);
   // Постобработка (ранее были патчи — теперь всё здесь)
   updateProgressBar();
   updateOnboarding();
@@ -2491,17 +2533,6 @@ function highlightTariffs(){
   if(!prev||!allData[prev]){TARIFF_IDS.forEach(id=>{const e=document.getElementById(id);if(e)e.classList.remove('changed');});return;}
   const pd=allData[prev];
   TARIFF_IDS.forEach(id=>{const e=document.getElementById(id);if(!e)return;const c=parseFloat(e.value)||0,p=pd[id]||0;e.classList.toggle('changed',c>0&&p>0&&Math.abs(c-p)>0.001);});
-}
-
-function checkAnomaly(c){
-  const months=MK.filter(m=>allData[m]).slice(-4);
-  if(months.length<3)return;
-  const avgs={gvs:0,hvs:0,t1:0,t2:0};
-  months.slice(0,-1).forEach(m=>{const d=allData[m];Object.keys(avgs).forEach(k=>avgs[k]+=Math.max(0,(d['cur-'+k]||0)-(d['prev-'+k]||0)));});
-  Object.keys(avgs).forEach(k=>avgs[k]/=(months.length-1));
-  const cur={gvs:c.vg,hvs:c.vh,t1:vol('t1'),t2:vol('t2')},names={gvs:'ГВС',hvs:'ХВС',t1:'ЭЭ Т1',t2:'ЭЭ Т2'};
-  const anom=[];Object.keys(avgs).forEach(k=>{if(avgs[k]>0&&cur[k]>avgs[k]*ANOMALY_THRESHOLD)anom.push(names[k]);});
-  // Could show a banner here if needed
 }
 
 /* ============================================================ VERIFY ============================================================ */
@@ -3040,6 +3071,27 @@ function checkAchs(){
   if(months.length>=12)unlockAch('allmonths');
   let streak=0;for(let i=curIdx;i>=0;i--){if(allData[MK[i]]&&allData[MK[i]]._paid)streak++;else break;}
   if(streak>=3)unlockAch('streak3');if(streak>=6)unlockAch('streak6');
+
+  // Цикл завершён / Полный комплект — про ТЕКУЩИЙ месяц, на основе уже сохранённых данных
+  const cm=allData[curMonth()];
+  if(cm){
+    const receiptKeys=['otop','gvs-pod','oi-ee-d','oi-ee-n','oi-vo','oi-gvs','oi-gvsp','oi-hvs'];
+    const meterKeys=['gvs','hvs','t1','t2'];
+    const allFilled=meterKeys.every(k=>cm['cur-'+k]!==undefined&&cm['cur-'+k]!=='')&&
+      receiptKeys.every(k=>cm['v-'+k]!==undefined&&cm['v-'+k]!=='');
+    if(allFilled){
+      unlockAch('cycle_done');
+      if(cm._paid){
+        const noAnomalies=FAB_BLOCKS[0].fields.concat(FAB_BLOCKS[1].fields).every(f=>{
+          const avg=fpGetFieldAverage(f);
+          if(!avg)return true;
+          const pv=parseFloat(cm['prev-'+f.key])||0,cv=parseFloat(cm['cur-'+f.key])||0;
+          return Math.max(0,cv-pv)<=avg*ANOMALY_THRESHOLD;
+        });
+        if(noAnomalies)unlockAch('full_set');
+      }
+    }
+  }
 }
 
 /* ============================================================ SETTINGS ============================================================ */
@@ -3070,12 +3122,23 @@ function setPattern(p,elId){settings.pattern=p;['pat-none','pat-dots','pat-lines
 // Сохранение серийных номеров/дат поверки — раньше этого пути не существовало
 // вообще (kmeter читался, но никогда не записывался). См. разбор "Поверки".
 function saveMeterInfo(btn){
+  const verifyStatus=d=>{const days=Math.ceil((new Date(d)-new Date())/MS_PER_DAY);return days<=0?'danger':(days<=90?'warn':'ok');};
+  const oldStatus={gvs:verifyStatus(meter.vgvs),hvs:verifyStatus(meter.vhvs),ee:verifyStatus(meter.vee)};
   meter.sgvs=document.getElementById('set-sgvs').value||meter.sgvs;
   meter.shvs=document.getElementById('set-shvs').value||meter.shvs;
   meter.see=document.getElementById('set-see').value||meter.see;
   meter.vgvs=document.getElementById('set-vgvs').value||meter.vgvs;
   meter.vhvs=document.getElementById('set-vhvs').value||meter.vhvs;
   meter.vee=document.getElementById('set-vee').value||meter.vee;
+  const newStatus={gvs:verifyStatus(meter.vgvs),hvs:verifyStatus(meter.vhvs),ee:verifyStatus(meter.vee)};
+  unlockAch('metrolog');
+  sessionTouched.meter=true;checkHouseMaster();
+  ['gvs','hvs','ee'].forEach(k=>{
+    if(newStatus[k]==='ok'&&oldStatus[k]!=='ok'){
+      unlockAch('just_in_time');
+      if(oldStatus[k]==='danger')unlockAch('rehab');
+    }
+  });
   localStorage.setItem('kmeter',JSON.stringify(meter));
   updateVerify();
   haptic(50);
@@ -5132,6 +5195,7 @@ function seedTariffHistoryBase(){
   });
   if(changed)saveTariffHistory(hist);
 }
+let tarExpanded=null;
 function renderTariffHistoryHints(){
   const hist=getTariffHistory();
   TARIFF_IDS.forEach(id=>{
@@ -5139,11 +5203,27 @@ function renderTariffHistoryHints(){
     const el=document.getElementById('tarhist-'+k);
     if(!el)return;
     const h=hist[k];
-    if(!h||h.length<2){el.textContent='';return;}
-    const last=h[h.length-1],prev=h[h.length-2];
-    const ds=new Date(last.date).toLocaleDateString('ru-RU',{day:'numeric',month:'short',year:'numeric'});
-    el.textContent='посл. изм.: '+ds+' (было '+prev.value+')';
+    if(!h||h.length<2){el.textContent='';el.onclick=null;el.style.cursor='';return;}
+    el.style.cursor='pointer';
+    el.onclick=()=>toggleTariffHistory(k);
+    if(tarExpanded===k){
+      const lines=h.slice().reverse().map(e=>{
+        const ds=new Date(e.date).toLocaleDateString('ru-RU',{day:'numeric',month:'short',year:'numeric'});
+        return '<div>'+ds+': '+e.value+'</div>';
+      });
+      el.innerHTML=lines.join('')+'<div style="color:var(--accent)">свернуть ▲</div>';
+    } else {
+      const last=h[h.length-1],prev=h[h.length-2];
+      const ds=new Date(last.date).toLocaleDateString('ru-RU',{day:'numeric',month:'short',year:'numeric'});
+      el.textContent='посл. изм.: '+ds+' (было '+prev.value+') · история ▾';
+    }
   });
+}
+function toggleTariffHistory(k){
+  const wasCollapsed=tarExpanded!==k;
+  tarExpanded=(tarExpanded===k)?null:k;
+  if(wasCollapsed)unlockAch('thorough');
+  renderTariffHistoryHints();
 }
 
 let tarSnapshot=null;
@@ -5151,6 +5231,7 @@ function openTariffsOverlay(){
   haptic(30);
   const overlay=document.getElementById('tariffs-overlay');
   if(!overlay)return;
+  unlockAch('accountant');
   tarSnapshot={};
   TARIFF_IDS.forEach(id=>{tarSnapshot[id.slice(2)]=gv(id);});
   overlay.classList.add('open');
@@ -5173,7 +5254,12 @@ function closeTariffsOverlay(){
         changed=true;
       }
     });
-    if(changed)saveTariffHistory(hist);
+    if(changed){
+      saveTariffHistory(hist);
+      unlockAch('tariff_update');
+      sessionTouched.tariffs=true;checkHouseMaster();
+      if(Object.values(hist).some(h=>h.length>=5))unlockAch('chronicler');
+    }
   }
   tarSnapshot=null;
 }
@@ -5954,6 +6040,7 @@ function fpToggleSkip(){
   const field=fpBlock.fields[fpFieldIdx];
   const ref=getFieldReference(field);
   if(ref===undefined||ref===null||ref==='')return;
+  unlockAch('calm_skip');
   fpDraftVal=String(ref).replace('.',',');
   fpDone();
 }
@@ -5969,6 +6056,7 @@ function fpDone(){
     fpDraftVal=getFieldDraftVal(fpBlock.fields[fpFieldIdx]);
     fpRenderField();
   }else{
+    if(fpBlock.id==='pik'&&fpBlock.fields.every(f=>fpDraft[f.key]!==undefined))unlockAch('pik_six');
     fpCloseBlock();
   }
 }
@@ -6094,6 +6182,8 @@ function fpApply(){
   // Берём значения из fpDraft (на экране подтверждения DOM полей уже нет).
   // meter пишем в cur-{key} (главный экран), receipt — в v-{key} (тарифная таблица).
   const allFields=FAB_BLOCKS.flatMap(b=>b.fields);
+  if(allFields.every(f=>fpDraft[f.key]!==undefined))unlockAch('perfect_month');
+  sessionTouched.fab=true;checkHouseMaster();
   let meterTouched=false;
   allFields.forEach(f=>{
     const val=fpDraft[f.key];
@@ -6661,7 +6751,7 @@ function renderDev(){
     'curMonth','prevMK','handlePaid','confirmPaid','handleUnpaid','updatePaidBtn',
     'updatePaidUI','toggleDetail','toggleFloatBar','renderPayHistory','openMonthPicker',
     'closePicker','prevMonth','nextMonth','jumpTo','loadMonth','onInput','autoSave',
-    'autoArchive','confirmClear','highlightTariffs','checkAnomaly','updateVerify',
+    'autoArchive','confirmClear','highlightTariffs','updateVerify',
     'addToCalendar','updateStreak','openOverlay','closeOverlay','goBack','exportJSON',
     'triggerImport','importJSON','showQR','renderHistory','renderDynamics','toggleDynMonth',
     'renderYear','getAchs','unlockAch','showAchToast','renderAchievements','checkAchs',
