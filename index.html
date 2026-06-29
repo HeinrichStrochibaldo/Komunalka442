@@ -6012,21 +6012,6 @@ function validateMeterInput(k, value, prevValue){
   return{ok:true,msg:''};
 }
 
-function fpGetAverages(){
-  // Считаем среднее потребление за последние 3 месяца (исключая текущий)
-  const prevMonths=MK.filter(m=>allData[m]&&m!==curMonth()).slice(-3);
-  if(prevMonths.length<2)return null; // недостаточно истории
-  const avgs={gvs:0,hvs:0,t1:0,t2:0};
-  prevMonths.forEach(m=>{
-    const d=allData[m];
-    Object.keys(avgs).forEach(k=>{
-      avgs[k]+=Math.max(0,(parseFloat(d['cur-'+k])||0)-(parseFloat(d['prev-'+k])||0));
-    });
-  });
-  Object.keys(avgs).forEach(k=>avgs[k]/=prevMonths.length);
-  return avgs;
-}
-
 function fpGoConfirm(){
   const pop=document.getElementById('fab-popup');
   if(!pop)return;
