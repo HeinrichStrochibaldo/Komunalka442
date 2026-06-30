@@ -1446,8 +1446,8 @@ html.dev-mode #settings-btn{
           <tbody>
             <tr><td class="td-name" data-tip="Капитальный ремонт&#10;Фиксированная сумма">Капремонт</td><td class="td-tariff-ro" id="tdisp-kaprem">—</td><td class="td-dash">фикс.</td><td class="td-sum" id="s-kaprem" data-tip="= тариф (фикс.)">—</td><td><span class="badge badge-i" data-tip="Платишь ты">Я</span></td></tr>
             <tr><td class="td-name" data-tip="Горячее водоснабжение (вода)&#10;Тариф × объём ГВС">ГВС (вода)</td><td class="td-tariff-ro" id="tdisp-gvs-voda">—</td><td class="td-auto" id="d-gvs-voda">—</td><td class="td-sum" id="s-gvs-voda" data-tip="= тариф × объём ГВС">—</td><td><span class="badge badge-v" data-tip="Платит Вадимовна">В</span></td></tr>
-            <tr><td class="td-name" data-tip="Горячее водоснабжение (подогрев)&#10;Тариф × объём в Гкал">ГВС (подогрев)</td><td class="td-tariff-ro" id="tdisp-gvs-pod">—</td><td><input type="number" id="v-gvs-pod" step="0.000001" readonly onclick="cmFieldTap()"></td><td class="td-sum" id="s-gvs-pod" data-tip="= тариф × объём Гкал">—</td><td><span class="badge badge-v" data-tip="Платит Вадимовна">В</span></td></tr>
-            <tr><td class="td-name" data-tip="Отопление&#10;Тариф × объём в Гкал">Отопление</td><td class="td-tariff-ro" id="tdisp-otop">—</td><td><input type="number" id="v-otop" step="0.01" readonly onclick="cmFieldTap()"></td><td class="td-sum" id="s-otop" data-tip="= тариф × объём Гкал">—</td><td><span class="badge badge-v" data-tip="Платит Вадимовна">В</span></td></tr>
+            <tr><td class="td-name" data-tip="Горячее водоснабжение (подогрев)&#10;Тариф × объём в Гкал">ГВС (подогрев)</td><td class="td-tariff-ro" id="tdisp-gvs-pod">—</td><td><input type="number" id="v-gvs-pod" step="0.000001" readonly onpointerdown="receiptFieldDown()" onpointerup="receiptFieldUp()" onpointerleave="receiptFieldLeave()"></td><td class="td-sum" id="s-gvs-pod" data-tip="= тариф × объём Гкал">—</td><td><span class="badge badge-v" data-tip="Платит Вадимовна">В</span></td></tr>
+            <tr><td class="td-name" data-tip="Отопление&#10;Тариф × объём в Гкал">Отопление</td><td class="td-tariff-ro" id="tdisp-otop">—</td><td><input type="number" id="v-otop" step="0.01" readonly onpointerdown="receiptFieldDown()" onpointerup="receiptFieldUp()" onpointerleave="receiptFieldLeave()"></td><td class="td-sum" id="s-otop" data-tip="= тариф × объём Гкал">—</td><td><span class="badge badge-v" data-tip="Платит Вадимовна">В</span></td></tr>
             <tr><td class="td-name" data-tip="Холодное водоснабжение&#10;Тариф × объём ХВС">ХВС</td><td class="td-tariff-ro" id="tdisp-hvs">—</td><td class="td-auto" id="d-hvs">—</td><td class="td-sum" id="s-hvs" data-tip="= тариф × объём ХВС">—</td><td><span class="badge badge-v" data-tip="Платит Вадимовна">В</span></td></tr>
             <tr><td class="td-name" data-tip="Водоотведение (канализация)&#10;Тариф × (ГВС + ХВС)">Водоотведение</td><td class="td-tariff-ro" id="tdisp-vodo">—</td><td class="td-auto" id="d-vodo">—</td><td class="td-sum" id="s-vodo" data-tip="= тариф × (ГВС + ХВС)">—</td><td><span class="badge badge-v" data-tip="Платит Вадимовна">В</span></td></tr>
           </tbody>
@@ -1467,12 +1467,12 @@ html.dev-mode #settings-btn{
             <tr><td class="td-name" data-tip="Обслуживание систем безопасности&#10;Фикс.">Обслуж. систем безопасности</td><td class="td-tariff-ro" id="tdisp-bezop">—</td><td class="td-dash">фикс.</td><td class="td-sum" id="s-bezop">—</td><td><span class="badge badge-i" data-tip="Платишь ты">Я</span></td></tr>
             <tr><td class="td-name" data-tip="Твёрдые коммунальные отходы&#10;Фикс.">Обращение с ТКО</td><td class="td-tariff-ro" id="tdisp-tko">—</td><td class="td-dash">фикс.</td><td class="td-sum" id="s-tko">—</td><td><span class="badge badge-i" data-tip="Платишь ты">Я</span></td></tr>
             <tr><td class="td-name" data-tip="Кабельное вещание&#10;Фикс.">ТВ (кабельное)</td><td class="td-tariff-ro" id="tdisp-tv">—</td><td class="td-dash">фикс.</td><td class="td-sum" id="s-tv">—</td><td><span class="badge badge-i" data-tip="Платишь ты">Я</span></td></tr>
-            <tr><td class="td-dim" data-tip="Общедомовая ЭЭ День · Т1 × объём">ЭЭ на сод. общ. имущ. (день)</td><td class="td-tariff-ro" id="tdisp-oi-ee-d">—</td><td><input type="number" id="v-oi-ee-d" step="0.0001" readonly onclick="cmFieldTap()"></td><td class="td-sum" id="s-oi-ee-d">—</td><td><span class="badge badge-i" data-tip="Платишь ты">Я</span></td></tr>
-            <tr><td class="td-dim" data-tip="Общедомовая ЭЭ Ночь · Т2 × объём">ЭЭ на сод. общ. имущ. (ночь)</td><td class="td-tariff-ro" id="tdisp-oi-ee-n">—</td><td><input type="number" id="v-oi-ee-n" step="0.0001" readonly onclick="cmFieldTap()"></td><td class="td-sum" id="s-oi-ee-n">—</td><td><span class="badge badge-i" data-tip="Платишь ты">Я</span></td></tr>
-            <tr><td class="td-dim" data-tip="Водоотведение на содержание ОИ">ВО на сод. общ. имущ.</td><td class="td-tariff-ro" id="tdisp-oi-vo">—</td><td><input type="number" id="v-oi-vo" step="0.001" readonly onclick="cmFieldTap()"></td><td class="td-sum" id="s-oi-vo">—</td><td><span class="badge badge-i" data-tip="Платишь ты">Я</span></td></tr>
-            <tr><td class="td-dim" data-tip="ГВС вода на содержание ОИ">ГВС (вода) на сод. общ. имущ.</td><td class="td-tariff-ro" id="tdisp-oi-gvs">—</td><td><input type="number" id="v-oi-gvs" step="0.001" readonly onclick="cmFieldTap()"></td><td class="td-sum" id="s-oi-gvs">—</td><td><span class="badge badge-i" data-tip="Платишь ты">Я</span></td></tr>
-            <tr><td class="td-dim" data-tip="ГВС подогрев на содержание ОИ">ГВС (подогрев) на сод. общ. имущ.</td><td class="td-tariff-ro" id="tdisp-oi-gvsp">—</td><td><input type="number" id="v-oi-gvsp" step="0.001" readonly onclick="cmFieldTap()"></td><td class="td-sum" id="s-oi-gvsp">—</td><td><span class="badge badge-i" data-tip="Платишь ты">Я</span></td></tr>
-            <tr><td class="td-dim" data-tip="ХВС на содержание ОИ">ХВС на сод. общ. имущ.</td><td class="td-tariff-ro" id="tdisp-oi-hvs">—</td><td><input type="number" id="v-oi-hvs" step="0.001" readonly onclick="cmFieldTap()"></td><td class="td-sum" id="s-oi-hvs">—</td><td><span class="badge badge-i" data-tip="Платишь ты">Я</span></td></tr>
+            <tr><td class="td-dim" data-tip="Общедомовая ЭЭ День · Т1 × объём">ЭЭ на сод. общ. имущ. (день)</td><td class="td-tariff-ro" id="tdisp-oi-ee-d">—</td><td><input type="number" id="v-oi-ee-d" step="0.0001" readonly onpointerdown="receiptFieldDown()" onpointerup="receiptFieldUp()" onpointerleave="receiptFieldLeave()"></td><td class="td-sum" id="s-oi-ee-d">—</td><td><span class="badge badge-i" data-tip="Платишь ты">Я</span></td></tr>
+            <tr><td class="td-dim" data-tip="Общедомовая ЭЭ Ночь · Т2 × объём">ЭЭ на сод. общ. имущ. (ночь)</td><td class="td-tariff-ro" id="tdisp-oi-ee-n">—</td><td><input type="number" id="v-oi-ee-n" step="0.0001" readonly onpointerdown="receiptFieldDown()" onpointerup="receiptFieldUp()" onpointerleave="receiptFieldLeave()"></td><td class="td-sum" id="s-oi-ee-n">—</td><td><span class="badge badge-i" data-tip="Платишь ты">Я</span></td></tr>
+            <tr><td class="td-dim" data-tip="Водоотведение на содержание ОИ">ВО на сод. общ. имущ.</td><td class="td-tariff-ro" id="tdisp-oi-vo">—</td><td><input type="number" id="v-oi-vo" step="0.001" readonly onpointerdown="receiptFieldDown()" onpointerup="receiptFieldUp()" onpointerleave="receiptFieldLeave()"></td><td class="td-sum" id="s-oi-vo">—</td><td><span class="badge badge-i" data-tip="Платишь ты">Я</span></td></tr>
+            <tr><td class="td-dim" data-tip="ГВС вода на содержание ОИ">ГВС (вода) на сод. общ. имущ.</td><td class="td-tariff-ro" id="tdisp-oi-gvs">—</td><td><input type="number" id="v-oi-gvs" step="0.001" readonly onpointerdown="receiptFieldDown()" onpointerup="receiptFieldUp()" onpointerleave="receiptFieldLeave()"></td><td class="td-sum" id="s-oi-gvs">—</td><td><span class="badge badge-i" data-tip="Платишь ты">Я</span></td></tr>
+            <tr><td class="td-dim" data-tip="ГВС подогрев на содержание ОИ">ГВС (подогрев) на сод. общ. имущ.</td><td class="td-tariff-ro" id="tdisp-oi-gvsp">—</td><td><input type="number" id="v-oi-gvsp" step="0.001" readonly onpointerdown="receiptFieldDown()" onpointerup="receiptFieldUp()" onpointerleave="receiptFieldLeave()"></td><td class="td-sum" id="s-oi-gvsp">—</td><td><span class="badge badge-i" data-tip="Платишь ты">Я</span></td></tr>
+            <tr><td class="td-dim" data-tip="ХВС на содержание ОИ">ХВС на сод. общ. имущ.</td><td class="td-tariff-ro" id="tdisp-oi-hvs">—</td><td><input type="number" id="v-oi-hvs" step="0.001" readonly onpointerdown="receiptFieldDown()" onpointerup="receiptFieldUp()" onpointerleave="receiptFieldLeave()"></td><td class="td-sum" id="s-oi-hvs">—</td><td><span class="badge badge-i" data-tip="Платишь ты">Я</span></td></tr>
           </tbody>
         </table>
       </div>
@@ -2188,12 +2188,16 @@ function confirmPaid(){
   cleanFutureMonths(m);
   closeOverlay('datepick-overlay');
   fbSave();updatePaidBtn();updatePaidUI(compute());
-  launchConfetti();unlockAch('paid1');
+  launchConfetti();
   playCoin();
+  // Toasty (если первая оплата за сессию) должен успеть заблокировать
+  // очередь ачивок ДО того, как unlockAch/checkAchs начнут её наполнять —
+  // иначе порядок монетка→Toasty→ачивки не соблюдается.
+  if(!sessionPaidShown){sessionPaidShown=true;showToasty();}
+  unlockAch('paid1');
   addXP(XP_PAID,'оплачено');
   let streak=0;for(let i=curIdx;i>=0;i--){if(allData[MK[i]]&&allData[MK[i]]._paid)streak++;else break;}
   if(streak>=2)addXP(XP_STREAK,'стрик '+streak);
-  if(!sessionPaidShown){sessionPaidShown=true;showToasty();}
   updateStreak();checkAchs();renderPayHistory();
 }
 
@@ -2403,6 +2407,15 @@ function loadMonth(){
       else{el.classList.remove('meter-locked');}
     }
   });
+  const isReceiptsAccepted=!!(allData[m]&&allData[m]._receiptsAccepted);
+  receiptsAccepted=isReceiptsAccepted;
+  RECEIPT_KEYS.forEach(k=>{
+    const el=document.getElementById('v-'+k);
+    if(el){
+      if(isReceiptsAccepted){el.classList.add('meter-locked');}
+      else{el.classList.remove('meter-locked');}
+    }
+  });
   updateMonthBarState();render();
 }
 
@@ -2450,6 +2463,27 @@ function cmFieldTap(){
   }else{
     pulseFab(false);
   }
+}
+
+// Тап/удержание на receipt-полях (квитанции). Не заблокированы — толкаем FAB,
+// как у счётчиков. Заблокированы — тап разблокирует все 8 разом, удержание
+// (HOLD_DELAY_REDO) — то же предупреждение и полный сброс, зеркально точно.
+let _receiptHoldTimer=null,_receiptHoldFired=false;
+function receiptFieldDown(){
+  if(!receiptsAccepted)return;
+  _receiptHoldFired=false;
+  _receiptHoldTimer=setTimeout(()=>{_receiptHoldFired=true;haptic([30,20,80]);receiptsRedoConfirm();},HOLD_DELAY_REDO);
+}
+function receiptFieldUp(){
+  if(_receiptHoldTimer){clearTimeout(_receiptHoldTimer);_receiptHoldTimer=null;}
+  if(!receiptsAccepted){
+    cmFieldTap();
+    return;
+  }
+  if(!_receiptHoldFired){haptic([20,10,20]);receiptsRedoUnlock();}
+}
+function receiptFieldLeave(){
+  if(_receiptHoldTimer){clearTimeout(_receiptHoldTimer);_receiptHoldTimer=null;}
 }
 
 async function autoSave(){
@@ -2924,6 +2958,43 @@ function getAchsData(){
   return raw.map(x=>typeof x==='string'?{id:x,date:null}:{id:x.id,date:x.date||null});
 }
 let achTimer=null;
+/* ============================================================
+   Очередь тостов достижений. Раньше несколько ачивок подряд
+   перезатирали один и тот же таймер показа — видна была только
+   последняя, а звук "дзынь" успевал сыграть на каждую отдельно,
+   накладываясь друг на друга и на звук оплаты/Toasty. Теперь:
+   - показываются по одной, дождавшись закрытия предыдущей;
+   - ачивки из ОДНОГО синхронного действия (общий microtask-тик)
+     считаются одной "пачкой" — звук играет только на первую из них;
+   - очередь не стартует, пока показывается Toasty (showToasty
+     ставит achQueueBlocked, _hideToasty его снимает) — порядок
+     при оплате: монетка → Toasty → очередь достижений.
+   ============================================================ */
+let achQueue=[];
+let achQueueShowing=false;
+let achQueueBlocked=false;
+let achBatchId=0;
+let achBatchScheduled=false;
+let achLastSoundBatch=-1;
+
+function enqueueAchToast(a){
+  if(!achBatchScheduled){
+    achBatchScheduled=true;
+    achBatchId++;
+    Promise.resolve().then(()=>{achBatchScheduled=false;});
+  }
+  achQueue.push({a,batch:achBatchId});
+  processAchQueue();
+}
+function processAchQueue(){
+  if(achQueueShowing||achQueueBlocked||achQueue.length===0)return;
+  const {a,batch}=achQueue.shift();
+  achQueueShowing=true;
+  const playSoundFlag=(batch!==achLastSoundBatch);
+  achLastSoundBatch=batch;
+  showAchToast(a,playSoundFlag);
+}
+
 function unlockAch(id){
   const ids=getAchs();if(ids.includes(id))return;
   const data=getAchsData();
@@ -2934,7 +3005,7 @@ function unlockAch(id){
   allData._achs=data;fbSave();
   const a=ACHS.find(x=>x.id===id);
   if(a){
-    showAchToast(a);
+    enqueueAchToast(a);
     if(a.xp>0)addXP(a.xp,'достижение: '+a.name);
     logEvent('achievement','Получено достижение: '+a.name);
   }
@@ -2953,10 +3024,15 @@ function _closeAchToast(){
   if(extra)extra.classList.remove('visible');
   toast.classList.remove('expand');
   toast.classList.add('collapse');
-  setTimeout(()=>toast.classList.remove('collapse'),700);
+  setTimeout(()=>{
+    toast.classList.remove('collapse');
+    achQueueShowing=false;
+    processAchQueue();
+  },700);
 }
 
-function showAchToast(a){
+function showAchToast(a,playSoundFlag){
+  if(playSoundFlag===undefined)playSoundFlag=true;
   const toast=document.getElementById('ach-toast');
   const icon=document.getElementById('ach-toast-icon');
   const name=document.getElementById('ach-toast-name');
@@ -2981,7 +3057,7 @@ function showAchToast(a){
     requestAnimationFrame(()=>requestAnimationFrame(()=>{
       toast.classList.add('expand');
     }));
-    if(settings.sounds)playSound('ach');
+    if(settings.sounds&&playSoundFlag)playSound('ach');
     achTimer=setTimeout(()=>_closeAchToast(),4000);
   },80);
   // Жесты: тап → достижения, свайп вверх → закрыть
@@ -3075,10 +3151,9 @@ function checkAchs(){
   // Цикл завершён / Полный комплект — про ТЕКУЩИЙ месяц, на основе уже сохранённых данных
   const cm=allData[curMonth()];
   if(cm){
-    const receiptKeys=['otop','gvs-pod','oi-ee-d','oi-ee-n','oi-vo','oi-gvs','oi-gvsp','oi-hvs'];
     const meterKeys=['gvs','hvs','t1','t2'];
     const allFilled=meterKeys.every(k=>cm['cur-'+k]!==undefined&&cm['cur-'+k]!=='')&&
-      receiptKeys.every(k=>cm['v-'+k]!==undefined&&cm['v-'+k]!=='');
+      RECEIPT_KEYS.every(k=>cm['v-'+k]!==undefined&&cm['v-'+k]!=='');
     if(allFilled){
       unlockAch('cycle_done');
       if(cm._paid){
@@ -3221,10 +3296,10 @@ function launchConfetti(){
   const mo=new Date().getMonth();
   const cols=mo>=10||mo<=1?['#c0e0ff','#fff','#a0c8ff']:mo>=3&&mo<=4?['#ffb3c6','#ffd6e0','#ff6b8a']:mo>=5&&mo<=7?['#ffd700','#ff8c00','#ffa07a']:['#ff8c00','#ff4500','#dc143c'];
   for(let i=0;i<55;i++){const el=document.createElement('div');el.className='confetti-bit';el.style.cssText=`left:${Math.random()*100}vw;top:0;background:${cols[Math.floor(Math.random()*cols.length)]};animation-duration:${2+Math.random()*3}s;animation-delay:${Math.random()*.5}s;transform:rotate(${Math.random()*360}deg)`;document.body.appendChild(el);setTimeout(()=>el.remove(),7000);}
-  if(settings.sounds)playSound('confetti');
 }
 function showToasty(){
   const el=document.getElementById('toasty');if(!el)return;
+  achQueueBlocked=true;
   if(settings.sounds)playToastySound();
   // Рандомная точка старта по периметру экрана
   const W=window.innerWidth,H=window.innerHeight;
@@ -3246,6 +3321,7 @@ function _hideToasty(el,sx,sy){
   el.style.transition='left .5s cubic-bezier(.4,0,.8,-.2),top .5s cubic-bezier(.4,0,.8,-.2),opacity .3s .2s';
   el.style.left=sx+'px';el.style.top=sy+'px';el.style.opacity='0';
   el.style.pointerEvents='none';
+  setTimeout(()=>{achQueueBlocked=false;processAchQueue();},550);
 }
 function testToasty(){showToasty();}
 
@@ -3424,7 +3500,7 @@ function playSound(type){
   try{
     const ctx=new(window.AudioContext||window.webkitAudioContext)();
     if(type==='save'){const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.value=880;g.gain.setValueAtTime(.06,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.15);o.start();o.stop(ctx.currentTime+.15);}
-    else if(type==='ach'||type==='confetti'){[440,554,659].forEach((f,i)=>{const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(.08,ctx.currentTime+i*.12);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+i*.12+.25);o.start(ctx.currentTime+i*.12);o.stop(ctx.currentTime+i*.12+.25);});}
+    else if(type==='ach'){[440,554,659].forEach((f,i)=>{const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(.08,ctx.currentTime+i*.12);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+i*.12+.25);o.start(ctx.currentTime+i*.12);o.stop(ctx.currentTime+i*.12+.25);});}
   }catch(e){}
 }
 
@@ -4649,6 +4725,8 @@ function playToastySound(){
 /* ════════ П7: Фиксация показаний / Заново ════════ */
 const PREV_METER_IDS=['prev-gvs','prev-hvs','prev-t1','prev-t2'];
 const CUR_METER_IDS=['cur-gvs','cur-hvs','cur-t1','cur-t2'];
+const RECEIPT_KEYS=['otop','gvs-pod','oi-ee-d','oi-ee-n','oi-vo','oi-gvs','oi-gvsp','oi-hvs'];
+let receiptsAccepted=false;
 const METER_INPUT_IDS=[...PREV_METER_IDS,...CUR_METER_IDS]; // обратная совместимость
 let metersAccepted=false;
 
@@ -4666,6 +4744,23 @@ function confirmAccept(){
   updateMonthBarState();
   autoSave();
   logEvent('meters','Внесены показания');
+}
+
+// Зеркало confirmAccept — для квитанций (МосОблЕИРЦ/Пик-Комфорт). Отдельный
+// флаг _receiptsAccepted, не связан со счётчиками — фиксируются независимо.
+function confirmReceipts(){
+  if(ghostGuard())return;
+  receiptsAccepted=true;
+  const m=curMonth();
+  if(!allData[m])allData[m]={};
+  allData[m]._receiptsAccepted=true;
+  RECEIPT_KEYS.forEach(k=>{
+    const el=document.getElementById('v-'+k);
+    if(el){el.classList.add('meter-locked');}
+  });
+  haptic([50,30,80,30,120]);
+  autoSave();
+  logEvent('meters','Внесена квитанция');
 }
 
 function showConfirm(msg, onYes, onNo){
@@ -4838,6 +4933,38 @@ function fpRedoConfirm(){
     updateMonthBarState();
     autoSave();
     showFabToast('Показания сброшены');
+  });
+}
+
+// Зеркало fpRedoUnlock/fpRedoConfirm — для квитанций. Тап по любому
+// заблокированному receipt-полю разблокирует ВСЕ 8 разом (значения
+// остаются); удержание — то же самое предупреждение и полный сброс
+// всех 8 разом. Зеркально точно, как у счётчиков.
+function receiptsRedoUnlock(){
+  if(ghostGuard())return;
+  receiptsAccepted=false;
+  const m=curMonth();
+  if(allData[m])delete allData[m]._receiptsAccepted;
+  RECEIPT_KEYS.forEach(k=>{
+    const el=document.getElementById('v-'+k);
+    if(el){el.classList.remove('meter-locked');}
+  });
+  autoSave();
+  showFabToast('Разблокировано — нажми на поле для повторного ввода');
+}
+function receiptsRedoConfirm(){
+  if(ghostGuard())return;
+  showConfirm('Сбросить введённые данные квитанции? Прошлый месяц не изменится.',()=>{
+    receiptsAccepted=false;
+    const m=curMonth();
+    if(allData[m])delete allData[m]._receiptsAccepted;
+    RECEIPT_KEYS.forEach(k=>{
+      const el=document.getElementById('v-'+k);
+      if(el){el.value='';el.classList.remove('meter-locked');}
+    });
+    onInput();
+    autoSave();
+    showFabToast('Данные квитанции сброшены');
   });
 }
 
@@ -6184,7 +6311,7 @@ function fpApply(){
   const allFields=FAB_BLOCKS.flatMap(b=>b.fields);
   if(allFields.every(f=>fpDraft[f.key]!==undefined))unlockAch('perfect_month');
   sessionTouched.fab=true;checkHouseMaster();
-  let meterTouched=false;
+  let meterTouched=false,receiptTouched=false;
   allFields.forEach(f=>{
     const val=fpDraft[f.key];
     if(val===undefined)return;
@@ -6192,19 +6319,22 @@ function fpApply(){
     const ce=document.getElementById(domId);
     if(ce){ce.value=val;ce.classList.add('changed');}
     if(f.kind==='meter')meterTouched=true;
+    else receiptTouched=true;
   });
   onInput();
   closeFabPopup();
   clearFpDraft();
   // Подтверждаем и фиксируем только то, что заполнено в этой сессии.
-  // Счётчики (meter) — отдельная фиксация, как и раньше. Квитанции (receipt)
-  // просто сохраняются; их собственная фиксация — отдельный будущий шаг.
+  // Счётчики и квитанции фиксируются НЕЗАВИСИМО друг от друга — у каждой
+  // свой флаг (_accepted / _receiptsAccepted), как и договаривались в
+  // "подтверждаем и фиксируем только то, что заполнено в данный момент".
   setTimeout(()=>{
-    if(meterTouched){
-      confirmAccept();
+    if(meterTouched)confirmAccept();
+    if(receiptTouched)confirmReceipts();
+    if(meterTouched||receiptTouched){
       autoSave().then(()=>{
         fabSaved();
-        showFabToast('Показания зафиксированы');
+        showFabToast(meterTouched?'Показания зафиксированы':'Квитанция зафиксирована');
       });
     } else {
       autoSave().then(()=>{
