@@ -6,8 +6,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Коммуналка">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
 <meta name="theme-color" id="meta-theme-color" content="#0f1117">
-<link rel="manifest" id="pwa-manifest" href="">
+<link rel="manifest" id="pwa-manifest" href="manifest.json">
 <title>Коммуналка</title>
 <style>
 /* ============================================================
@@ -28,6 +29,14 @@
      --text      основной текст
      --muted     вторичный текст, подсказки, метаданные
      --label     заголовки секций, метки полей
+  */
+  /* D-007: размеры тап-зон (кнопки, инпуты, иконки) НЕ увеличиваются до
+     формальных 44×44px (рекомендация WCAG/Apple HIG) намеренно. Приложение
+     для одного пользователя — минимализм и компактность интерфейса важнее
+     формального соответствия стандарту доступности для множества людей.
+     Решение сознательное, обсуждалось устно ранее без письменного следа —
+     зафиксировано здесь 2026-06-30, чтобы не предлагать "исправить" это
+     снова при будущих аудитах/ревизиях кода.
   */
   --bg:       #0f1117;
   --surface:  #1a1d27;
@@ -60,13 +69,13 @@
 }
 :root.light {
   --bg:#f4f6fb; --surface:#ffffff; --surface2:#eef1f7; --border:#d1d9e6;
-  --accent:#3b6ff5; --green:#16a97a; --red:#e03e3e; --yellow:#d97706;
+  --accent:#3b6ff5; --green:#0f7655; --red:#d12121; --yellow:#a25904;
   --text:#1a1f2e; --muted:#8492a6; --label:#4a5568;
 }
 @media (prefers-color-scheme:light) {
   :root:not(.dark) {
     --bg:#f4f6fb; --surface:#ffffff; --surface2:#eef1f7; --border:#d1d9e6;
-    --accent:#3b6ff5; --green:#16a97a; --red:#e03e3e; --yellow:#d97706;
+    --accent:#3b6ff5; --green:#0f7655; --red:#d12121; --yellow:#a25904;
     --text:#1a1f2e; --muted:#8492a6; --label:#4a5568;
   }
 }
@@ -1703,6 +1712,11 @@ html.dev-mode #settings-btn{
    kfirst_run        — флаг первого запуска (онбординг)
    k_cleaned_v2      — флаг "разовая миграция уже прогнана"; удаляется при полном сбросе
    doomData          — состояние пасхалки DOOMUNALKA (разблокировка, статистика)
+   last_arch         — дата последнего УСПЕШНОГО облачного архива месяца (autoArchive)
+   last_arch_attempt — дата последней ПОПЫТКИ архивации, успешной или нет (троттлинг
+                        повторов раз в сутки при недоступной сети). Примечание: оба
+                        ключа исторически без префикса "k", в отличие от остальных —
+                        оставлено как есть, чтобы не терять уже сохранённые отметки.
 
    Только удаляются (одноразовая очистка осиротевших ключей старых версий,
    сами больше никогда не пишутся/не читаются — это ожидаемо, не баг):
@@ -2506,8 +2520,13 @@ async function autoSave(){
 }
 
 async function autoArchive(){
-  const now=new Date(),k='last_arch',last=localStorage.getItem(k);
+  const now=new Date(),k='last_arch',kAttempt='last_arch_attempt',last=localStorage.getItem(k);
   if(!last||new Date(last).getMonth()!==now.getMonth()){
+    // Если сеть недоступна, не долбим Firestore на каждый автосейв —
+    // не чаще раза в день, пока попытка не пройдёт успешно.
+    const lastAttempt=localStorage.getItem(kAttempt);
+    if(lastAttempt&&(now-new Date(lastAttempt))<864e5)return;
+    localStorage.setItem(kAttempt,now.toISOString());
     const ak='arch_'+now.getFullYear()+'_'+(now.getMonth()+1);
     try{await db.collection('karchives').doc(ak).set({d:allData,t:now.toISOString()});localStorage.setItem(k,now.toISOString());}catch(e){appError(e,'autoArchive');}
   }
@@ -7054,6 +7073,15 @@ function openArtifact(){
 /* ============================================================ BOOTSTRAP — запускается после всех определений ============================================================ */
 (function init(){
   initSplashText();
+  updateOnlineStatus(); // проверяем сразу — если уже офлайн при открытии, badge не должен ждать события смены сети
+  // Регистрируем Service Worker — без него приложение не может открыться
+  // в полном офлайне вообще (статическая страница, нечего показать без
+  // сети). Регистрация ни на что не блокирует — best-effort, как и Firebase.
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('./sw.js').catch(e=>{
+      console.warn('[SW] Регистрация не удалась:', e);
+    });
+  }
   // Миграция: концепция "непрочитанного месяца" удалена из приложения —
   // подчищаем осиротевшие ключи один раз, чтобы не копился мусор.
   localStorage.removeItem('khist_seen');
