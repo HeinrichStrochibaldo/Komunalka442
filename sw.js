@@ -14,7 +14,7 @@
    случай отсутствия связи, не основной источник данных.
    ============================================================ */
 
-const CACHE_VERSION = 'doomunalka-v1';
+const CACHE_VERSION = 'doomunalka-v2';
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -58,6 +58,18 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   // Только GET — POST/PUT к Firestore и т.п. не перехватываем.
   if (event.request.method !== 'GET') return;
+
+  const url = event.request.url;
+  const isSameOrigin = url.startsWith(self.location.origin);
+  const isKnownStaticAsset = CORE_ASSETS.includes(url);
+
+  // КРИТИЧНО: Firestore держит постоянное GET-соединение для live-обновлений
+  // (потоковая передача, не обычная загрузка файла). Перехват/clone() такого
+  // запроса ломает внутреннее состояние Firebase SDK (см. разбор от
+  // 2026-06-30 — ошибка "TypeError: undefined is not an object (D.error)").
+  // Поэтому трогаем ТОЛЬКО свою же страницу и явно перечисленные статичные
+  // CDN-скрипты — всё остальное идёт мимо Service Worker'а нетронутым.
+  if (!isSameOrigin && !isKnownStaticAsset) return;
 
   event.respondWith(
     fetch(event.request)
