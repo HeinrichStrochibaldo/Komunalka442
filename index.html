@@ -322,6 +322,67 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
 /* ============================================================
    PAID STATUS BLOCK
    ============================================================ */
+/* ── Hero-зона: состояние месяца ── */
+#hero-zone { margin-bottom: 14px; }
+.hero-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  text-align: center;
+}
+.hero-card.hero-ready { border-color: var(--accent); }
+.hero-card.hero-paid { border-color: var(--green); }
+.hero-phase { font-size: 12px; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.hero-phase-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+.hero-sum { font-size: 28px; font-weight: 500; color: var(--text); margin-bottom: 2px; }
+.hero-sub { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+.hero-chips { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+.hero-trend { font-size: 11px; margin-bottom: 10px; }
+.hero-progress { font-size: 12px; color: var(--text); margin-bottom: 8px; }
+.hero-context { font-size: 12px; color: var(--muted); }
+.hero-entities { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.hero-today {
+  background: var(--surface2);
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin-top: 10px;
+  font-size: 12px;
+}
+.hero-today-lbl { color: var(--muted); font-size: 11px; margin-bottom: 3px; }
+.hero-today-text { color: var(--text); }
+.hero-entity {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: flex; align-items: center; gap: 10px;
+  cursor: pointer;
+  transition: border-color .2s;
+}
+.hero-entity .he-icon { font-size: 18px; flex-shrink: 0; width: 22px; text-align: center; }
+.hero-entity .he-body { flex: 1; min-width: 0; }
+.hero-entity .he-title { font-size: 13px; color: var(--text); }
+.hero-entity .he-sub { font-size: 11px; color: var(--muted); }
+.hero-entity .he-badge { font-size: 12px; flex-shrink: 0; }
+.hero-entity-detail {
+  display: none; padding: 10px 0 0; margin-top: 10px;
+  border-top: 1px solid var(--border); font-size: 12px; color: var(--text);
+}
+.hero-entity.expanded .hero-entity-detail { display: block; }
+.hero-entity-detail .hed-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 3px 0; color: var(--text);
+}
+.hero-entity-detail .hed-row .hed-lbl { color: var(--muted); }
+.hero-entity-detail .hed-row .hed-val { font-weight: 500; }
+.hero-entity-detail .hed-meta { font-size: 11px; color: var(--muted); margin-top: 6px; }
+.hero-pay-btn {
+  display: block; width: 100%; margin-top: 12px;
+  background: var(--accent); color: var(--bg); border: none;
+  border-radius: 10px; padding: 10px; font-size: 13px; font-weight: 500; cursor: pointer;
+}
+
 .paid-block {
   background: rgba(52,211,153,.08); border: 1px solid rgba(52,211,153,.25);
   border-radius: var(--radius-md); padding: 14px 16px; margin-bottom: 16px;
@@ -1338,9 +1399,17 @@ html.dev-mode #settings-btn{
       <button id="paid-btn" class="btn btn-ghost btn-sm">Оплатить</button>
     </div>
   </div>
+  <div id="today-pill-row" style="display:none;text-align:center;margin-top:-6px;margin-bottom:8px">
+    <button id="today-pill" onclick="jumpToToday()" style="background:var(--accent);color:var(--bg);border:none;border-radius:20px;padding:4px 14px;font-size:11px;cursor:pointer;font-weight:500">↺ сегодня</button>
+  </div>
   <div style="text-align:center;margin-top:-10px;margin-bottom:12px">
     <span class="autosave-lbl" id="autosave-lbl"></span>
   </div>
+
+  <!-- D-008: DOOMUNALKA — приложение для наблюдения за жизнью квартиры, не для ввода данных.
+       Hero-зона: вертикальная история месяца, 4 фазы по флагам _accepted/_receiptsAccepted/_paid -->
+  <div id="hero-zone"></div>
+
   <div id="onboarding-hint" style="display:none"></div>
   <div id="tariff-check-row" style="display:none;align-items:center;justify-content:space-between;gap:10px;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.3);border-radius:10px;padding:10px 14px;margin-bottom:14px">
     <span style="font-size:12px;color:var(--yellow)">⚠️ Тариф не менялся 3 месяца — всё ещё актуален?</span>
@@ -2105,7 +2174,7 @@ function render(){
   ['kaprem','gvs-voda','gvs-pod','otop','hvs','vodo','soderzh','bezop','tko','tv','oi-ee-d','oi-ee-n','oi-vo','oi-gvs','oi-gvsp','oi-hvs','t1','t2','inet'].forEach(id=>{const e=document.getElementById('tdisp-'+id);if(e){const v=gv('t-'+id);const vs=v>0?v.toLocaleString('ru-RU',{maximumFractionDigits:6}):'—';e.textContent=vs;e.setAttribute('data-tip',(v>0?'Ставка: '+vs:'Ставка не задана')+'\nИзменить — в Настройках → Тарифы');}});
   setT('tot-mosob',c.mosob>0?fmt(c.mosob):'—');setT('tot-pik',c.pik>0?fmt(c.pik):'—');setT('tot-mosen',c.ee>0?fmt(c.ee):'—');setT('tot-inet',c.inet>0?fmt(c.inet):'—');
   setT('ft-grand',c.grand>0?fmt(c.grand):'—');setT('ft-v',c.vadim>0?fmt(c.vadim):'—');setT('ft-me',c.me>0?fmt(c.me):'—');
-  highlightTariffs();updatePaidUI(c);
+  highlightTariffs();updatePaidUI(c);renderHero(c);
   // Постобработка (ранее были патчи — теперь всё здесь)
   updateProgressBar();
   updateOnboarding();
@@ -2277,6 +2346,313 @@ function handleUnpaid(){
       updateMonthBarState();
     }
   );
+}
+
+/* ── Блок «Сегодня» — появляется ТОЛЬКО если есть что сказать ──────
+   Тихий экран = всё хорошо. Нет проблем — блока нет вообще.
+   ──────────────────────────────────────────────────────────────────── */
+function renderHeroToday(c,d){
+  const items=[];
+  const m=curMonth(),paid=!!d._paid;
+
+  if(!paid){
+    // Что осталось внести?
+    const waterOk=(d['cur-gvs']!==undefined&&d['cur-gvs']!=='')&&(d['cur-hvs']!==undefined&&d['cur-hvs']!=='');
+    const eeOk=(d['cur-t1']!==undefined&&d['cur-t1']!=='')&&(d['cur-t2']!==undefined&&d['cur-t2']!=='');
+    const eircOk=(d['v-otop']!==undefined&&d['v-otop']!=='')&&(d['v-gvs-pod']!==undefined&&d['v-gvs-pod']!=='');
+    const pikKeys=['oi-ee-d','oi-ee-n','oi-vo','oi-gvs','oi-gvsp','oi-hvs'];
+    const pikOk=pikKeys.every(k=>d['v-'+k]!==undefined&&d['v-'+k]!=='');
+    const missing=[];
+    if(!waterOk)missing.push('Вода');
+    if(!eeOk)missing.push('Электричество');
+    if(!eircOk)missing.push('ЕИРЦ');
+    if(!pikOk)missing.push('Пик-Комфорт');
+    if(missing.length>0&&missing.length<4){
+      items.push('Осталось внести: '+missing.join(', '));
+    }
+  }
+
+  // Поверки — предупреждение если ≤90 дней
+  const now=new Date();
+  const verChecks=[
+    {n:'ГВС (вода)',d:new Date(meter.vgvs)},
+    {n:'ХВС',d:new Date(meter.vhvs)},
+    {n:'Электричество',d:new Date(meter.vee)}
+  ];
+  verChecks.forEach(v=>{
+    const days=Math.ceil((v.d-now)/MS_PER_DAY);
+    if(days<=0) items.push('⚠ Поверка '+v.n+' просрочена!');
+    else if(days<=90) items.push('Через '+days+' дн. поверка '+v.n);
+  });
+
+  // Неоплаченный прошлый месяц
+  if(curIdx>0){
+    const prevM=MK[curIdx-1];
+    if(allData[prevM]&&!allData[prevM]._paid&&cfd(allData[prevM]).grand>0){
+      items.push('Прошлый месяц ('+MONTHS[prevM]+') не оплачен');
+    }
+  }
+
+  if(items.length===0)return '';
+  return '<div class="hero-today"><div class="hero-today-lbl">Сегодня</div>'+
+    items.map(t=>'<div class="hero-today-text">'+t+'</div>').join('')+
+  '</div>';
+}
+
+let heroExpanded=null;
+function toggleHeroEntity(id){
+  heroExpanded=(heroExpanded===id)?null:id;
+  const cards=document.querySelectorAll('.hero-entity');
+  cards.forEach(c=>{
+    c.classList.toggle('expanded',c.dataset.entity===heroExpanded);
+  });
+}
+
+/* ── Четыре живые карточки: Вода / Электричество / Квитанции / Поверки ──
+   Каждая карточка сама меняет своё содержимое в зависимости от состояния
+   данных месяца. Это не кнопки — это сущности квартиры, которые «живут».
+   ──────────────────────────────────────────────────────────────────────── */
+function renderHeroEntities(c,d){
+  const paid=!!d._paid;
+  const accepted=!!d._accepted;
+  const receiptsAccepted=!!d._receiptsAccepted;
+
+  // ── 💧 Вода ──
+  const hasWater=(d['cur-gvs']!==undefined&&d['cur-gvs']!=='');
+  const vgTotal=c?c.vg:0, vhTotal=c?c.vh:0;
+  const waterVol=vgTotal+vhTotal;
+  // Средний расход воды
+  const waterAvgs=MK.filter(mk=>mk!==curMonth()&&allData[mk]).map(mk=>{
+    const cd2=cfd(allData[mk]);return cd2.vg+cd2.vh;
+  }).filter(v=>v>0);
+  const waterAvg=waterAvgs.length>0?waterAvgs.reduce((a,b)=>a+b,0)/waterAvgs.length:0;
+  let waterSub='ожидаем показания', waterBadge='';
+  if(paid){
+    waterSub=waterVol>0?fvol(waterVol,'м³'):'—';
+    waterBadge='<span style="color:var(--green)">✓</span>';
+  } else if(accepted&&hasWater){
+    waterSub=fvol(waterVol,'м³');
+    if(waterAvg>0){
+      const pct=Math.round((waterVol-waterAvg)/waterAvg*100);
+      if(Math.abs(pct)>=5) waterSub+=' · '+(pct>0?'↑':'↓')+' '+Math.abs(pct)+'%';
+      else waterSub+=' · как обычно';
+    }
+    waterBadge='<span style="color:var(--green)">✓ зафикс.</span>';
+  } else if(hasWater){
+    waterSub=fvol(waterVol,'м³');
+    waterBadge='';
+  }
+
+  // ── ⚡ Электричество ──
+  const hasEE=(d['cur-t1']!==undefined&&d['cur-t1']!=='');
+  const eeVol=c?(Math.max(0,(parseFloat(d['cur-t1'])||0)-(parseFloat(d['prev-t1'])||0))+Math.max(0,(parseFloat(d['cur-t2'])||0)-(parseFloat(d['prev-t2'])||0))):0;
+  const eeAvgs=MK.filter(mk=>mk!==curMonth()&&allData[mk]).map(mk=>{
+    const a=allData[mk];
+    return Math.max(0,(a['cur-t1']||0)-(a['prev-t1']||0))+Math.max(0,(a['cur-t2']||0)-(a['prev-t2']||0));
+  }).filter(v=>v>0);
+  const eeAvg=eeAvgs.length>0?eeAvgs.reduce((a,b)=>a+b,0)/eeAvgs.length:0;
+  let eeSub='ожидаем показания', eeBadge='';
+  if(paid){
+    eeSub=eeVol>0?Math.round(eeVol)+' кВт·ч':'—';
+    eeBadge='<span style="color:var(--green)">✓</span>';
+  } else if(accepted&&hasEE){
+    eeSub=Math.round(eeVol)+' кВт·ч';
+    if(eeAvg>0){
+      const pct=Math.round((eeVol-eeAvg)/eeAvg*100);
+      if(Math.abs(pct)>=5) eeSub+=' · '+(pct>0?'↑':'↓')+' '+Math.abs(pct)+'%';
+      else eeSub+=' · как обычно';
+    }
+    eeBadge='<span style="color:var(--green)">✓ зафикс.</span>';
+  } else if(hasEE){
+    eeSub=Math.round(eeVol)+' кВт·ч';
+    eeBadge='';
+  }
+
+  // ── 🏢 Квитанции ──
+  const filledReceipts=RECEIPT_KEYS.filter(k=>d['v-'+k]!==undefined&&d['v-'+k]!=='').length;
+  const totalReceipts=RECEIPT_KEYS.length;
+  let rcptSub='ожидаем данные', rcptBadge='';
+  if(paid||receiptsAccepted){
+    rcptSub=filledReceipts===totalReceipts?'все внесены':'внесено '+filledReceipts+'/'+totalReceipts;
+    rcptBadge='<span style="color:var(--green)">✓'+(filledReceipts===totalReceipts?'':' '+filledReceipts+'/'+totalReceipts)+'</span>';
+  } else if(filledReceipts>0){
+    rcptSub='внесено частично';
+    rcptBadge='<span style="color:var(--yellow)">'+filledReceipts+'/'+totalReceipts+'</span>';
+  }
+
+  // ── 🔧 Поверки ──
+  const now=new Date();
+  const verifyDates=[
+    {k:'gvs',n:'ГВС',d:new Date(meter.vgvs)},
+    {k:'hvs',n:'ХВС',d:new Date(meter.vhvs)},
+    {k:'ee',n:'ЭЭ',d:new Date(meter.vee)}
+  ];
+  const nearest=verifyDates.reduce((best,v)=>{
+    const days=Math.ceil((v.d-now)/MS_PER_DAY);
+    return(best===null||days<best.days)?{name:v.n,days}:best;
+  },null);
+  let verifySub='',verifyBadge='';
+  if(nearest){
+    if(nearest.days<=0){
+      verifySub='⚠ просрочена — '+nearest.name;
+      verifyBadge='<span style="color:var(--red)">!</span>';
+    } else if(nearest.days<=90){
+      verifySub='ближайшая — '+nearest.name;
+      verifyBadge='<span style="color:var(--yellow)">'+nearest.days+' дн.</span>';
+    } else {
+      verifySub='ближайшая — '+nearest.name;
+      verifyBadge='<span style="color:var(--green)">'+nearest.days+' дн.</span>';
+    }
+  }
+
+  // ── Детали для аккордеона ──
+  // Вода: ГВС + ХВС
+  const prevGvs=parseFloat(d['prev-gvs'])||0, curGvs=parseFloat(d['cur-gvs'])||0;
+  const prevHvs=parseFloat(d['prev-hvs'])||0, curHvs=parseFloat(d['cur-hvs'])||0;
+  const waterDetail=
+    '<div class="hed-row"><span class="hed-lbl">🔴 ГВС</span><span class="hed-val">'+(curGvs>0?fwat(curGvs-prevGvs):'—')+'</span></div>'+
+    (curGvs>0?'<div class="hed-row"><span class="hed-lbl">пред. → тек.</span><span>'+prevGvs.toFixed(3)+' → '+curGvs.toFixed(3)+'</span></div>':'')+
+    '<div class="hed-row"><span class="hed-lbl">🔵 ХВС</span><span class="hed-val">'+(curHvs>0?fwat(curHvs-prevHvs):'—')+'</span></div>'+
+    (curHvs>0?'<div class="hed-row"><span class="hed-lbl">пред. → тек.</span><span>'+prevHvs.toFixed(3)+' → '+curHvs.toFixed(3)+'</span></div>':'')+
+    '<div class="hed-meta">'+meter.sgvs+' · '+meter.shvs+'</div>';
+
+  // Электричество: Т1 + Т2
+  const prevT1=parseFloat(d['prev-t1'])||0, curT1=parseFloat(d['cur-t1'])||0;
+  const prevT2=parseFloat(d['prev-t2'])||0, curT2=parseFloat(d['cur-t2'])||0;
+  const eeDetail=
+    '<div class="hed-row"><span class="hed-lbl">Т1 день</span><span class="hed-val">'+(curT1>0?fee(curT1-prevT1):'—')+'</span></div>'+
+    (curT1>0?'<div class="hed-row"><span class="hed-lbl">пред. → тек.</span><span>'+Math.round(prevT1)+' → '+Math.round(curT1)+'</span></div>':'')+
+    '<div class="hed-row"><span class="hed-lbl">Т2 ночь</span><span class="hed-val">'+(curT2>0?fee(curT2-prevT2):'—')+'</span></div>'+
+    (curT2>0?'<div class="hed-row"><span class="hed-lbl">пред. → тек.</span><span>'+Math.round(prevT2)+' → '+Math.round(curT2)+'</span></div>':'')+
+    '<div class="hed-meta">'+meter.see+'</div>';
+
+  // Квитанции: список 8 полей
+  const rcptNames={otop:'Отопление','gvs-pod':'ГВС (подогрев)','oi-ee-d':'ОИ ЭЭ день','oi-ee-n':'ОИ ЭЭ ночь','oi-vo':'ОИ водоотв.','oi-gvs':'ОИ ГВС','oi-gvsp':'ОИ ГВС подогрев','oi-hvs':'ОИ ХВС'};
+  const rcptDetail=RECEIPT_KEYS.map(k=>{
+    const val=d['v-'+k];
+    const filled=val!==undefined&&val!=='';
+    return '<div class="hed-row"><span class="hed-lbl">'+(rcptNames[k]||k)+'</span><span class="hed-val"'+(filled?'':' style="color:var(--muted)"')+'>'+(filled?val:'—')+'</span></div>';
+  }).join('');
+
+  // Поверки: все три
+  const verifyDetail=verifyDates.map(v=>{
+    const days=Math.ceil((v.d-now)/MS_PER_DAY);
+    const ds=v.d.toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit',year:'numeric'});
+    const color=days<=0?'var(--red)':(days<=90?'var(--yellow)':'var(--green)');
+    const status=days<=0?'просрочена!':(days<=90?'⚠ '+days+' дн.':'✓ '+days+' дн.');
+    return '<div class="hed-row"><span class="hed-lbl">'+v.n+'</span><span class="hed-val" style="color:'+color+'">'+status+'</span></div>'+
+      '<div class="hed-row"><span class="hed-lbl">до</span><span>'+ds+'</span></div>';
+  }).join('')+'<div class="hed-meta">Серийные: '+meter.sgvs.split('·')[1]+' / '+meter.shvs.split('·')[1]+' / '+meter.see.split('·')[1]+'</div>';
+
+  const exp=heroExpanded;
+  return '<div class="hero-entities">'+
+    '<div class="hero-entity'+(exp==='water'?' expanded':'')+'" data-entity="water" onclick="toggleHeroEntity(\'water\')"><div class="he-icon">💧</div><div class="he-body"><div class="he-title">Вода</div><div class="he-sub">'+waterSub+'</div></div><div class="he-badge">'+waterBadge+'</div><div class="hero-entity-detail">'+waterDetail+'</div></div>'+
+    '<div class="hero-entity'+(exp==='ee'?' expanded':'')+'" data-entity="ee" onclick="toggleHeroEntity(\'ee\')"><div class="he-icon">⚡</div><div class="he-body"><div class="he-title">Электричество</div><div class="he-sub">'+eeSub+'</div></div><div class="he-badge">'+eeBadge+'</div><div class="hero-entity-detail">'+eeDetail+'</div></div>'+
+    '<div class="hero-entity'+(exp==='rcpt'?' expanded':'')+'" data-entity="rcpt" onclick="toggleHeroEntity(\'rcpt\')"><div class="he-icon">🏢</div><div class="he-body"><div class="he-title">Квитанции</div><div class="he-sub">'+rcptSub+'</div></div><div class="he-badge">'+rcptBadge+'</div><div class="hero-entity-detail">'+rcptDetail+'</div></div>'+
+    '<div class="hero-entity'+(exp==='verify'?' expanded':'')+'" data-entity="verify" onclick="toggleHeroEntity(\'verify\')"><div class="he-icon">🔧</div><div class="he-body"><div class="he-title">Поверки</div><div class="he-sub">'+verifySub+'</div></div><div class="he-badge">'+verifyBadge+'</div><div class="hero-entity-detail">'+verifyDetail+'</div></div>'+
+  '</div>';
+}
+
+/* ── renderHero: вертикальная история месяца ──────────────────────
+   MonthState (не нумерованные «фазы» — потому что со временем
+   появятся WAITING_FOR_BILL, ANOMALY, ARCHIVED и другие):
+   NEW             — месяц начался, данных нет
+   IN_PROGRESS     — частично заполнено
+   READY_TO_PAY    — всё внесено, ждёт подтверждения оплаты
+   PAID            — месяц закрыт
+   ──────────────────────────────────────────────────────────────── */
+function renderHero(c){
+  const el=document.getElementById('hero-zone');if(!el)return;
+  const m=curMonth(),d=allData[m]||{};
+  const paid=!!d._paid;
+  const metersOk=!!d._accepted;
+  const receiptsOk=!!d._receiptsAccepted;
+
+  // Определяем прогресс блоков FAB
+  const meterKeys=['gvs','hvs','t1','t2'];
+  const hasMeterData=meterKeys.some(k=>d['cur-'+k]!==undefined&&d['cur-'+k]!=='');
+  const hasReceiptData=RECEIPT_KEYS.some(k=>d['v-'+k]!==undefined&&d['v-'+k]!=='');
+  const allMeters=meterKeys.every(k=>d['cur-'+k]!==undefined&&d['cur-'+k]!=='');
+  const allReceipts=RECEIPT_KEYS.every(k=>d['v-'+k]!==undefined&&d['v-'+k]!=='');
+  const allFilled=allMeters&&allReceipts;
+
+  // Блоки FAB для прогресса
+  const waterOk=d['cur-gvs']!==undefined&&d['cur-gvs']!==''&&d['cur-hvs']!==undefined&&d['cur-hvs']!=='';
+  const eeOk=d['cur-t1']!==undefined&&d['cur-t1']!==''&&d['cur-t2']!==undefined&&d['cur-t2']!=='';
+  // ЕИРЦ: отопление + гвс-подогрев (основные ручные поля)
+  const eircOk=d['v-otop']!==undefined&&d['v-otop']!==''&&d['v-gvs-pod']!==undefined&&d['v-gvs-pod']!=='';
+  // Пик: все 6 полей oi-*
+  const pikKeys=['oi-ee-d','oi-ee-n','oi-vo','oi-gvs','oi-gvsp','oi-hvs'];
+  const pikOk=pikKeys.every(k=>d['v-'+k]!==undefined&&d['v-'+k]!=='');
+
+  // Среднее для тренда
+  const filledMonths=MK.filter(mk=>mk!==m&&allData[mk]&&cfd(allData[mk]).grand>0);
+  const avg=filledMonths.length>0?filledMonths.reduce((a,mk)=>a+cfd(allData[mk]).grand,0)/filledMonths.length:0;
+  const grand=c?c.grand:0;
+
+  let html='';
+
+  if(paid){
+    // ── PAID ──
+    const pd=d._paidDate?new Date(d._paidDate):null;
+    const ds=pd?pd.toLocaleDateString('ru-RU',{day:'numeric',month:'long'}):'';
+    let streak=0;for(let i=curIdx;i>=0;i--){if(allData[MK[i]]&&allData[MK[i]]._paid)streak++;else break;}
+    // Сравнение с прошлым
+    const prevM=MK[curIdx-1];
+    const prevGrand=prevM&&allData[prevM]?cfd(allData[prevM]).grand:0;
+    let cmpText='';
+    if(prevGrand>0&&grand>0){
+      const diff=grand-prevGrand;
+      if(Math.abs(diff)>10) cmpText=(diff>0?'Дороже':'Дешевле')+' прошлого на '+fmt(Math.abs(diff));
+    }
+    html='<div class="hero-card hero-paid">'+
+      '<div class="hero-phase"><span class="hero-phase-dot" style="background:var(--green)"></span><span style="color:var(--green)">Оплачено'+(ds?' '+ds:'')+'</span></div>'+
+      '<div class="hero-sum">'+fmt(grand)+'</div>'+
+      (streak>=2?'<div class="hero-sub" style="color:var(--accent)">🔥 Стрик: '+streak+' мес.</div>':'')+
+      (cmpText?'<div class="hero-context">'+cmpText+'</div>':'')+
+    '</div>';
+
+  } else if(allFilled){
+    // ── READY_TO_PAY ──
+    const trendPct=avg>0?Math.round((grand-avg)/avg*100):0;
+    let trendText='';
+    if(avg>0&&Math.abs(trendPct)>=3){
+      trendText=(trendPct>0?'↑ на '+trendPct+'% выше':'↓ на '+Math.abs(trendPct)+'% ниже')+' среднего';
+    }
+    html='<div class="hero-card hero-ready">'+
+      '<div class="hero-phase"><span class="hero-phase-dot" style="background:var(--accent)"></span><span style="color:var(--accent)">Всё внесено</span></div>'+
+      '<div class="hero-sum">'+fmt(grand)+'</div>'+
+      '<div class="hero-sub">насчитано за месяц</div>'+
+      '<div class="hero-chips">Вода '+fmt(c.mosob-c.kaprem)+' · ЭЭ '+fmt(c.ee)+' · ЕИРЦ '+fmt(c.mosob)+' · Пик '+fmt(c.pik)+'</div>'+
+      (trendText?'<div class="hero-trend" style="color:var(--yellow)">'+trendText+'</div>':'')+
+      '<button class="hero-pay-btn" onclick="handlePaid()">Оплатить</button>'+
+    '</div>';
+
+  } else if(hasMeterData||hasReceiptData){
+    // ── IN_PROGRESS ──
+    const check=ok=>'<span style="color:var(--green)">✓</span>';
+    const dash='<span style="color:var(--muted)">—</span>';
+    html='<div class="hero-card">'+
+      '<div class="hero-phase"><span class="hero-phase-dot" style="background:var(--yellow)"></span><span style="color:var(--yellow)">Месяц в процессе</span></div>'+
+      '<div class="hero-progress">Вода '+(waterOk?check():'—')+' · ЭЭ '+(eeOk?check():'—')+' · ЕИРЦ '+(eircOk?check():'—')+' · Пик '+(pikOk?check():'—')+'</div>'+
+      (grand>0?'<div class="hero-sub">Пока насчитано</div><div class="hero-sum">'+fmt(grand)+'</div>':'')+
+    '</div>';
+
+  } else {
+    // ── NEW ──
+    const prevM=MK[curIdx-1];
+    const prevGrand=prevM&&allData[prevM]?cfd(allData[prevM]).grand:0;
+    html='<div class="hero-card">'+
+      '<div class="hero-phase"><span class="hero-phase-dot" style="background:var(--muted)"></span><span style="color:var(--muted)">Месяц только начался</span></div>'+
+      (prevGrand>0?'<div class="hero-context">Прошлый: '+fmt(prevGrand)+'</div>':'')+
+    '</div>';
+  }
+
+  el.innerHTML=html+renderHeroToday(c,d)+renderHeroEntities(c,d);
+
+  // Итерация 1: Hero сосуществует со старым экраном. Ничего не прячем,
+  // пока новое решение не проживёт несколько дней реального использования.
+  // Только после этого — убираем ставшее лишним (paid-block, progress-bar и т.д.).
 }
 
 function updatePaidBtn(){
@@ -2472,7 +2848,7 @@ function loadMonth(){
       else{el.classList.remove('meter-locked');}
     }
   });
-  updateMonthBarState();render();
+  updateMonthBarState();render();updateTodayPill();
 }
 
 function onInput(){
@@ -3035,6 +3411,24 @@ function shiftCycle(dir){
 function jumpToCycle(){
   cycleStartYear=cycleYearAuto();
   renderYear();
+}
+
+// ── Пилюля «↺ сегодня» на главном экране ──
+// Появляется только когда просматриваешь не-текущий месяц.
+function jumpToToday(){
+  const now=new Date();
+  const targetKey=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  ensureMonthExists(targetKey);
+  const idx=MK.indexOf(targetKey);
+  if(idx!==-1){
+    guardMonthSwitch(()=>{curIdx=idx;loadMonth();});
+  }
+}
+function updateTodayPill(){
+  const row=document.getElementById('today-pill-row');if(!row)return;
+  const now=new Date();
+  const todayKey=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  row.style.display=(curMonth()===todayKey)?'none':'block';
 }
 function renderYear(){
   const qEl=document.getElementById('year-q');if(!qEl)return;
