@@ -1535,7 +1535,18 @@ html.dev-mode #settings-btn{
 
 <!-- ГОД -->
 <div id="page-year" class="page">
-  <div class="sec-title">Годовой итог</div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+    <div class="sec-title" style="margin-bottom:0">Годовой итог</div>
+    <div style="display:flex;gap:6px">
+      <button id="year-tab-cycle" class="btn btn-sm" onclick="setYearMode('cycle')" style="font-size:12px;padding:5px 10px">Цикл</button>
+      <button id="year-tab-all" class="btn btn-ghost btn-sm" onclick="setYearMode('all')" style="font-size:12px;padding:5px 10px">Всё время</button>
+    </div>
+  </div>
+  <div id="year-cycle-nav" style="display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:16px">
+    <button onclick="shiftCycle(-1)" style="background:none;border:none;color:var(--accent);font-size:20px;cursor:pointer;padding:4px 8px">←</button>
+    <span id="year-cycle-label" style="font-size:14px;font-weight:700;cursor:pointer" onclick="jumpToCycle()">2026</span>
+    <button onclick="shiftCycle(1)" style="background:none;border:none;color:var(--accent);font-size:20px;cursor:pointer;padding:4px 8px">→</button>
+  </div>
   <div class="year-quarters" id="year-q"></div>
   <div class="year-quarters" id="year-stats"></div>
 </div>
@@ -1779,6 +1790,37 @@ const DOOM_DURATION = 30000;       // мс длительность Doom муз�
 
 const MONTHS={'2026-05':'Май 2026','2026-06':'Июнь 2026','2026-07':'Июль 2026','2026-08':'Август 2026','2026-09':'Сентябрь 2026','2026-10':'Октябрь 2026','2026-11':'Ноябрь 2026','2026-12':'Декабрь 2026','2027-01':'Январь 2027','2027-02':'Февраль 2027','2027-03':'Март 2027','2027-04':'Апрель 2027'};
 const MK=Object.keys(MONTHS);
+
+// Закон 9 — календарь бесконечен вперёд. MONTHS/MK больше не статичны:
+// это "модель времени" (Calendar), а не константа. Единственная точка,
+// которая знает, как достраивается календарь — больше нигде в коде
+// не должно быть циклов "пока не существует — добавляем".
+const MONTH_NAMES_RU=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+function monthLabel(key){
+  const [y,m]=key.split('-').map(Number);
+  return MONTH_NAMES_RU[m-1]+' '+y;
+}
+function nextCalendarMonthKey(key){
+  const [y,m]=key.split('-').map(Number);
+  return m===12?(y+1)+'-01':y+'-'+String(m+1).padStart(2,'0');
+}
+// Идемпотентна: уже существующий targetKey — no-op. Атомарна: считает
+// весь список новых месяцев локально и только потом одним проходом
+// синхронно применяет к MONTHS+MK вместе — расхождение между ними
+// невозможно (JS однопоточный, между вычислением и применением нет await).
+function ensureMonthExists(targetKey){
+  if(MONTHS[targetKey]!==undefined)return;
+  if(targetKey<MK[0])return; // календарь растёт только вперёд — раньше начала не лезем
+  const newEntries=[];
+  let cursor=MK[MK.length-1];
+  const SAFETY_CAP=1200; // ~100 лет — защита от случайного бесконечного цикла
+  for(let i=0;i<SAFETY_CAP;i++){
+    cursor=nextCalendarMonthKey(cursor);
+    newEntries.push(cursor);
+    if(cursor===targetKey)break;
+  }
+  newEntries.forEach(k=>{MONTHS[k]=monthLabel(k);MK.push(k);});
+}
 const TARIFF_IDS=['t-kaprem','t-gvs-voda','t-gvs-pod','t-otop','t-hvs','t-vodo','t-soderzh','t-bezop','t-tko','t-tv','t-oi-ee-d','t-oi-ee-n','t-oi-vo','t-oi-gvs','t-oi-gvsp','t-oi-hvs','t-t1','t-t2','t-inet'];
 const TARIFF_LABELS={kaprem:'Капремонт','gvs-voda':'ГВС (вода)','gvs-pod':'ГВС (подогрев)',otop:'Отопление',hvs:'ХВС',vodo:'Водоотведение',soderzh:'Содержание',bezop:'Безопасность',tko:'ТКО',tv:'ТВ',t1:'ЭЭ Т1',t2:'ЭЭ Т2',inet:'Интернет'};
 const ACHS=[
@@ -1885,9 +1927,10 @@ async function fbLoad(){
     // Автопереход на текущий месяц
     const _now=new Date();
     const _curMK=_now.getFullYear()+'-'+(String(_now.getMonth()+1).padStart(2,'0'));
+    ensureMonthExists(_curMK); // Закон 9 — если реальное время ушло дальше последнего созданного месяца
     const _curIdx=MK.indexOf(_curMK);
     if(_curIdx!==-1) curIdx=_curIdx;
-    else curIdx=MK.length-1;
+    else curIdx=MK.length-1; // защитная страховка — в норме сюда уже не попадаем
     loadMonth();updateVerify();updateStreak();checkEaster();
     updateXPDisplay();updateProgressBar();updateOnboarding();
     checkTariffSuggestion();
@@ -2012,8 +2055,9 @@ function cleanOrphanData(){
 
 // Создаём следующий месяц из текущего (Закон 5)
 function createNextMonth(currentMK){
+  ensureMonthExists(nextCalendarMonthKey(currentMK)); // Закон 9 — календарь не заканчивается
   const nextMk=nextMK(currentMK);
-  if(!nextMk)return; // нет следующего месяца в MK
+  if(!nextMk)return; // защитная страховка — в норме сюда уже не попадаем
   if(isCreatedMonth(nextMk))return; // уже создан — не перезаписываем
   const cur=allData[currentMK]||{};
   const next={};
@@ -2128,8 +2172,6 @@ function renderDatepickCal(){
   if(!cal) return;
   const now = new Date();
   const year = _dpYear, month = _dpMonth;
-  const monthNames = ['Январь','Февраль','Март','Апрель','Май','Июнь',
-                      'Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
   const firstDay = new Date(year, month, 1).getDay();
   const startOffset = (firstDay === 0 ? 6 : firstDay - 1); // пн=0
   const daysInMonth = new Date(year, month+1, 0).getDate();
@@ -2144,7 +2186,7 @@ function renderDatepickCal(){
   let html = `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
     <button onclick="_dpYear=${prevMonth.y};_dpMonth=${prevMonth.m};renderDatepickCal()"
       style="background:none;border:none;color:var(--accent);font-size:20px;cursor:pointer;padding:4px 8px;font-family:inherit">‹</button>
-    <div style="font-size:14px;font-weight:700;color:var(--text)">${monthNames[month]} ${year}</div>
+    <div style="font-size:14px;font-weight:700;color:var(--text)">${MONTH_NAMES_RU[month]} ${year}</div>
     <button onclick="_dpYear=${nextMonth.y};_dpMonth=${nextMonth.m};renderDatepickCal()"
       style="background:none;border:none;color:${isNextDisabled?'var(--border)':'var(--accent)'};font-size:20px;cursor:pointer;padding:4px 8px;font-family:inherit"
       ${isNextDisabled?'disabled':''}>›</button>
@@ -2374,7 +2416,7 @@ function guardMonthSwitch(action){
 
 function prevMonth(){if(curIdx>0){guardMonthSwitch(()=>{curIdx--;loadMonth();});}}
 function nextMonth(){
-  if(curIdx>=MK.length-1)return;
+  if(curIdx>=MK.length-1)ensureMonthExists(nextCalendarMonthKey(MK[curIdx])); // Закон 9
   // Навигация свободная — действия блокирует ghostGuard()
   guardMonthSwitch(()=>{curIdx++;loadMonth();});
 }
@@ -2939,29 +2981,117 @@ function toggleDynMonth(head){
 }
 
 /* ============================================================ YEAR ============================================================ */
+/* ── Вкладка «Год» — вариант (г): Цикл + Всё время ──────────────────
+   Цикл = 12 месяцев мая→апреля, навигируемых вперёд/назад.
+   Всё время = честная агрегация по всему MK.
+   Кварталы динамические — не хардкод дат.
+   Задел: кнопка «Сегодня» намеренно не добавлена — её место определится
+   при переделке главного экрана.
+   ──────────────────────────────────────────────────────────────────── */
+let yearMode='cycle';
+let cycleStartYear=null;
+
+function cycleYearAuto(){
+  return new Date().getFullYear();
+}
+function getCycleMonths(year){
+  const months=[];
+  for(let m=1;m<=12;m++)months.push(year+'-'+String(m).padStart(2,'0'));
+  return months;
+}
+function getCycleQuarters(year){
+  const all=getCycleMonths(year);
+  return[
+    {l:'Q1 янв–мар',m:all.slice(0,3)},
+    {l:'Q2 апр–июн',m:all.slice(3,6)},
+    {l:'Q3 июл–сен',m:all.slice(6,9)},
+    {l:'Q4 окт–дек',m:all.slice(9,12)},
+  ];
+}
+function getRecordsInRange(monthList){
+  const filled=monthList.filter(m=>allData[m]&&cfd(allData[m]).grand>0);
+  if(filled.length<2)return null;
+  let maxM=null,minM=null,maxV=0,minV=Infinity;
+  filled.forEach(m=>{const v=cfd(allData[m]).grand;if(v>maxV){maxV=v;maxM=m;}if(v<minV){minV=v;minM=m;}});
+  return{maxM,maxV,minM,minV};
+}
+function setYearMode(mode){
+  yearMode=mode;
+  const c=document.getElementById('year-tab-cycle');
+  const a=document.getElementById('year-tab-all');
+  const nav=document.getElementById('year-cycle-nav');
+  if(c)c.className='btn btn-sm'+(mode==='cycle'?'':' btn-ghost');
+  if(a)a.className='btn btn-sm'+(mode==='all'?'':' btn-ghost');
+  if(nav)nav.style.display=mode==='cycle'?'flex':'none';
+  renderYear();
+}
+function shiftCycle(dir){
+  if(cycleStartYear===null)cycleStartYear=cycleYearAuto();
+  const next=cycleStartYear+dir;
+  if(next<2026)return; // нижняя граница — раньше мая 2026 данных не было
+  cycleStartYear=next;
+  renderYear();
+}
+function jumpToCycle(){
+  cycleStartYear=cycleYearAuto();
+  renderYear();
+}
 function renderYear(){
   const qEl=document.getElementById('year-q');if(!qEl)return;
-  const qs=[{l:'Q1 янв–мар',m:['2027-01','2027-02','2027-03']},{l:'Q2 апр–июн',m:['2027-04','2026-05','2026-06']},{l:'Q3 июл–сен',m:['2026-07','2026-08','2026-09']},{l:'Q4 окт–дек',m:['2026-10','2026-11','2026-12']}];
-  let total=0;
-  qEl.innerHTML=qs.map(q=>{const s=q.m.reduce((a,m)=>a+(allData[m]?cfd(allData[m]).grand:0),0);total+=s;return`<div class="qcard"><div class="qcard-lbl">${q.l}</div><div class="qcard-val">${s>0?fmt(s):'—'}</div></div>`;}).join('')+`<div class="qcard total"><div class="qcard-lbl">💰 Итого</div><div class="qcard-val">${total>0?fmt(total):'—'}</div></div>`;
-
   const statsEl=document.getElementById('year-stats');if(!statsEl)return;
-  const filledMonths=MK.filter(m=>allData[m]&&cfd(allData[m]).grand>0);
-  if(!filledMonths.length){
-    statsEl.innerHTML=`<div class="qcard" style="grid-column:1/-1"><div class="qcard-lbl">📅 Нет данных за год</div><div class="qcard-val" style="font-size:14px">Заполните первый месяц</div></div>`;
-    return;
+  if(cycleStartYear===null)cycleStartYear=cycleYearAuto();
+
+  if(yearMode==='cycle'){
+    const sy=cycleStartYear;
+    const lbl=document.getElementById('year-cycle-label');
+    if(lbl)lbl.textContent=String(sy);
+    const qs=getCycleQuarters(sy);
+    const cycleMonths=getCycleMonths(sy);
+    cycleMonths.forEach(ensureMonthExists);
+    let total=0;
+    const qHtml=qs.map(q=>{
+      const s=q.m.reduce((a,m)=>a+(allData[m]?cfd(allData[m]).grand:0),0);
+      total+=s;
+      return '<div class="qcard"><div class="qcard-lbl">'+q.l+'</div><div class="qcard-val">'+(s>0?fmt(s):'—')+'</div></div>';
+    }).join('')+'<div class="qcard total"><div class="qcard-lbl">💰 Итого</div><div class="qcard-val">'+(total>0?fmt(total):'—')+'</div></div>';
+    qEl.innerHTML=qHtml;
+    const filledInCycle=cycleMonths.filter(m=>allData[m]&&cfd(allData[m]).grand>0);
+    if(!filledInCycle.length){
+      statsEl.innerHTML='<div class="qcard" style="grid-column:1/-1"><div class="qcard-lbl">📅 Нет данных</div><div class="qcard-val" style="font-size:14px">Заполните первый месяц цикла</div></div>';
+      return;
+    }
+    const avg=total/filledInCycle.length;
+    let html=
+      '<div class="qcard total"><div class="qcard-lbl">💰 Сумма за цикл</div><div class="qcard-val">'+fmt(total)+'</div></div>'+
+      '<div class="qcard"><div class="qcard-lbl">📊 Средний платёж</div><div class="qcard-val">'+fmt(avg)+'</div></div>';
+    const r=getRecordsInRange(cycleMonths);
+    if(r){
+      html+=
+        '<div class="qcard"><div class="qcard-lbl">💸 Дороже всего</div><div style="font-size:11px;color:var(--muted);margin-bottom:3px">'+(MONTHS[r.maxM]||r.maxM)+'</div><div class="qcard-val">'+fmt(r.maxV)+'</div></div>'+
+        '<div class="qcard"><div class="qcard-lbl">💚 Дешевле всего</div><div style="font-size:11px;color:var(--muted);margin-bottom:3px">'+(MONTHS[r.minM]||r.minM)+'</div><div class="qcard-val">'+fmt(r.minV)+'</div></div>';
+    }
+    statsEl.innerHTML=html;
+  } else {
+    qEl.innerHTML='';
+    const allFilled=MK.filter(m=>allData[m]&&cfd(allData[m]).grand>0);
+    if(!allFilled.length){
+      statsEl.innerHTML='<div class="qcard" style="grid-column:1/-1"><div class="qcard-lbl">📅 Нет данных</div><div class="qcard-val" style="font-size:14px">Заполните первый месяц</div></div>';
+      return;
+    }
+    const total=allFilled.reduce((a,m)=>a+cfd(allData[m]).grand,0);
+    const avg=total/allFilled.length;
+    const r=getRecords();
+    let html=
+      '<div class="qcard total"><div class="qcard-lbl">💰 Всего оплачено</div><div class="qcard-val">'+fmt(total)+'</div></div>'+
+      '<div class="qcard"><div class="qcard-lbl">📊 Средний месяц</div><div class="qcard-val">'+fmt(avg)+'</div></div>'+
+      '<div class="qcard"><div class="qcard-lbl">📅 Месяцев данных</div><div class="qcard-val">'+allFilled.length+'</div></div>';
+    if(r){
+      html+=
+        '<div class="qcard"><div class="qcard-lbl">💸 Рекорд (дорого)</div><div style="font-size:11px;color:var(--muted);margin-bottom:3px">'+(MONTHS[r.maxM]||r.maxM)+'</div><div class="qcard-val">'+fmt(r.maxV)+'</div></div>'+
+        '<div class="qcard"><div class="qcard-lbl">💚 Рекорд (дёшево)</div><div style="font-size:11px;color:var(--muted);margin-bottom:3px">'+(MONTHS[r.minM]||r.minM)+'</div><div class="qcard-val">'+fmt(r.minV)+'</div></div>';
+    }
+    statsEl.innerHTML=html;
   }
-  const avg=total/filledMonths.length;
-  let html=
-    `<div class="qcard total"><div class="qcard-lbl">💰 Сумма за год</div><div class="qcard-val">${fmt(total)}</div></div>`+
-    `<div class="qcard"><div class="qcard-lbl">📊 Средний платёж</div><div class="qcard-val">${fmt(avg)}</div></div>`;
-  const r=getRecords();
-  if(r){
-    html+=
-      `<div class="qcard"><div class="qcard-lbl">💸 Самый дорогой</div><div style="font-size:11px;color:var(--muted);margin-bottom:3px">${MONTHS[r.maxM]}</div><div class="qcard-val">${fmt(r.maxV)}</div></div>`+
-      `<div class="qcard"><div class="qcard-lbl">💚 Самый дешёвый</div><div style="font-size:11px;color:var(--muted);margin-bottom:3px">${MONTHS[r.minM]}</div><div class="qcard-val">${fmt(r.minV)}</div></div>`;
-  }
-  statsEl.innerHTML=html;
 }
 
 /* ============================================================ ACHIEVEMENTS ============================================================ */
