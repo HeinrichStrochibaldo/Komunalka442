@@ -2366,6 +2366,11 @@ function renderHeroToday(c,d){
   const items=[];
   const m=curMonth(),paid=!!d._paid;
 
+  const sanity=checkSumSanity(c?c.grand:0,m);
+  if(!sanity.ok){
+    items.push('⚠ Сумма выглядит подозрительно: '+sanity.reason);
+  }
+
   if(!paid){
     // Что осталось внести?
     const waterOk=(d['cur-gvs']!==undefined&&d['cur-gvs']!=='')&&(d['cur-hvs']!==undefined&&d['cur-hvs']!=='');
@@ -3300,6 +3305,26 @@ function goBack(){
 /* ============================================================ COPY / SHARE / QR ============================================================ */
 function exportJSON(){unlockAch('export1');const blob=new Blob([JSON.stringify(allData,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='kommunalka_'+new Date().toISOString().slice(0,10)+'.json';a.click();}
 function triggerImport(){document.getElementById('import-file').click();}
+// Проверка импортируемых данных ДО применения — не трогает allData/MK,
+// работает только с распарсенным объектом, чтобы не менять состояние
+// раньше подтверждения пользователем.
+function checkImportSanity(parsed){
+  const monthKeyRe=/^\d{4}-\d{2}$/;
+  const keys=Object.keys(parsed).filter(k=>monthKeyRe.test(k));
+  const sums={};
+  keys.forEach(k=>{try{sums[k]=cfd(parsed[k]).grand;}catch(e){sums[k]=0;}});
+  const vals=Object.values(sums).filter(v=>v>0);
+  const avg=vals.length>=2?vals.reduce((a,b)=>a+b,0)/vals.length:0;
+  const flagged=[];
+  keys.forEach(k=>{
+    const g=sums[k];
+    if(!g||g<=0)return;
+    if(g>SANITY_ABS_LIMIT){flagged.push(k+': '+fmt(g)+' — превышает разумный потолок');return;}
+    if(avg>0&&g>avg*SANITY_MULT){flagged.push(k+': '+fmt(g)+' — в '+Math.round(g/avg)+' раз выше среднего по файлу');}
+  });
+  return flagged;
+}
+
 function importJSON(e){
   const f=e.target.files[0];if(!f)return;
   const r=new FileReader();
@@ -3317,8 +3342,12 @@ function importJSON(e){
       showFabToast('Ошибка импорта: неверный формат');
       return;
     }
+    const flagged=checkImportSanity(parsed);
+    const warnText=flagged.length>0
+      ?'<br><br>⚠ <b>Похоже, в данных ошибка:</b><br>'+flagged.join('<br>')
+      :'';
     showConfirm(
-      'Импортировать? Текущие данные будут перезаписаны.',
+      'Импортировать? Текущие данные будут перезаписаны.'+warnText,
       async()=>{
         try{
           allData=parsed;
@@ -5119,6 +5148,26 @@ function updateOnboarding(){
 
 
 /* П37: Рекорды в шторке (самый дорогой / дешёвый месяц) */
+/* ============================================================
+   Проверка адекватности суммы — защита от тихой отрисовки мусора
+   (испорченный импорт, случайная правка localStorage). Два условия,
+   срабатывает любое: (1) сумма в разы больше среднего по истории,
+   (2) сумма превышает разумный абсолютный потолок независимо от
+   истории (актуально для первого месяца, когда истории ещё нет).
+   ============================================================ */
+const SANITY_ABS_LIMIT=500000; // ₽ — абсолютный потолок вне зависимости от истории
+const SANITY_MULT=6; // во сколько раз выше среднего считается подозрительным
+function checkSumSanity(grand,excludeMonth){
+  if(!grand||grand<=0)return{ok:true};
+  if(grand>SANITY_ABS_LIMIT)return{ok:false,reason:'превышает '+fmt(SANITY_ABS_LIMIT)};
+  const hist=MK.filter(m=>m!==excludeMonth&&allData[m]).map(m=>cfd(allData[m]).grand).filter(v=>v>0);
+  if(hist.length>=2){
+    const avg=hist.reduce((a,b)=>a+b,0)/hist.length;
+    if(avg>0&&grand>avg*SANITY_MULT)return{ok:false,reason:'в '+Math.round(grand/avg)+' раз выше среднего ('+fmt(avg)+')'};
+  }
+  return{ok:true};
+}
+
 function getRecords(){
   const months=MK.filter(m=>allData[m]&&Object.keys(allData[m]).filter(k=>!k.startsWith('_')).length>3);
   if(months.length<2)return null;
