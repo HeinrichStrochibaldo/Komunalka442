@@ -1711,6 +1711,7 @@ html.dev-mode #settings-btn{
     <div class="tar-row"><div class="tar-row-label"><label>ГВС (вода)</label><div class="tar-hist" id="tarhist-gvs-voda"></div></div><input type="number" id="t-gvs-voda" step="0.0001" oninput="onInput()"></div>
     <div class="tar-row"><div class="tar-row-label"><label>ХВС</label><div class="tar-hist" id="tarhist-hvs"></div></div><input type="number" id="t-hvs" step="0.0001" oninput="onInput()"></div>
     <div class="tar-row"><div class="tar-row-label"><label>Водоотведение</label><div class="tar-hist" id="tarhist-vodo"></div></div><input type="number" id="t-vodo" step="0.0001" oninput="onInput()"></div>
+    <div class="tar-row"><div class="tar-row-label"><label style="font-size:12px;color:var(--muted)">↳ Объём (переопределить)</label><div class="tar-hist">по умолчанию — ГВС+ХВС автоматически</div></div><input type="number" id="v-vodo" step="0.001" placeholder="авто" oninput="onInput()"></div>
 
     <div class="sec-title" style="margin-top:20px">📄 МосОблЕИРЦ</div>
     <div class="tar-row"><div class="tar-row-label"><label>Капремонт (фикс.)</label><div class="tar-hist" id="tarhist-kaprem"></div></div><input type="number" id="t-kaprem" step="0.01" oninput="onInput()"></div>
@@ -2143,7 +2144,13 @@ function createNextMonth(currentMK){
 
 /* ============================================================ COMPUTE ============================================================ */
 function compute(){
-  const vg=vol('gvs'),vh=vol('hvs'),vv=vg+vh;
+  const vg=vol('gvs'),vh=vol('hvs');
+  // Водоотведение: по умолчанию считается автоматически (ГВС+ХВС), но можно
+  // переопределить вручную во вкладке «Тарифы» — реальный объём в квитанции
+  // иногда слегка отличается от суммы показаний счётчиков.
+  const vodoOverrideEl=document.getElementById('v-vodo');
+  const vodoOverride=(vodoOverrideEl&&vodoOverrideEl.value!=='')?parseFloat(vodoOverrideEl.value):null;
+  const vv=vodoOverride!==null?vodoOverride:vg+vh;
   const v={kaprem:gv('t-kaprem'),'gvs-voda':gv('t-gvs-voda')*vg,'gvs-pod':gv('t-gvs-pod')*gv('v-gvs-pod'),otop:gv('t-otop')*gv('v-otop'),hvs:gv('t-hvs')*vh,vodo:gv('t-vodo')*vv,soderzh:gv('t-soderzh'),bezop:gv('t-bezop'),tko:gv('t-tko'),tv:gv('t-tv'),'oi-ee-d':gv('t-oi-ee-d')*gv('v-oi-ee-d'),'oi-ee-n':gv('t-oi-ee-n')*gv('v-oi-ee-n'),'oi-vo':gv('t-oi-vo')*gv('v-oi-vo'),'oi-gvs':gv('t-oi-gvs')*gv('v-oi-gvs'),'oi-gvsp':gv('t-oi-gvsp')*gv('v-oi-gvsp'),'oi-hvs':gv('t-oi-hvs')*gv('v-oi-hvs'),t1:gv('t-t1')*vol('t1'),t2:gv('t-t2')*vol('t2'),inet:gv('t-inet'),vg,vh,vv};
   v.mosob=v.kaprem+v['gvs-voda']+v['gvs-pod']+v.otop+v.hvs+v.vodo;
   v.pik=v.soderzh+v.bezop+v.tko+v.tv+v['oi-ee-d']+v['oi-ee-n']+v['oi-vo']+v['oi-gvs']+v['oi-gvsp']+v['oi-hvs'];
@@ -2154,8 +2161,9 @@ function compute(){
 function cfd(d){
   const g=k=>d[k]||0;
   const vg=Math.max(0,(d['cur-gvs']||0)-(d['prev-gvs']||0)),vh=Math.max(0,(d['cur-hvs']||0)-(d['prev-hvs']||0));
+  const vodoVol=(d['v-vodo']!==undefined&&d['v-vodo']!=='')?d['v-vodo']:(vg+vh);
   const vt1=Math.max(0,(d['cur-t1']||0)-(d['prev-t1']||0)),vt2=Math.max(0,(d['cur-t2']||0)-(d['prev-t2']||0));
-  const v={kaprem:g('t-kaprem'),'gvs-voda':g('t-gvs-voda')*vg,'gvs-pod':g('t-gvs-pod')*g('v-gvs-pod'),otop:g('t-otop')*g('v-otop'),hvs:g('t-hvs')*vh,vodo:g('t-vodo')*(vg+vh),soderzh:g('t-soderzh'),bezop:g('t-bezop'),tko:g('t-tko'),tv:g('t-tv'),'oi-ee-d':g('t-oi-ee-d')*g('v-oi-ee-d'),'oi-ee-n':g('t-oi-ee-n')*g('v-oi-ee-n'),'oi-vo':g('t-oi-vo')*g('v-oi-vo'),'oi-gvs':g('t-oi-gvs')*g('v-oi-gvs'),'oi-gvsp':g('t-oi-gvsp')*g('v-oi-gvsp'),'oi-hvs':g('t-oi-hvs')*g('v-oi-hvs'),t1:g('t-t1')*vt1,t2:g('t-t2')*vt2,inet:g('t-inet'),vg,vh};
+  const v={kaprem:g('t-kaprem'),'gvs-voda':g('t-gvs-voda')*vg,'gvs-pod':g('t-gvs-pod')*g('v-gvs-pod'),otop:g('t-otop')*g('v-otop'),hvs:g('t-hvs')*vh,vodo:g('t-vodo')*vodoVol,soderzh:g('t-soderzh'),bezop:g('t-bezop'),tko:g('t-tko'),tv:g('t-tv'),'oi-ee-d':g('t-oi-ee-d')*g('v-oi-ee-d'),'oi-ee-n':g('t-oi-ee-n')*g('v-oi-ee-n'),'oi-vo':g('t-oi-vo')*g('v-oi-vo'),'oi-gvs':g('t-oi-gvs')*g('v-oi-gvs'),'oi-gvsp':g('t-oi-gvsp')*g('v-oi-gvsp'),'oi-hvs':g('t-oi-hvs')*g('v-oi-hvs'),t1:g('t-t1')*vt1,t2:g('t-t2')*vt2,inet:g('t-inet'),vg,vh};
   v.mosob=v.kaprem+v['gvs-voda']+v['gvs-pod']+v.otop+v.hvs+v.vodo;
   v.pik=v.soderzh+v.bezop+v.tko+v.tv+v['oi-ee-d']+v['oi-ee-n']+v['oi-vo']+v['oi-gvs']+v['oi-gvsp']+v['oi-hvs'];
   v.ee=v.t1+v.t2;v.grand=v.mosob+v.pik+v.ee+v.inet;
