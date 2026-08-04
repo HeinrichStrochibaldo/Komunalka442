@@ -4684,6 +4684,11 @@ function switchTab(name){
     track.style.transform='translateX(-'+idx+'00%)';
   }
 
+  // Сброс скролла страницы — иначе вкладка с более коротким контентом
+  // (напр. «История» после длинного «Ввода») открывается ниже своего
+  // содержимого и выглядит пустой. Заметно в основном на десктопе.
+  window.scrollTo(0,0);
+
   // Lazy render
   if(name==='history')renderHistory();
   if(name==='dynamics')renderDynamics();
