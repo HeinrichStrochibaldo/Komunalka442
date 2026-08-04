@@ -1316,6 +1316,7 @@ html.dev-mode #settings-btn{
   </div>
   <div class="header-zone-center">
     <span id="streak-badge" onclick="openStreakPopup()" style="cursor:pointer">🔥 <span id="streak-count">0</span> мес.</span>
+    <span id="prestige-badge" onclick="openPrestigePopup()" style="cursor:pointer;display:none;margin-left:6px;color:var(--yellow)"></span>
   </div>
   <div class="header-zone-right">
     <button class="hbtn" id="back-btn" onclick="goBack()" style="display:none;font-size:13px;padding:5px 9px">← Назад</button>
@@ -1987,6 +1988,7 @@ async function fbLoad(){
     migrateData(); // F-008: версия данных проверена и при необходимости мигрирована
     if(!allData['2026-05']){allData['2026-05']=MAY26;fbSave();}
     if(allData._achs)localStorage.setItem('kachs',JSON.stringify(allData._achs));
+    if(allData._prestige)localStorage.setItem('kprestige',JSON.stringify(allData._prestige));
     // Одноразовая очистка мусорных cur-* в несозданных месяцах
     cleanOrphanData();
   }catch(e){appError(e,'fbLoad:postprocess');}
@@ -2001,7 +2003,7 @@ async function fbLoad(){
     const _curIdx=MK.indexOf(_curMK);
     if(_curIdx!==-1) curIdx=_curIdx;
     else curIdx=MK.length-1; // защитная страховка — в норме сюда уже не попадаем
-    loadMonth();updateVerify();updateStreak();checkEaster();
+    loadMonth();updateVerify();updateStreak();updatePrestigeBadge();checkEaster();
     updateXPDisplay();updateProgressBar();updateOnboarding();
     checkTariffSuggestion();
       }catch(e){console.error('Render:',e);_dbg('<span style="color:#f87171">RENDER ERR: '+e.message+'</span>');}
@@ -2329,9 +2331,10 @@ function confirmPaid(){
   if(!sessionPaidShown){sessionPaidShown=true;showToasty();}
   unlockAch('paid1');
   addXP(XP_PAID,'оплачено');
-  let streak=0;for(let i=curIdx;i>=0;i--){if(allData[MK[i]]&&allData[MK[i]]._paid)streak++;else break;}
+  const streak=getStreakMonths().length;
   if(streak>=2)addXP(XP_STREAK,'стрик '+streak);
-  updateStreak();checkAchs();renderPayHistory();
+  checkPrestige(m.split('-')[0]); // престиж проверяем именно за год оплаченного месяца
+  updateStreak();checkAchs();renderPayHistory();updatePrestigeBadge();
 }
 
 function handleUnpaid(){
@@ -2604,7 +2607,7 @@ function renderHero(c){
     // ── PAID ──
     const pd=d._paidDate?new Date(d._paidDate):null;
     const ds=pd?pd.toLocaleDateString('ru-RU',{day:'numeric',month:'long'}):'';
-    let streak=0;for(let i=curIdx;i>=0;i--){if(allData[MK[i]]&&allData[MK[i]]._paid)streak++;else break;}
+    let streak=getStreakMonths().length;
     // Сравнение с прошлым
     const prevM=MK[curIdx-1];
     const prevGrand=prevM&&allData[prevM]?cfd(allData[prevM]).grand:0;
@@ -3037,15 +3040,86 @@ function addToCalendar(k){
 }
 
 /* ============================================================ STREAK ============================================================ */
+/* ============================================================
+   ПРЕСТИЖ — календарный год, оплаченный целиком (все 12 месяцев),
+   становится постоянным достижением ("★ 2026"), которое не исчезает
+   при сбросе стрика в январе. Условие простое: allData[m]._paid===true
+   для всех 12 месяцев года — без требований к срокам оплаты.
+   Хранение: kprestige в localStorage + allData._prestige для Firebase-синка.
+   ============================================================ */
+function getPrestigeData(){
+  try{return JSON.parse(localStorage.getItem('kprestige')||'{}');}catch(e){return{};}
+}
+function savePrestigeData(data){
+  localStorage.setItem('kprestige',JSON.stringify(data));
+  allData._prestige=data;
+  fbSave();
+}
+function isYearComplete(year){
+  for(let m=1;m<=12;m++){
+    const key=year+'-'+String(m).padStart(2,'0');
+    if(!allData[key]||!allData[key]._paid)return false;
+  }
+  return true;
+}
+function checkPrestige(year){
+  const data=getPrestigeData();
+  if(data[year]&&data[year].complete)return; // уже начислен — идемпотентно
+  if(!isYearComplete(year))return;
+  data[year]={complete:true,completedAt:new Date().toISOString().slice(0,10)};
+  savePrestigeData(data);
+  showPrestigeToast(year);
+  updatePrestigeBadge();
+}
+function showPrestigeToast(year){
+  haptic([50,30,80,30,120,30,150]);
+  if(settings.sounds)playSound('ach');
+  showFabToast('🏆 Престиж '+year+'! Год без пропусков');
+}
+function updatePrestigeBadge(){
+  const el=document.getElementById('prestige-badge');if(!el)return;
+  const data=getPrestigeData();
+  const count=Object.values(data).filter(y=>y.complete).length;
+  el.style.display=count>0?'inline-flex':'none';
+  el.textContent='★ ×'+count;
+}
+
+function openPrestigePopup(){
+  const data=getPrestigeData();
+  const years=Object.keys(data).filter(y=>data[y].complete).sort((a,b)=>b-a);
+  if(!years.length)return;
+  haptic(20);
+  const existing=document.getElementById('app-confirm');
+  if(existing)existing.remove();
+  const rows=years.map(y=>{
+    const d=new Date(data[y].completedAt);
+    const ds=d.toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'});
+    return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)"><span>★ '+y+'</span><span style="color:var(--muted);font-size:12px">'+ds+'</span></div>';
+  }).join('');
+  const overlay=document.createElement('div');
+  overlay.id='app-confirm';
+  overlay.className='overlay open';
+  overlay.innerHTML='<div class="modal" style="text-align:left;max-width:300px">'+
+    '<p style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:12px">🏆 Престиж</p>'+
+    rows+
+    '<div class="modal-btns" style="margin-top:16px"><button class="btn btn-ghost" id="app-confirm-no" style="width:100%">Закрыть</button></div>'+
+  '</div>';
+  document.body.appendChild(overlay);
+  document.getElementById('app-confirm-no').onclick=()=>overlay.remove();
+}
+
 function getStreakMonths(){
-  // Считаем стрик от последнего оплаченного месяца назад
+  // Считаем стрик от последнего оплаченного месяца во всём календаре назад.
+  // Граница календарного года обрывает серию — стрик копится максимум 12
+  // месяцев (янв-дек), в январе начинается заново. См. систему престижей.
   const paidIdx=[];
   MK.forEach((m,i)=>{if(allData[m]&&allData[m]._paid)paidIdx.push(i);});
   if(!paidIdx.length)return[];
-  // Берём последний оплаченный и идём назад
   let streak=[];
   let last=paidIdx[paidIdx.length-1];
+  const lastYear=MK[last].split('-')[0];
   for(let i=last;i>=0;i--){
+    if(MK[i].split('-')[0]!==lastYear)break; // граница года — обрыв серии
     if(allData[MK[i]]&&allData[MK[i]]._paid)streak.push(MK[i]);
     else break;
   }
@@ -3696,8 +3770,8 @@ function checkAchs(){
   if(months.some(m=>allData[m]._paid))unlockAch('paid1');
   if(months.length>=10)unlockAch('months10');
   if(months.length>=12)unlockAch('allmonths');
-  let streak=0;for(let i=curIdx;i>=0;i--){if(allData[MK[i]]&&allData[MK[i]]._paid)streak++;else break;}
-  if(streak>=3)unlockAch('streak3');if(streak>=6)unlockAch('streak6');
+  const streakLen=getStreakMonths().length;
+  if(streakLen>=3)unlockAch('streak3');if(streakLen>=6)unlockAch('streak6');
 
   // Цикл завершён / Полный комплект — про ТЕКУЩИЙ месяц, на основе уже сохранённых данных
   const cm=allData[curMonth()];
