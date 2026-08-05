@@ -2062,6 +2062,7 @@ function appError(e, context){
 function gv(id){const e=document.getElementById(id);return e?(parseFloat(e.value)||0):0;}
 function vol(m){return Math.max(0,gv('cur-'+m)-gv('prev-'+m));}
 function fmt(n){return n.toLocaleString('ru-RU',{minimumFractionDigits:2,maximumFractionDigits:2})+' ₽';}
+function fmtInt(n){return n.toLocaleString('ru-RU');}
 function fvol(n,u){return n>0?n.toLocaleString('ru-RU',{minimumFractionDigits:3,maximumFractionDigits:3})+' '+u:'—';}
 // C-003: единые функции форматирования
 function fwat(n){return n>0?n.toLocaleString('ru-RU',{minimumFractionDigits:3,maximumFractionDigits:3})+' м³':'—';}
@@ -5223,7 +5224,7 @@ function addXP(pts, reason, monthKey){
 }
 function updateXPDisplay(){
   const el=document.querySelector('#section-overlay .xp-badge');
-  if(el)el.textContent='✨ '+xpTotal+' XP';
+  if(el)el.textContent='✨ '+fmtInt(xpTotal)+' XP';
 }
 
 function getXPLevel(xp){
@@ -5267,14 +5268,14 @@ function openXPPopup(){
           <button onclick="document.getElementById('xp-popup-overlay').remove()" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;padding:0 4px;line-height:1;font-family:inherit">×</button>
         </div>
         <div style="text-align:center;margin-bottom:16px">
-          <div style="font-size:40px;font-weight:800;color:var(--yellow);line-height:1">${xpTotal}</div>
+          <div style="font-size:40px;font-weight:800;color:var(--yellow);line-height:1">${fmtInt(xpTotal)}</div>
           <div style="font-size:12px;color:var(--muted);margin-top:2px">XP</div>
           <div style="font-size:13px;font-weight:600;color:${level.color};margin-top:6px">${level.name}</div>
           ${level.next?`
           <div style="height:6px;background:var(--border);border-radius:3px;margin:8px 0 4px;overflow:hidden">
             <div style="height:100%;width:${pct}%;background:${level.color};border-radius:3px;transition:width .6s cubic-bezier(.34,1.56,.64,1)"></div>
           </div>
-          <div style="font-size:10px;color:var(--muted)">${xpTotal} / ${level.next} XP до следующего уровня</div>`:'<div style="font-size:11px;color:var(--yellow);margin-top:6px">🏆 Максимальный уровень!</div>'}
+          <div style="font-size:10px;color:var(--muted)">${fmtInt(xpTotal)} / ${fmtInt(level.next)} XP до следующего уровня</div>`:'<div style="font-size:11px;color:var(--yellow);margin-top:6px">🏆 Максимальный уровень!</div>'}
         </div>
         <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:8px">История начислений</div>
       </div>
@@ -5915,7 +5916,7 @@ function updateAchGrid(){
   const counter=document.querySelector('#section-overlay .ach-counter');
   if(counter)counter.textContent=cnt+' из '+total+' разблокировано';
   const xpEl=document.querySelector('#section-overlay .xp-badge');
-  if(xpEl)xpEl.textContent='✨ '+xpTotal+' XP';
+  if(xpEl)xpEl.textContent='✨ '+fmtInt(xpTotal)+' XP';
 }
 
 function openSection(name){
