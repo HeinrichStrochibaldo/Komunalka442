@@ -595,6 +595,31 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
   transition: max-height .35s cubic-bezier(0.25,0.46,0.45,0.94);
 }
 .hist-month-card.open .hist-month-body { max-height: 400px; }
+
+/* Группировка Истории по годам (пункт 2.4) — заголовки-годы сворачиваемые,
+   по умолчанию открыт только реальный текущий год. Карточки месяцев внутри
+   свёрнутого года НЕ рендерятся до первого раскрытия (лениво) — иначе
+   группировка была бы только визуальной, без реального выигрыша в скорости
+   на многолетней истории. */
+.hist-year-group {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  margin-bottom: 12px;
+  overflow: hidden;
+  background: var(--surface);
+}
+.hist-year-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px; cursor: pointer;
+  -webkit-tap-highlight-color: transparent; user-select: none;
+}
+.hist-year-head:active { background: var(--surface2); }
+.hist-year-title { font-size: 15px; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 8px; }
+.hist-year-total { font-size: 14px; font-weight: 700; color: var(--accent); }
+.hist-year-arrow { font-size: 11px; color: var(--muted); transition: transform .3s cubic-bezier(0.25,0.46,0.45,0.94); margin-left: 10px; flex-shrink: 0; }
+.hist-year-group.open .hist-year-arrow { transform: rotate(180deg); }
+.hist-year-body { display: none; padding: 0 12px 12px; }
+.hist-year-group.open .hist-year-body { display: block; }
 .hist-month-row {
   display: flex;
   justify-content: space-between;
@@ -3291,29 +3316,21 @@ function toggleHistMonth(card){
   card.classList.toggle('open',!isOpen);
 }
 
-function renderHistory(){
-  const months=MK.filter(m=>allData[m]);
-  const acc=document.getElementById('hist-accordion');
-  if(!acc)return;
-  if(!months.length){acc.innerHTML='<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">Нет данных</div></div>';return;}
+function renderHistMonthCard(m){
   const nv=settings.nameV||'Вадимовна',nm=settings.nameMe||'Я';
-  let html='';
-  // Показываем месяцы от новых к старым
-  const sorted=[...months].reverse();
-  sorted.forEach(m=>{
-    const d=allData[m]||{};
-    const c=cfd(d);
-    const isPaid=d._paid;
-    const rows=[
-      {l:'Всего',k:'grand',total:true},
-      {l:nv,k:'vadim'},
-      {l:nm,k:'me'},
-      {l:'МосОблЕИРЦ',k:'mosob'},
-      {l:'Пик-Комфорт',k:'pik'},
-      {l:'Мосэнергосбыт',k:'ee'},
-      {l:'Интернет',k:'inet'},
-    ];
-    html+=`<div class="hist-month-card" data-month="${m}">
+  const d=allData[m]||{};
+  const c=cfd(d);
+  const isPaid=d._paid;
+  const rows=[
+    {l:'Всего',k:'grand',total:true},
+    {l:nv,k:'vadim'},
+    {l:nm,k:'me'},
+    {l:'МосОблЕИРЦ',k:'mosob'},
+    {l:'Пик-Комфорт',k:'pik'},
+    {l:'Мосэнергосбыт',k:'ee'},
+    {l:'Интернет',k:'inet'},
+  ];
+  return `<div class="hist-month-card" data-month="${m}">
       <div class="hist-month-head" onclick="toggleHistMonth(this.closest('.hist-month-card'))">
         <div class="hist-month-title">
           ${isPaid?'✅':''} ${MONTHS[m]}
@@ -3333,8 +3350,69 @@ function renderHistory(){
         }).join('')}
       </div>
     </div>`;
+}
+
+// Пункт 2.4: группировка Истории по календарным годам, как в «Годе».
+// Ленивый рендер — карточки месяцев строятся только для развёрнутого года,
+// остальные годы рендерят один только заголовок до первого клика.
+function renderHistory(){
+  const months=MK.filter(m=>allData[m]);
+  const acc=document.getElementById('hist-accordion');
+  if(!acc)return;
+  if(!months.length){acc.innerHTML='<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">Нет данных</div></div>';return;}
+
+  const byYear={};
+  months.forEach(m=>{
+    const y=m.split('-')[0];
+    if(!byYear[y])byYear[y]=[];
+    byYear[y].push(m);
+  });
+  const years=Object.keys(byYear).sort((a,b)=>b-a); // новые сверху
+
+  const realCurrentYear=String(new Date().getFullYear());
+  const defaultYear=byYear[realCurrentYear]?realCurrentYear:years[0];
+
+  let html='';
+  years.forEach(y=>{
+    const yearMonths=[...byYear[y]].reverse(); // новые сверху внутри года тоже
+    const yearTotal=yearMonths.reduce((a,m)=>a+cfd(allData[m]).grand,0);
+    const isOpen=(y===defaultYear);
+    html+=`<div class="hist-year-group${isOpen?' open':''}" data-year="${y}">
+      <div class="hist-year-head" onclick="toggleHistYear(this.closest('.hist-year-group'))">
+        <div class="hist-year-title">${y} <span style="color:var(--muted);font-weight:400">· ${yearMonths.length} мес.</span></div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="hist-year-total">${yearTotal>0?fmt(yearTotal):'—'}</div>
+          <div class="hist-year-arrow">▼</div>
+        </div>
+      </div>
+      <div class="hist-year-body" data-rendered="${isOpen?'1':'0'}">
+        ${isOpen?yearMonths.map(renderHistMonthCard).join(''):''}
+      </div>
+    </div>`;
   });
   acc.innerHTML=html;
+
+  // Скроллим текущий год в видимую область явно — не полагаемся на то,
+  // что он окажется первым в списке (защита от повторения бага 1.6).
+  requestAnimationFrame(()=>{
+    const target=acc.querySelector('[data-year="'+defaultYear+'"]');
+    if(target)target.scrollIntoView({block:'start'});
+  });
+}
+function toggleHistYear(group){
+  if(!group)return;
+  const isOpen=group.classList.contains('open');
+  if(!isOpen){
+    // Ленивый рендер — строим карточки месяцев только при первом раскрытии
+    const body=group.querySelector('.hist-year-body');
+    if(body&&body.dataset.rendered!=='1'){
+      const year=group.dataset.year;
+      const yearMonths=MK.filter(m=>allData[m]&&m.startsWith(year+'-')).reverse();
+      body.innerHTML=yearMonths.map(renderHistMonthCard).join('');
+      body.dataset.rendered='1';
+    }
+  }
+  group.classList.toggle('open',!isOpen);
 }
 
 /* ============================================================ DYNAMICS ACCORDION ============================================================ */
