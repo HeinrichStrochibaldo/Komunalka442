@@ -1169,34 +1169,9 @@ input.meter-locked:focus { border-color: var(--border) !important; }
   padding: 20px 20px 100px;
 }
 
-/* Постоянный оверлей "Тарифы" — НЕ через #section-overlay-content (тот общий
-   контейнер уничтожает innerHTML при переключении на Достижения/Настройки,
-   а autoSave() собирает ВСЕ number-инпуты страницы без разбора — поля
-   тарифов должны жить в DOM всегда, как и главный экран). */
-#tariffs-overlay {
-  position: fixed; inset: 0; z-index: 400;
-  background: var(--bg);
-  transform: translateX(100%);
-  transition: transform .3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  will-change: transform;
-}
-#tariffs-overlay.open { transform: translateX(0); }
-#tariffs-overlay-header {
-  display: flex; align-items: center; gap: 12px;
-  padding: 18px 20px 14px;
-  border-bottom: 1px solid var(--border);
-  position: sticky; top: 0; background: var(--bg); z-index: 1;
-}
-#tariffs-overlay-title { font-size: 17px; font-weight: 700; color: var(--text); flex: 1; }
-#tariffs-overlay-back {
-  background: transparent; border: none; color: var(--accent);
-  font-size: 15px; font-weight: 600; cursor: pointer;
-  padding: 4px 0; font-family: inherit;
-  display: flex; align-items: center; gap: 4px;
-}
-#tariffs-overlay-content { padding: 20px 20px 100px; }
+/* Тарифы теперь живут внутри общей оболочки #section-overlay (D-009: единый
+   стек "комнат"). Поля остаются постоянно в DOM (не пересоздаются через
+   innerHTML) — только видимость переключается, значения не теряются. */
 .tar-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
 .tar-row-label { display: flex; flex-direction: column; flex: 1; min-width: 0; }
 .tar-hist { font-size: 10px; color: var(--muted); margin-top: 2px; min-height: 12px; }
@@ -1330,12 +1305,43 @@ html.dev-mode #settings-btn{
 <!-- SECTION OVERLAY (Достижения / Настройки) -->
 <div id="section-overlay">
   <div id="section-overlay-header">
-    <button id="section-overlay-back" onclick="closeSectionOverlay()">
+    <button id="section-overlay-back" onclick="popSection()">
       <span style="font-size:18px">‹</span> Назад
     </button>
     <div id="section-overlay-title">Достижения</div>
   </div>
   <div id="section-overlay-content"></div>
+  <div id="tariffs-overlay-content" style="display:none;padding:20px 20px 100px">
+    <div class="sec-title">💧 Вода</div>
+    <div class="tar-row"><div class="tar-row-label"><label>ГВС (вода)</label><div class="tar-hist" id="tarhist-gvs-voda"></div></div><input type="number" id="t-gvs-voda" step="0.0001" oninput="onInput()"></div>
+    <div class="tar-row"><div class="tar-row-label"><label>ХВС</label><div class="tar-hist" id="tarhist-hvs"></div></div><input type="number" id="t-hvs" step="0.0001" oninput="onInput()"></div>
+    <div class="tar-row"><div class="tar-row-label"><label>Водоотведение</label><div class="tar-hist" id="tarhist-vodo"></div></div><input type="number" id="t-vodo" step="0.0001" oninput="onInput()"></div>
+    <div class="tar-row"><div class="tar-row-label"><label style="font-size:12px;color:var(--muted)">↳ Объём (переопределить)</label><div class="tar-hist">по умолчанию — ГВС+ХВС автоматически</div></div><input type="number" id="v-vodo" step="0.001" placeholder="авто" oninput="onInput()"></div>
+
+    <div class="sec-title" style="margin-top:20px">📄 МосОблЕИРЦ</div>
+    <div class="tar-row"><div class="tar-row-label"><label>Капремонт (фикс.)</label><div class="tar-hist" id="tarhist-kaprem"></div></div><input type="number" id="t-kaprem" step="0.01" oninput="onInput()"></div>
+    <div class="tar-row"><div class="tar-row-label"><label>ГВС (подогрев)</label><div class="tar-hist" id="tarhist-gvs-pod"></div></div><input type="number" id="t-gvs-pod" step="0.000001" oninput="onInput()"></div>
+    <div class="tar-row"><div class="tar-row-label"><label>Отопление</label><div class="tar-hist" id="tarhist-otop"></div></div><input type="number" id="t-otop" step="0.0001" oninput="onInput()"></div>
+
+    <div class="sec-title" style="margin-top:20px">⚡ Электричество</div>
+    <div class="tar-row"><div class="tar-row-label"><label>Т1 (день)</label><div class="tar-hist" id="tarhist-t1"></div></div><input type="number" id="t-t1" step="0.01" oninput="onInput()"></div>
+    <div class="tar-row"><div class="tar-row-label"><label>Т2 (ночь)</label><div class="tar-hist" id="tarhist-t2"></div></div><input type="number" id="t-t2" step="0.01" oninput="onInput()"></div>
+
+    <div class="sec-title" style="margin-top:20px">🏢 Пик-Комфорт</div>
+    <div class="tar-row"><div class="tar-row-label"><label>Содержание помещения (фикс.)</label><div class="tar-hist" id="tarhist-soderzh"></div></div><input type="number" id="t-soderzh" step="0.01" oninput="onInput()"></div>
+    <div class="tar-row"><div class="tar-row-label"><label>Обслуж. систем безопасности (фикс.)</label><div class="tar-hist" id="tarhist-bezop"></div></div><input type="number" id="t-bezop" step="0.01" oninput="onInput()"></div>
+    <div class="tar-row"><div class="tar-row-label"><label>Обращение с ТКО (фикс.)</label><div class="tar-hist" id="tarhist-tko"></div></div><input type="number" id="t-tko" step="0.01" oninput="onInput()"></div>
+    <div class="tar-row"><div class="tar-row-label"><label>ТВ (кабельное, фикс.)</label><div class="tar-hist" id="tarhist-tv"></div></div><input type="number" id="t-tv" step="0.01" oninput="onInput()"></div>
+    <div class="tar-row"><div class="tar-row-label"><label>ЭЭ ОДН (день)</label><div class="tar-hist" id="tarhist-oi-ee-d"></div></div><input type="number" id="t-oi-ee-d" step="0.01" oninput="onInput()"></div>
+    <div class="tar-row"><div class="tar-row-label"><label>ЭЭ ОДН (ночь)</label><div class="tar-hist" id="tarhist-oi-ee-n"></div></div><input type="number" id="t-oi-ee-n" step="0.01" oninput="onInput()"></div>
+    <div class="tar-row"><div class="tar-row-label"><label>Водоотведение ОИ</label><div class="tar-hist" id="tarhist-oi-vo"></div></div><input type="number" id="t-oi-vo" step="0.01" oninput="onInput()"></div>
+    <div class="tar-row"><div class="tar-row-label"><label>ГВС-вода ОИ</label><div class="tar-hist" id="tarhist-oi-gvs"></div></div><input type="number" id="t-oi-gvs" step="0.01" oninput="onInput()"></div>
+    <div class="tar-row"><div class="tar-row-label"><label>ГВС-подогрев ОИ</label><div class="tar-hist" id="tarhist-oi-gvsp"></div></div><input type="number" id="t-oi-gvsp" step="0.01" oninput="onInput()"></div>
+    <div class="tar-row"><div class="tar-row-label"><label>ХВС ОИ</label><div class="tar-hist" id="tarhist-oi-hvs"></div></div><input type="number" id="t-oi-hvs" step="0.01" oninput="onInput()"></div>
+
+    <div class="sec-title" style="margin-top:20px">🌐 Интернет</div>
+    <div class="tar-row"><div class="tar-row-label"><label>Абонентская плата (фикс.)</label><div class="tar-hist" id="tarhist-inet"></div></div><input type="number" id="t-inet" step="0.01" oninput="onInput()"></div>
+  </div>
 </div>
 
 <!-- TABS -->
@@ -1410,6 +1416,15 @@ html.dev-mode #settings-btn{
 
   <!-- D-008: DOOMUNALKA — приложение для наблюдения за жизнью квартиры, не для ввода данных.
        Hero-зона: вертикальная история месяца, 4 фазы по флагам _accepted/_receiptsAccepted/_paid -->
+  <!-- D-009: Дом и Комнаты. Главный экран (Ввод/Hero) — концептуальный центр
+       приложения, тот самый "дом". Уровень 1 (равноправные линзы просмотра
+       квартиры, вкладки верхнего уровня): Ввод, История, Динамика, Год —
+       к ним обращаются часто, сравнивая между собой. Уровень 2 (служебные
+       "комнаты", единый стек push/pop, НЕ конкурируют за место с Уровнем 1):
+       Настройки, Тарифы, Достижения, будущий Паспорт квартиры — заходишь
+       по делу, возвращаешься обратно. Правило для новых разделов: если это
+       ещё одна "линза" на квартиру — Уровень 1; если это обслуживание/
+       настройка/редко нужный инструмент — Уровень 2, "комната". -->
   <div id="hero-zone"></div>
 
   <div id="onboarding-hint" style="display:none"></div>
@@ -1703,43 +1718,6 @@ html.dev-mode #settings-btn{
 <div id="meterpad-demo-backdrop" style="display:none;position:fixed;inset:0;z-index:299;background:rgba(0,0,0,.4)" onclick="closeMeterPadDemo()"></div>
 
 <!-- Тарифы (Ветка В) — постоянный оверлей, все 19 ставок живут только здесь -->
-<div id="tariffs-overlay">
-  <div id="tariffs-overlay-header">
-    <button id="tariffs-overlay-back" onclick="closeTariffsOverlay()">‹ Назад</button>
-    <div id="tariffs-overlay-title">Тарифы</div>
-  </div>
-  <div id="tariffs-overlay-content">
-    <div class="sec-title">💧 Вода</div>
-    <div class="tar-row"><div class="tar-row-label"><label>ГВС (вода)</label><div class="tar-hist" id="tarhist-gvs-voda"></div></div><input type="number" id="t-gvs-voda" step="0.0001" oninput="onInput()"></div>
-    <div class="tar-row"><div class="tar-row-label"><label>ХВС</label><div class="tar-hist" id="tarhist-hvs"></div></div><input type="number" id="t-hvs" step="0.0001" oninput="onInput()"></div>
-    <div class="tar-row"><div class="tar-row-label"><label>Водоотведение</label><div class="tar-hist" id="tarhist-vodo"></div></div><input type="number" id="t-vodo" step="0.0001" oninput="onInput()"></div>
-    <div class="tar-row"><div class="tar-row-label"><label style="font-size:12px;color:var(--muted)">↳ Объём (переопределить)</label><div class="tar-hist">по умолчанию — ГВС+ХВС автоматически</div></div><input type="number" id="v-vodo" step="0.001" placeholder="авто" oninput="onInput()"></div>
-
-    <div class="sec-title" style="margin-top:20px">📄 МосОблЕИРЦ</div>
-    <div class="tar-row"><div class="tar-row-label"><label>Капремонт (фикс.)</label><div class="tar-hist" id="tarhist-kaprem"></div></div><input type="number" id="t-kaprem" step="0.01" oninput="onInput()"></div>
-    <div class="tar-row"><div class="tar-row-label"><label>ГВС (подогрев)</label><div class="tar-hist" id="tarhist-gvs-pod"></div></div><input type="number" id="t-gvs-pod" step="0.000001" oninput="onInput()"></div>
-    <div class="tar-row"><div class="tar-row-label"><label>Отопление</label><div class="tar-hist" id="tarhist-otop"></div></div><input type="number" id="t-otop" step="0.0001" oninput="onInput()"></div>
-
-    <div class="sec-title" style="margin-top:20px">⚡ Электричество</div>
-    <div class="tar-row"><div class="tar-row-label"><label>Т1 (день)</label><div class="tar-hist" id="tarhist-t1"></div></div><input type="number" id="t-t1" step="0.01" oninput="onInput()"></div>
-    <div class="tar-row"><div class="tar-row-label"><label>Т2 (ночь)</label><div class="tar-hist" id="tarhist-t2"></div></div><input type="number" id="t-t2" step="0.01" oninput="onInput()"></div>
-
-    <div class="sec-title" style="margin-top:20px">🏢 Пик-Комфорт</div>
-    <div class="tar-row"><div class="tar-row-label"><label>Содержание помещения (фикс.)</label><div class="tar-hist" id="tarhist-soderzh"></div></div><input type="number" id="t-soderzh" step="0.01" oninput="onInput()"></div>
-    <div class="tar-row"><div class="tar-row-label"><label>Обслуж. систем безопасности (фикс.)</label><div class="tar-hist" id="tarhist-bezop"></div></div><input type="number" id="t-bezop" step="0.01" oninput="onInput()"></div>
-    <div class="tar-row"><div class="tar-row-label"><label>Обращение с ТКО (фикс.)</label><div class="tar-hist" id="tarhist-tko"></div></div><input type="number" id="t-tko" step="0.01" oninput="onInput()"></div>
-    <div class="tar-row"><div class="tar-row-label"><label>ТВ (кабельное, фикс.)</label><div class="tar-hist" id="tarhist-tv"></div></div><input type="number" id="t-tv" step="0.01" oninput="onInput()"></div>
-    <div class="tar-row"><div class="tar-row-label"><label>ЭЭ ОДН (день)</label><div class="tar-hist" id="tarhist-oi-ee-d"></div></div><input type="number" id="t-oi-ee-d" step="0.01" oninput="onInput()"></div>
-    <div class="tar-row"><div class="tar-row-label"><label>ЭЭ ОДН (ночь)</label><div class="tar-hist" id="tarhist-oi-ee-n"></div></div><input type="number" id="t-oi-ee-n" step="0.01" oninput="onInput()"></div>
-    <div class="tar-row"><div class="tar-row-label"><label>Водоотведение ОИ</label><div class="tar-hist" id="tarhist-oi-vo"></div></div><input type="number" id="t-oi-vo" step="0.01" oninput="onInput()"></div>
-    <div class="tar-row"><div class="tar-row-label"><label>ГВС-вода ОИ</label><div class="tar-hist" id="tarhist-oi-gvs"></div></div><input type="number" id="t-oi-gvs" step="0.01" oninput="onInput()"></div>
-    <div class="tar-row"><div class="tar-row-label"><label>ГВС-подогрев ОИ</label><div class="tar-hist" id="tarhist-oi-gvsp"></div></div><input type="number" id="t-oi-gvsp" step="0.01" oninput="onInput()"></div>
-    <div class="tar-row"><div class="tar-row-label"><label>ХВС ОИ</label><div class="tar-hist" id="tarhist-oi-hvs"></div></div><input type="number" id="t-oi-hvs" step="0.01" oninput="onInput()"></div>
-
-    <div class="sec-title" style="margin-top:20px">🌐 Интернет</div>
-    <div class="tar-row"><div class="tar-row-label"><label>Абонентская плата (фикс.)</label><div class="tar-hist" id="tarhist-inet"></div></div><input type="number" id="t-inet" step="0.01" oninput="onInput()"></div>
-  </div>
-</div>
 <div id="meterpad-demo" style="display:none;position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:300;background:var(--surface);border:1px solid var(--border);border-radius:16px;width:min(calc(94vw - 150px),720px);box-shadow:0 8px 40px rgba(0,0,0,.5);flex-direction:column;max-height:85vh;overflow:hidden">
   <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border)">
     <div id="mpd-title" style="font-weight:700;font-size:15px">Показания</div>
@@ -5919,15 +5897,90 @@ function updateAchGrid(){
   if(xpEl)xpEl.textContent='✨ '+fmtInt(xpTotal)+' XP';
 }
 
+/* D-009: единый стек "комнат" — Достижения/Настройки/Тарифы живут в одной
+   оболочке #section-overlay. openSection() — точка входа снаружи (с главного
+   экрана), всегда начинает новый стек. pushSection()/popSection() — переходы
+   ВНУТРИ стека (например, Настройки → Тарифы → назад). */
+let sectionStack=[];
+
 function openSection(name){
+  sectionStack=[];
+  pushSection(name);
+}
+
+function pushSection(name){
   haptic(30);
   const overlay=document.getElementById('section-overlay');
+  if(!overlay)return;
+  sectionStack.push(name);
+  renderSectionScreen(name);
+  overlay.classList.add('open');
+  document.body.style.overflow='hidden';
+}
+
+function popSection(){
+  const leaving=sectionStack[sectionStack.length-1];
+  if(leaving==='tariffs'){
+    // Бывший closeTariffsOverlay() — фиксируем изменения ставок в историю
+    if(tarSnapshot){
+      const hist=getTariffHistory();
+      let changed=false;
+      TARIFF_IDS.forEach(id=>{
+        const k=id.slice(2),newVal=gv(id);
+        if(newVal!==tarSnapshot[k]){
+          if(!hist[k])hist[k]=[];
+          hist[k].push({value:newVal,date:new Date().toISOString().slice(0,10)});
+          changed=true;
+        }
+      });
+      if(changed){
+        saveTariffHistory(hist);
+        unlockAch('tariff_update');
+        sessionTouched.tariffs=true;checkHouseMaster();
+        if(Object.values(hist).some(h=>h.length>=5))unlockAch('chronicler');
+      }
+    }
+    tarSnapshot=null;
+  }
+  haptic(20);
+  sectionStack.pop();
+  if(sectionStack.length===0){
+    const overlay=document.getElementById('section-overlay');
+    if(overlay)overlay.classList.remove('open');
+    document.body.style.overflow='';
+  } else {
+    renderSectionScreen(sectionStack[sectionStack.length-1]);
+  }
+}
+
+// Полное закрытие независимо от глубины стека (программные вызовы,
+// например при импорте — сразу вернуться на главный экран).
+function closeSectionOverlay(){
+  while(sectionStack.length)popSection();
+}
+
+function renderSectionScreen(name){
   const title=document.getElementById('section-overlay-title');
   const content=document.getElementById('section-overlay-content');
-  if(!overlay||!content)return;
+  const tariffsContent=document.getElementById('tariffs-overlay-content');
+  if(!title||!content||!tariffsContent)return;
+
+  if(name==='tariffs'){
+    content.style.display='none';
+    tariffsContent.style.display='block';
+    title.textContent='📊 Тарифы';
+    unlockAch('accountant');
+    tarSnapshot={};
+    TARIFF_IDS.forEach(id=>{tarSnapshot[id.slice(2)]=gv(id);});
+    renderTariffHistoryHints();
+    return;
+  }
+
+  content.style.display='block';
+  tariffsContent.style.display='none';
 
   if(name==='achievements'){
-    if(title)title.textContent='🏆 Достижения';
+    title.textContent='🏆 Достижения';
     const xp=parseInt(localStorage.getItem('kxp')||'0');
     const r=getRecords();
     const recsHtml=r?`<div style="margin-bottom:16px;padding:12px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:12px">
@@ -5972,20 +6025,10 @@ function openSection(name){
       });
     }
   } else if(name==='settings'){
-    if(title)title.textContent='⚙️ Настройки';
+    title.textContent='⚙️ Настройки';
     _buildSettingsContent(content);
     applySettings();
   }
-
-  overlay.classList.add('open');
-  document.body.style.overflow='hidden';
-}
-
-function closeSectionOverlay(){
-  haptic(20);
-  const overlay=document.getElementById('section-overlay');
-  if(overlay)overlay.classList.remove('open');
-  document.body.style.overflow='';
 }
 
 /* Ветка В.2 — история ставок. Снимок при открытии, сравнение при закрытии:
@@ -6043,42 +6086,9 @@ function toggleTariffHistory(k){
 }
 
 let tarSnapshot=null;
-function openTariffsOverlay(){
-  haptic(30);
-  const overlay=document.getElementById('tariffs-overlay');
-  if(!overlay)return;
-  unlockAch('accountant');
-  tarSnapshot={};
-  TARIFF_IDS.forEach(id=>{tarSnapshot[id.slice(2)]=gv(id);});
-  overlay.classList.add('open');
-  document.body.style.overflow='hidden';
-  renderTariffHistoryHints();
-}
-function closeTariffsOverlay(){
-  haptic(20);
-  const overlay=document.getElementById('tariffs-overlay');
-  if(overlay)overlay.classList.remove('open');
-  document.body.style.overflow='';
-  if(tarSnapshot){
-    const hist=getTariffHistory();
-    let changed=false;
-    TARIFF_IDS.forEach(id=>{
-      const k=id.slice(2),newVal=gv(id);
-      if(newVal!==tarSnapshot[k]){
-        if(!hist[k])hist[k]=[];
-        hist[k].push({value:newVal,date:new Date().toISOString().slice(0,10)});
-        changed=true;
-      }
-    });
-    if(changed){
-      saveTariffHistory(hist);
-      unlockAch('tariff_update');
-      sessionTouched.tariffs=true;checkHouseMaster();
-      if(Object.values(hist).some(h=>h.length>=5))unlockAch('chronicler');
-    }
-  }
-  tarSnapshot=null;
-}
+// openTariffsOverlay/closeTariffsOverlay удалены — Тарифы теперь просто ещё
+// один экран стека D-009, открывается через pushSection('tariffs'),
+// логика снимка/сравнения истории живёт внутри pushSection()/popSection().
 
 
 /* ── П59: Здоровье данных ── */
@@ -6296,7 +6306,7 @@ function _buildSettingsContent(content){
     <div class="set-section">
       <div class="set-section-title">📊 Тарифы</div>
       <div class="set-row"><label>Все ставки расчётов</label>
-        <button class="btn btn-ghost btn-sm" onclick="openTariffsOverlay()">Открыть →</button>
+        <button class="btn btn-ghost btn-sm" onclick="pushSection('tariffs')">Открыть →</button>
       </div>
     </div>
 
@@ -6613,7 +6623,7 @@ if(!ACHS.find(a=>a.id==='quote1001')){
     const dx=e.changedTouches[0].clientX-edgeStart;
     const overlay=document.getElementById('section-overlay');
     if(dx>60&&overlay&&overlay.classList.contains('open')){
-      closeSectionOverlay();haptic(20);
+      popSection();
     }
     edgeStart=null;
   },{passive:true});
