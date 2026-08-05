@@ -6015,7 +6015,25 @@ function renderSectionScreen(name){
   } else if(name==='settings'){
     title.textContent='⚙️ Настройки';
     _buildSettingsContent(content);
+  } else if(name==='set-profile'){
+    title.textContent='👤 Профиль';
+    _buildSettingsProfile(content);
     applySettings();
+  } else if(name==='set-appearance'){
+    title.textContent='🎨 Внешний вид';
+    _buildSettingsAppearance(content);
+    applySettings();
+  } else if(name==='set-data'){
+    title.textContent='💾 Данные';
+    _buildSettingsData(content);
+    applySettings();
+  } else if(name==='set-verify'){
+    title.textContent='🔧 Поверка счётчиков';
+    _buildSettingsVerify(content);
+    applySettings();
+  } else if(name==='set-contacts'){
+    title.textContent='📞 Контакты поставщиков';
+    _buildSettingsContacts(content);
   }
 }
 
@@ -6224,23 +6242,35 @@ async function runHealthCheck(){
 
 // Строим настройки в оверлее
 function _buildSettingsContent(content){
-  const nv=settings.nameV||'Вадимовна',nm=settings.nameMe||'Я';
-  const isLight=document.documentElement.classList.contains('light');
-  const colors=['#5b8cff','#34d399','#f97316','#a78bfa','#f87171','#fbbf24','#38bdf8','#ec4899'];
   content.innerHTML=`
-
-    <!-- 👤 Профиль -->
     <div class="set-section">
-      <div class="set-section-title">👤 Профиль</div>
+      <div class="set-row" style="cursor:pointer" onclick="pushSection('set-profile')"><label>👤 Профиль</label><span style="color:var(--muted)">›</span></div>
+      <div class="set-row" style="cursor:pointer" onclick="pushSection('set-appearance')"><label>🎨 Внешний вид</label><span style="color:var(--muted)">›</span></div>
+      <div class="set-row" style="cursor:pointer" onclick="pushSection('set-data')"><label>💾 Данные</label><span style="color:var(--muted)">›</span></div>
+      <div class="set-row" style="cursor:pointer" onclick="pushSection('tariffs')"><label>📊 Тарифы</label><span style="color:var(--muted)">›</span></div>
+      <div class="set-row" style="cursor:pointer" onclick="pushSection('set-verify')"><label>🔧 Поверка счётчиков</label><span style="color:var(--muted)">›</span></div>
+      <div class="set-row" style="cursor:pointer" onclick="pushSection('set-contacts')"><label>📞 Контакты поставщиков</label><span style="color:var(--muted)">›</span></div>
+    </div>
+  `;
+}
+
+function _buildSettingsProfile(content){
+  const nv=settings.nameV||'Вадимовна',nm=settings.nameMe||'Я';
+  content.innerHTML=`
+    <div class="set-section">
       <div class="set-row"><label>Первый плательщик</label><input type="text" id="so-name-v" value="${nv}" style="width:140px" oninput="soSaveSettings()"></div>
       <div class="set-row"><label>Второй плательщик</label><input type="text" id="so-name-me" value="${nm}" style="width:140px" oninput="soSaveSettings()"></div>
       <div class="set-row"><label>Площадь квартиры (м²)</label><input type="text" id="so-area" value="${settings.area||27}" style="width:80px" oninput="soSaveSettings()"></div>
       <div class="set-row"><label>Название трекера</label><input type="text" id="so-title" value="${settings.title||'Коммуналка'}" style="width:140px" oninput="soSaveSettings()"></div>
     </div>
+  `;
+}
 
-    <!-- 🎨 Внешний вид -->
+function _buildSettingsAppearance(content){
+  const isLight=document.documentElement.classList.contains('light');
+  const colors=['#5b8cff','#34d399','#f97316','#a78bfa','#f87171','#fbbf24','#38bdf8','#ec4899'];
+  content.innerHTML=`
     <div class="set-section">
-      <div class="set-section-title">🎨 Внешний вид</div>
       <div class="set-row"><label>Тема</label>
         <button class="btn btn-ghost btn-sm" onclick="toggleTheme()">${isLight?'🌙 Тёмная':'☀️ Светлая'}</button>
       </div>
@@ -6256,10 +6286,12 @@ function _buildSettingsContent(content){
         </label>
       </div>
     </div>
+  `;
+}
 
-    <!-- 💾 Данные -->
+function _buildSettingsData(content){
+  content.innerHTML=`
     <div class="set-section">
-      <div class="set-section-title">💾 Данные</div>
       <div class="set-row"><label>Резервная копия</label>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn btn-ghost btn-sm" onclick="exportJSON()">💾 Экспорт</button>
@@ -6289,18 +6321,12 @@ function _buildSettingsContent(content){
         <button class="btn btn-ghost btn-sm" style="width:100%" onclick="runHealthCheck()">🔍 Запустить проверку</button>
       </div>
     </div>
+  `;
+}
 
-    <!-- 📊 Тарифы -->
+function _buildSettingsVerify(content){
+  content.innerHTML=`
     <div class="set-section">
-      <div class="set-section-title">📊 Тарифы</div>
-      <div class="set-row"><label>Все ставки расчётов</label>
-        <button class="btn btn-ghost btn-sm" onclick="pushSection('tariffs')">Открыть →</button>
-      </div>
-    </div>
-
-    <!-- 🔧 Поверка счётчиков -->
-    <div class="set-section">
-      <div class="set-section-title">🔧 Поверка счётчиков</div>
       <div class="set-row" style="flex-direction:column;align-items:stretch;gap:6px">
         <label>ГВС — серийный номер</label>
         <input type="text" id="set-sgvs" placeholder="Модель · номер">
@@ -6321,10 +6347,12 @@ function _buildSettingsContent(content){
       </div>
       <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:12px" onclick="saveMeterInfo(this)">💾 Сохранить</button>
     </div>
+  `;
+}
 
-    <!-- 📞 Контакты -->
+function _buildSettingsContacts(content){
+  content.innerHTML=`
     <div class="set-section">
-      <div class="set-section-title">📞 Контакты поставщиков</div>
       <div class="contact-grid">
         <div class="contact-card"><div class="contact-name">🏦 МосОблЕИРЦ</div><a class="contact-phone" href="tel:+74955263600">+7 (495) 526-36-00</a></div>
         <div class="contact-card"><div class="contact-name">🏠 Пик-Комфорт</div><a class="contact-phone" href="tel:+74955058989">+7 (495) 505-89-89</a></div>
