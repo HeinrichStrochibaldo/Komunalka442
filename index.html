@@ -383,40 +383,14 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
   border-radius: 10px; padding: 10px; font-size: 13px; font-weight: 500; cursor: pointer;
 }
 
-.paid-block {
-  background: rgba(52,211,153,.08); border: 1px solid rgba(52,211,153,.25);
-  border-radius: var(--radius-md); padding: 14px 16px; margin-bottom: 16px;
-  display: none;
-}
-.paid-block.show { display: block; }
-.paid-block-top {
-  display: flex; align-items: center; justify-content: space-between; gap: 10px;
-}
-.paid-status { display: flex; align-items: center; gap: 8px; }
-.paid-check { font-size: 20px; }
-.paid-info { display: flex; flex-direction: column; gap: 2px; }
-.paid-date { font-size: 13px; font-weight: 600; color: var(--green); }
-.paid-summary { font-size: 12px; color: var(--muted); }
-.paid-next { font-size: 11px; color: var(--muted); margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(52,211,153,.2); }
-.paid-next span { color: var(--green); font-weight: 600; }
+/* .paid-detail-btn — переиспользуется внутри Hero фазы PAID (см. D-008/
+   заметку про Итерацию 3 рядом с #hero-zone). Остальные классы этого блока
+   (.paid-block, .next-payment, .np-*) убраны — элементы удалены из HTML. */
 .paid-detail-btn {
   font-size: 11px; color: var(--accent); cursor: pointer; margin-top: 6px;
   display: inline-block; text-decoration: none;
 }
 .paid-detail-btn:hover { text-decoration: underline; }
-
-/* ============================================================
-   NEXT PAYMENT WIDGET (unpaid)
-   ============================================================ */
-.next-payment {
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius-md); padding: 12px 16px; margin-bottom: 16px;
-  display: flex; align-items: center; justify-content: space-between;
-}
-.np-label { font-size: 12px; color: var(--muted); margin-bottom: 2px; }
-.np-days { font-size: 18px; font-weight: 700; color: var(--text); }
-.np-days.urgent { color: var(--red); }
-.np-days.soon { color: var(--yellow); }
 
 /* ============================================================
    METER BLOCK
@@ -1425,42 +1399,21 @@ html.dev-mode #settings-btn{
        по делу, возвращаешься обратно. Правило для новых разделов: если это
        ещё одна "линза" на квартиру — Уровень 1; если это обслуживание/
        настройка/редко нужный инструмент — Уровень 2, "комната". -->
+  <!-- ЗАМЕТКА (Итерация 3, Hero-чистка): #detail-view — постоянный дом живых
+       полей квитанций/тарифов, НЕ старый экран для удаления. toggleDetail()
+       (был кнопкой внутри #paid-block) перенесён в Hero фазы PAID как
+       "Показать подробно ▾" — логика detailOpen/toggleDetail() не менялась,
+       только место триггера. #next-payment убран как дублирующий блок
+       "Сегодня" в Hero (та же мысль "прошлый месяц не оплачен"/скоро платёж).
+       #month-progress-bar убран как дублирующий текстовый прогресс Hero
+       фазы IN_PROGRESS ("Вода✓ ЭЭ✓..."). Если что-то из этого понадобится
+       вернуть — искать здесь, не переизобретать заново. -->
   <div id="hero-zone"></div>
 
   <div id="onboarding-hint" style="display:none"></div>
   <div id="tariff-check-row" style="display:none;align-items:center;justify-content:space-between;gap:10px;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.3);border-radius:10px;padding:10px 14px;margin-bottom:14px">
     <span style="font-size:12px;color:var(--yellow)">⚠️ Тариф не менялся 3 месяца — всё ещё актуален?</span>
     <button onclick="dismissTariffAlert()" style="background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;flex-shrink:0">Ок</button>
-  </div>
-
-  <!-- П31: Прогресс-полоска заполненности месяца -->
-  <div id="month-progress-bar" style="height:3px;background:var(--border);border-radius:2px;margin-bottom:14px;overflow:hidden">
-    <div id="month-progress-fill" style="height:100%;width:0%;border-radius:2px;background:var(--border);transition:width .5s cubic-bezier(.4,0,.2,1),background .5s"></div>
-  </div>
-
-  <!-- Paid status block -->
-  <div class="paid-block" id="paid-block">
-    <div class="paid-block-top">
-      <div class="paid-status">
-        <span class="paid-check">✅</span>
-        <div class="paid-info">
-          <div class="paid-date" id="paid-date-txt">Оплачено</div>
-          <div class="paid-summary" id="paid-summary-txt">—</div>
-        </div>
-      </div>
-      <button class="btn btn-ghost btn-sm" onclick="handleUnpaid()">Отменить оплату</button>
-    </div>
-    <div class="paid-next" id="paid-next-txt"></div>
-    <a class="paid-detail-btn" onclick="toggleDetail()">Показать подробно ▾</a>
-  </div>
-
-  <!-- Next payment widget (shown when not paid) -->
-  <div class="next-payment" id="next-payment" style="display:none">
-    <div>
-      <div class="np-label">До следующего платежа</div>
-      <div class="np-days" id="np-days">—</div>
-    </div>
-    <div style="font-size:24px">📅</div>
   </div>
 
   <!-- Meter block -->
@@ -1984,7 +1937,7 @@ async function fbLoad(){
     if(_curIdx!==-1) curIdx=_curIdx;
     else curIdx=MK.length-1; // защитная страховка — в норме сюда уже не попадаем
     loadMonth();updateVerify();updateStreak();updatePrestigeBadge();checkEaster();
-    updateXPDisplay();updateProgressBar();updateOnboarding();
+    updateXPDisplay();updateOnboarding();
     checkTariffSuggestion();
       }catch(e){console.error('Render:',e);_dbg('<span style="color:#f87171">RENDER ERR: '+e.message+'</span>');}
 }
@@ -2167,7 +2120,6 @@ function render(){
   setT('ft-grand',c.grand>0?fmt(c.grand):'—');setT('ft-v',c.vadim>0?fmt(c.vadim):'—');setT('ft-me',c.me>0?fmt(c.me):'—');
   highlightTariffs();updatePaidUI(c);renderHero(c);
   // Постобработка (ранее были патчи — теперь всё здесь)
-  updateProgressBar();
   updateOnboarding();
   updateYoY();
   updateSavings();
@@ -2607,6 +2559,10 @@ function renderHero(c){
       '<div class="hero-sum">'+fmt(grand)+'</div>'+
       (streak>=2?'<div class="hero-sub" style="color:var(--accent)">🔥 Стрик: '+streak+' мес.</div>':'')+
       (cmpText?'<div class="hero-context">'+cmpText+'</div>':'')+
+      '<div style="display:flex;justify-content:center;gap:16px;margin-top:12px">'+
+        '<a class="paid-detail-btn" onclick="toggleDetail()" style="font-size:12px;color:var(--accent);cursor:pointer">'+(detailOpen?'Скрыть подробности ▴':'Показать подробно ▾')+'</a>'+
+        '<a onclick="handleUnpaid()" style="font-size:12px;color:var(--muted);cursor:pointer">Отменить оплату</a>'+
+      '</div>'+
     '</div>';
 
   } else if(allFilled){
@@ -2659,46 +2615,13 @@ function updatePaidBtn(){
 function updatePaidUI(c){
   const m=curMonth(),d=allData[m];
   const paid=d&&d._paid;
-  const pb=document.getElementById('paid-block');
-  const np=document.getElementById('next-payment');
   const dv=document.getElementById('detail-view');
   if(paid){
-    if(pb)pb.classList.add('show');
-    if(np)np.style.display='none';
-    // Date
-    const pd=d._paidDate?new Date(d._paidDate):null;
-    const ds=pd?pd.toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'}):'—';
-    setT('paid-date-txt','Оплачено '+ds);
-    // Summary
-    const nv=settings.nameV||'Вадимовна',nm=settings.nameMe||'Я';
-    setT('paid-summary-txt',c.grand>0?fmt(c.grand)+' · '+nv+': '+fmt(c.vadim)+' · '+nm+': '+fmt(c.me):'—');
-    // Next payment
-    if(pd){
-      const next=new Date(pd);next.setDate(next.getDate()+30);
-      const today=new Date();
-      const days=Math.ceil((next-today)/MS_PER_DAY);
-      const nextStr=next.toLocaleDateString('ru-RU',{day:'numeric',month:'long'});
-      if(days>0){const txt='Следующий платёж ориентировочно '+nextStr+' · через '+days+' дн.';setT('paid-next-txt',txt);}
-      else setT('paid-next-txt','Пора оплачивать! Следующий платёж был '+nextStr);
-    }
-    // Detail view visibility
+    // Detail view visibility — Hero сама решает, что показывать выше;
+    // здесь только состояние блока с живыми полями квитанций/тарифов.
     if(dv)dv.classList.toggle('show',detailOpen);
   }else{
-    if(pb)pb.classList.remove('show');
     if(dv){dv.classList.add('show');detailOpen=true;}
-    // Next payment widget
-    const paidMonths=MK.filter(k=>allData[k]&&allData[k]._paid&&allData[k]._paidDate);
-    if(paidMonths.length>0&&np){
-      const lastPaid=new Date(allData[paidMonths[paidMonths.length-1]]._paidDate);
-      const next=new Date(lastPaid);next.setDate(next.getDate()+30);
-      const days=Math.ceil((next-new Date())/MS_PER_DAY);
-      const daysEl=document.getElementById('np-days');
-      if(daysEl){
-        daysEl.textContent=days>0?'через '+days+' дн.':'Пора платить!';
-        daysEl.className='np-days'+(days<=3?' urgent':days<=7?' soon':'');
-      }
-      np.style.display='flex';
-    }else if(np){np.style.display='none';}
   }
 }
 
@@ -2708,8 +2631,6 @@ function toggleDetail(){
   if(dv)dv.classList.toggle('show',detailOpen);
   const btn=document.querySelector('.paid-detail-btn');
   if(btn)btn.textContent=detailOpen?'Скрыть подробности ▴':'Показать подробно ▾';
-  const pb=document.getElementById('paid-block');
-  if(pb&&detailOpen){pb.style.overflow='visible';}
 }
 
 /* ============================================================ FLOATING BAR ============================================================ */
@@ -5110,20 +5031,9 @@ function showSaveWave(){
 }
 
 
-/* П31: Прогресс-полоска под навигацией */
-function updateProgressBar(){
-  const fill=document.getElementById('month-progress-fill');
-  if(!fill)return;
-  const m=curMonth(), d=allData[m]||{};
-  const total=document.querySelectorAll('input[type=number]').length;
-  const filled=Object.keys(d).filter(k=>!k.startsWith('_')&&d[k]!==undefined&&d[k]!==null).length;
-  const pct=total>0?Math.min(100,Math.round(filled/total*100)):0;
-  const paid=d._paid;
-  // Цвет: серый < 30%, жёлтый < 80%, зелёный = 100% или оплачено
-  const color=paid||pct===100?'var(--green)':pct>=50?'var(--yellow)':'var(--accent)';
-  fill.style.width=pct+'%';
-  fill.style.background=color;
-}
+/* П31: Прогресс-полоска под навигацией — УБРАНА (Итерация 3, Hero-чистка).
+   Дублировала текстовый прогресс Hero фазы IN_PROGRESS. См. заметку в HTML
+   рядом с #hero-zone, если понадобится восстановить. */
 
 /* П33: Онбординг-подсказка */
 function updateOnboarding(){
@@ -7260,7 +7170,6 @@ const QA_TESTS={
     closeOverlay('datepick-overlay');return ok;
   },
   'Отмена оплаты': async()=>typeof handleUnpaid==='function',
-  'Прогресс-полоска запо': async()=>{updateProgressBar();return true;},
   // История
   'Вкладка История — та': async()=>{
     renderHistory();return !!document.getElementById('hist-body');
@@ -7602,7 +7511,7 @@ function renderDev(){
     'showEgg','switchTab','applyTheme','toggleTheme','hideSplash','haptic','fabSaved',
     'openSheet','closeSheet',
     'buildSheetMonth','openPayHistorySheet','testAllAchs','hideSkeleton',
-    'fabLoading','showSaveWave','updateProgressBar','updateOnboarding','getRecords',
+    'fabLoading','showSaveWave','updateOnboarding','getRecords',
     'addXP','updateXPDisplay','showXPFloat','updateYoY',
     'updateRecordsTable','playDoom','playToastySound',
     'confirmAccept','lockedFieldFeedback','fpShowScreen1','fpGoConfirm','fpApply',
