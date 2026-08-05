@@ -1350,7 +1350,8 @@ html.dev-mode #settings-btn{
 
 <!-- Streak Popup -->
 <div id="streak-popup-overlay" onclick="closeStreakPopup()"></div>
-<div id="streak-popup" onclick="closeStreakPopup()">
+<div id="streak-popup">
+  <button onclick="closeStreakPopup()" style="position:absolute;top:8px;right:8px;background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:4px;line-height:1">✕</button>
   <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:12px;text-align:center">🔥 Серия оплат</div>
   <div id="streak-fires" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px"></div>
   <div id="streak-months" style="font-size:11px;color:var(--muted)"></div>
@@ -3237,19 +3238,26 @@ function openStreakPopup(){
     popup.style.left=left+'px';
     popup.style.top=(rect.bottom+6)+'px';
     popup.style.width='auto';
+    // Длинная серия не должна выезжать за экран — ограничиваем высоту и
+    // даём внутренний скролл вместо рендера на тысячи пикселей вниз.
+    popup.style.maxHeight='min(70vh, 480px)';
     popup.style.height='auto';
+    popup.style.overflowY='auto';
     popup.style.borderRadius='16px';
     popup.style.opacity='1';
-    popup.style.overflow='visible';
     popup.style.pointerEvents='auto';
     popup.style.padding='16px';
   }));
 
   document.getElementById('streak-popup-overlay').classList.add('open');
 
-  // Автозакрытие через 3 сек
+  // Автозакрытие через 3 сек — но не для длинных серий: пользователю
+  // физически не хватит времени прокрутить и посмотреть на 6+ месяцев.
+  // Для них закрытие только явное (✕ или тап снаружи).
   clearTimeout(popup._autoClose);
-  popup._autoClose=setTimeout(()=>closeStreakPopup(),TOOLTIP_DURATION);
+  if(streak.length<=6){
+    popup._autoClose=setTimeout(()=>closeStreakPopup(),TOOLTIP_DURATION);
+  }
 }
 function closeStreakPopup(){
   const popup=document.getElementById('streak-popup');
