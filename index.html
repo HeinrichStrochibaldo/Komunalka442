@@ -6088,8 +6088,16 @@ async function runHealthCheck(){
   const results=[];
   const now=new Date().toLocaleString('ru-RU',{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'});
 
-  // 1. Синхронизация Firebase
-  const fbOk=typeof db!=='undefined'&&db!==null;
+  // 1. Синхронизация Firebase — реальный пинг, не просто "объект существует".
+  // Раньше проверялось только typeof db!=='undefined' — с неверным ключом или
+  // недоступным проектом это всё равно показывало "подключён".
+  let fbOk=false;
+  if(typeof db!=='undefined'&&db!==null&&typeof DOC!=='undefined'&&DOC){
+    try{
+      await Promise.race([DOC.get(),new Promise((_,r)=>setTimeout(()=>r(new Error('timeout')),3000))]);
+      fbOk=true;
+    }catch(e){fbOk=false;}
+  }
   results.push({icon:'☁',label:'Синхронизация',status:fbOk?'ok':'warn',msg:fbOk?'Firebase подключён':'Используется localStorage'});
 
   // 2. Локальная копия
@@ -6127,13 +6135,17 @@ async function runHealthCheck(){
   results.push({icon:'🔢',label:'Показания счётчиков',status:meterErrors.length?'warn':'ok',
     msg:meterErrors.length?'Снижение: '+meterErrors.slice(0,2).join(', '):'Логика соблюдена'});
 
-  // 5. Проверка расчётов — пересчитываем текущий месяц
+  // 5. Проверка расчётов — сравниваем ДВА независимых пути: из живых DOM-полей
+  // (compute()) и из сохранённых данных месяца (cfd()). Раньше сравнивалось
+  // с allData[m].grand — поле, которое никогда не сохранялось, поэтому
+  // проверка была всегда зелёной вне зависимости от реального состояния.
   try{
-    const c=compute();
-    const saved=allData[curMonth()]&&allData[curMonth()].grand;
-    const diff=saved?Math.abs(c.grand-(saved||0)):0;
+    const fromDom=compute().grand;
+    const savedData=allData[curMonth()];
+    const fromStored=savedData?cfd(savedData).grand:fromDom;
+    const diff=Math.abs(fromDom-fromStored);
     results.push({icon:'🧮',label:'Расчёты',status:diff>1?'warn':'ok',
-      msg:diff>1?'Расхождение: '+fmt(diff):'Корректны'});
+      msg:diff>1?'Расхождение экрана и сохранённых данных: '+fmt(diff):'Корректны'});
   }catch(e){
     results.push({icon:'🧮',label:'Расчёты',status:'error',msg:'Ошибка: '+e.message});
   }
