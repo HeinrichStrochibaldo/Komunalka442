@@ -1903,9 +1903,10 @@ const ACHS=[
   {id:'allmonths',icon:'🏆',name:'Годовой рекорд',desc:'Все 12 месяцев заполнены',xp:200},
   {id:'export1',icon:'💾',name:'Архивариус',desc:'Сделал резервную копию',xp:30},
   {id:'konami',icon:'🎮',name:'Геймер',desc:'↑↑↓↓←→←→BA',xp:50},
+  {id:'triple_tap',icon:'👆',name:'Любопытный',desc:'3 тапа по заголовку «Коммуналка»',xp:20},
   {id:'toasty',icon:'🔥',name:'TOASTY!',desc:'Застал пасхалку MK',xp:25},
   {id:'toasty_catch',icon:'👆',name:'Поймал!',desc:'Поймал Toasty тапом',xp:40},
-  {id:'birthday',icon:'🎂',name:'С днём рождения!',desc:'Открыл трекер в свой день рождения',xp:100},
+  {id:'birthday',icon:'🎂',name:'Годовщина трекера',desc:'Ровно год с первого запуска приложения',xp:100},
   {id:'newyear',icon:'🎉',name:'С новым годом!',desc:'Открыл трекер 1 января',xp:50},
   // Новые — привязаны к MeterPad/Тарифам/Поверкам
   {id:'perfect_month',icon:'✨',name:'Идеальный месяц',desc:'Все 4 блока заполнены за один заход в FAB',xp:60},
@@ -4742,7 +4743,7 @@ if(appTitle){
         showEgg('🎮 MOBILE KONAMI!','5 тапов — Doom активирован!');
         playDoom();haptic([100,50,100,50,200]);
       } else if(mobileTapCount>=3){
-        unlockAch('birthday');launchConfetti();showEgg('🎂 С днём рождения!','Трекер поздравляет!');
+        unlockAch('triple_tap');launchConfetti();showEgg('👆 Нашёл!','Секретов ещё много...');
       }
       mobileTapCount=0;
     },600);
