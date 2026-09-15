@@ -6072,9 +6072,14 @@ function renderTariffHistoryHints(){
     el.style.cursor='pointer';
     el.onclick=()=>toggleTariffHistory(k);
     if(tarExpanded===k){
-      const lines=h.slice().reverse().map(e=>{
+      // Сохраняем ИСХОДНЫЙ индекс каждой записи до разворота списка —
+      // иначе кнопка удаления могла бы стереть не ту запись.
+      const lines=h.map((e,i)=>({...e,origIdx:i})).reverse().map(e=>{
         const ds=new Date(e.date).toLocaleDateString('ru-RU',{day:'numeric',month:'short',year:'numeric'});
-        return '<div>'+ds+': '+e.value+'</div>';
+        return '<div style="display:flex;align-items:center;justify-content:space-between;gap:6px">'+
+          '<span>'+ds+': '+e.value+'</span>'+
+          '<span onclick="event.stopPropagation();deleteTariffHistEntry(\''+k+'\','+e.origIdx+')" style="color:var(--red);cursor:pointer;padding:0 4px">✕</span>'+
+        '</div>';
       });
       el.innerHTML=lines.join('')+'<div style="color:var(--accent)">свернуть ▲</div>';
     } else {
@@ -6089,6 +6094,65 @@ function toggleTariffHistory(k){
   tarExpanded=(tarExpanded===k)?null:k;
   if(wasCollapsed)unlockAch('thorough');
   renderTariffHistoryHints();
+}
+// Удаление ошибочной записи истории (например, опечатка — объём вместо
+// ставки). Нужно, чтобы явная ошибка не тянулась годами через сравнения
+// в Динамике, искажая Δ% для двух соседних точек (входа в ошибку и выхода).
+function deleteTariffHistEntry(k,idx){
+  const hist=getTariffHistory();
+  if(!hist[k]||!hist[k][idx])return;
+  const entry=hist[k][idx];
+  const ds=new Date(entry.date).toLocaleDateString('ru-RU',{day:'numeric',month:'short',year:'numeric'});
+  showConfirm('Удалить запись «'+ds+': '+entry.value+'» из истории тарифа? Действие необратимо.',()=>{
+    hist[k].splice(idx,1);
+    if(hist[k].length===0)delete hist[k];
+    saveTariffHistory(hist);
+    renderTariffHistoryHints();
+    showFabToast('Запись удалена');
+  });
+}
+
+/* Ретроактивное исправление тарифа. autoSave() сохраняет снимок тарифных
+   ставок В КАЖДЫЙ месяц отдельно (все number-инпуты со страницы, включая
+   постоянно живущие в DOM t-* поля) — значит ошибочное значение могло
+   записаться не в одно место, а во все месяцы, что были открыты, пока
+   ошибка была "живой" в общих полях. Правка одной ставки сегодня это
+   не чинит — нужно найти и заменить во всех уже сохранённых месяцах. */
+function findWrongTariffMonths(){
+  const tariffKey=document.getElementById('rtf-tariff').value;
+  const wrongRaw=document.getElementById('rtf-wrong').value;
+  const rightRaw=document.getElementById('rtf-right').value;
+  const resultEl=document.getElementById('rtf-result');
+  if(wrongRaw===''||rightRaw===''){
+    resultEl.textContent='Заполни оба значения.';
+    return;
+  }
+  const wrong=parseFloat(wrongRaw),right=parseFloat(rightRaw);
+  const EPS=1e-9; // защита от погрешности сравнения float
+  const affected=MK.filter(m=>allData[m]&&allData[m][tariffKey]!==undefined&&Math.abs(allData[m][tariffKey]-wrong)<EPS);
+  if(!affected.length){
+    resultEl.textContent='Не найдено месяцев с таким значением.';
+    return;
+  }
+  resultEl.innerHTML='Найдено: '+affected.length+' мес. ('+affected.map(m=>MONTHS[m]||m).join(', ')+')'+
+    '<button class="btn btn-danger btn-sm" style="width:100%;margin-top:8px" onclick="applyRetroTariffFix(\''+tariffKey+'\','+wrong+','+right+')">Заменить во всех ('+affected.length+')</button>';
+}
+function applyRetroTariffFix(tariffKey,wrong,right){
+  const label=TARIFF_LABELS[tariffKey.slice(2)]||tariffKey;
+  showConfirm('Заменить '+wrong+' → '+right+' для «'+label+'» во всех найденных месяцах? Действие необратимо.',()=>{
+    const EPS=1e-9;
+    let count=0;
+    MK.forEach(m=>{
+      if(allData[m]&&allData[m][tariffKey]!==undefined&&Math.abs(allData[m][tariffKey]-wrong)<EPS){
+        allData[m][tariffKey]=right;
+        count++;
+      }
+    });
+    fbSave();
+    document.getElementById('rtf-result').textContent='Готово — исправлено месяцев: '+count;
+    showFabToast('Исправлено '+count+' мес.');
+    render();
+  });
 }
 
 let tarSnapshot=null;
@@ -6290,6 +6354,7 @@ function _buildSettingsAppearance(content){
 }
 
 function _buildSettingsData(content){
+  const tariffOptions=Object.entries(TARIFF_LABELS).map(([id,label])=>'<option value="t-'+id+'">'+label+'</option>').join('');
   content.innerHTML=`
     <div class="set-section">
       <div class="set-row"><label>Резервная копия</label>
@@ -6308,6 +6373,17 @@ function _buildSettingsData(content){
       </div>
       <div class="set-row"><label style="color:var(--red)">Полный сброс после мая</label>
         <button class="btn btn-danger btn-sm" onclick="fullWipe()">💣 Вайп</button>
+      </div>
+      <div class="set-row" style="flex-direction:column;align-items:stretch;gap:8px">
+        <label>🔧 Исправить тариф задним числом</label>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:2px">Если ошибочное значение (например, объём вместо ставки) успело сохраниться в нескольких месяцах — найдёт все и заменит разом.</div>
+        <select id="rtf-tariff" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px;color:var(--text)">${tariffOptions}</select>
+        <div style="display:flex;gap:8px">
+          <input type="number" id="rtf-wrong" placeholder="Неверное значение" style="flex:1">
+          <input type="number" id="rtf-right" placeholder="Верное значение" style="flex:1">
+        </div>
+        <button class="btn btn-ghost btn-sm" style="width:100%" onclick="findWrongTariffMonths()">🔍 Найти месяцы</button>
+        <div id="rtf-result" style="font-size:12px;color:var(--muted)"></div>
       </div>
       <div class="set-row" style="flex-direction:column;align-items:stretch;gap:8px">
         <label>История версий</label>
