@@ -208,7 +208,14 @@ header.scrolled { box-shadow: var(--shadow-md); }
    ============================================================ */
 /* ── Telegram-style tab slide ── */
 #pages-viewport {
-  overflow-x: hidden;
+  /* Важно: НЕ overflow:hidden. hidden + visible превращается в auto/auto,
+     т.е. контейнер остаётся прокручиваемым программно: scrollIntoView() и
+     focus() внутри соседней (ещё не показанной) вкладки двигали его по
+     горизонтали, и сдвиг складывался с translateX трека — вкладка
+     «уезжала» с экрана (баг «вкладки гуляют», воспроизведён 2026-10-18).
+     clip — не создаёт scroll-контейнер, двигать нечего. */
+  overflow-x: hidden;   /* запасной вариант для старых браузеров */
+  overflow-x: clip;
   overflow-y: visible;
   position: relative;
 }
@@ -3394,9 +3401,20 @@ function renderHistory(){
 
   // Скроллим текущий год в видимую область явно — не полагаемся на то,
   // что он окажется первым в списке (защита от повторения бага 1.6).
+  // ВАЖНО: не scrollIntoView — у него inline:'nearest' по умолчанию, и он
+  // сдвигал горизонтально #pages-viewport (см. комментарий в CSS). Только
+  // вертикаль и только если вкладка «История» сейчас активна.
   requestAnimationFrame(()=>{
+    const pg=document.getElementById('page-history');
+    if(!pg||!pg.classList.contains('active'))return;
     const target=acc.querySelector('[data-year="'+defaultYear+'"]');
-    if(target)target.scrollIntoView({block:'start'});
+    if(!target)return;
+    // Липкая шапка с вкладками закрывает верх экрана — вычитаем её высоту,
+    // иначе заголовок года окажется под ней.
+    const tabsEl=document.getElementById('main-tabs');
+    const stickyBottom=tabsEl?tabsEl.getBoundingClientRect().bottom:0;
+    const top=target.getBoundingClientRect().top+window.scrollY-stickyBottom-8;
+    window.scrollTo(0,Math.max(0,top));
   });
 }
 function toggleHistYear(group){
@@ -4748,9 +4766,17 @@ function showEgg(title,text){
 
 /* ============================================================ TABS — Telegram slide ============================================================ */
 const TABS_LIST=['dev','qa','entry','history','dynamics','year'];
+// Страховка: горизонтально этот контейнер не должен быть сдвинут никогда
+// (вкладки двигаются только через transform трека).
+(function guardPagesViewport(){
+  const v=document.getElementById('pages-viewport');
+  if(!v)return;
+  v.addEventListener('scroll',()=>{if(v.scrollLeft!==0)v.scrollLeft=0;},{passive:true});
+})();
 function switchTab(name){
   const idx=TABS_LIST.indexOf(name);
   if(idx===-1)return;
+  const _pv=document.getElementById('pages-viewport');if(_pv&&_pv.scrollLeft!==0)_pv.scrollLeft=0;
 
   // Подсвечиваем таб — ищем по onclick
   document.querySelectorAll('.tab').forEach(t=>{

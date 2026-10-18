@@ -14,7 +14,7 @@
    случай отсутствия связи, не основной источник данных.
    ============================================================ */
 
-const CACHE_VERSION = 'doomunalka-v2';
+const CACHE_VERSION = 'doomunalka-v3';
 const CORE_ASSETS = [
   './',
   './index.html',
