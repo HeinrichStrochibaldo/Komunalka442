@@ -17,6 +17,31 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
+  /* ── Слои (z-index). ЕДИНАЯ шкала: порядок снизу вверх. Не писать числа в z-index —
+     добавлять токен сюда в нужное место шкалы. Шаг 10 оставляет место для вставки. ── */
+  --z-inner: 1; /* внутри экрана секции (шапка секции) */
+  --z-tabs: 10; /* липкая панель вкладок */
+  --z-header: 20; /* шапка */
+  --z-float-bar: 30; /* нижняя плавающая панель */
+  --z-picker: 40; /* выбор месяца */
+  --z-fab: 50; /* кнопка ⚡ */
+  --z-popup-scrim: 60; /* подложка FAB-попапа */
+  --z-popup: 70; /* FAB-попап */
+  --z-sheet-scrim: 80; /* подложка нижней шторки */
+  --z-sheet: 90; /* нижняя шторка */
+  --z-section: 100; /* экраны секций (настройки, тарифы, достижения) */
+  --z-modal: 110; /* модальные окна и диалоги подтверждения */
+  --z-pres: 120; /* режим презентации */
+  --z-ptr: 130; /* индикатор pull-to-refresh */
+  --z-fx: 140; /* конфетти */
+  --z-tip: 150; /* глобальная подсказка */
+  --z-toast: 160; /* PWA-тост, пасхальные сообщения */
+  --z-streak-scrim: 170; /* подложка попапа серии */
+  --z-streak: 180; /* попап серии */
+  --z-toasty: 190; /* Toasty */
+  --z-top: 200; /* самый верх: сплэш, быстрые тосты, подсказки */
+  --z-ach: 210; /* тост достижения (всегда поверх всего) */
+
   /* D-006: цветовая семантика
      --bg        фон страницы
      --surface   фон карточек, попапов
@@ -97,7 +122,7 @@ input, textarea { -webkit-user-select: text; user-select: text; -webkit-touch-ca
    SPLASH
    ============================================================ */
 #splash {
-  position: fixed; inset: 0; background: var(--bg); z-index: 9999;
+  position: fixed; inset: 0; background: var(--bg); z-index:var(--z-top);
   display: flex; flex-direction: column; align-items: center;
   justify-content: center; gap: 16px; transition: opacity .4s;
 }
@@ -115,7 +140,7 @@ header {
   display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr);
   align-items: center; gap: 10px;
   padding: 18px 24px 14px; border-bottom: 1px solid var(--border);
-  position: sticky; top: 0; background: var(--bg); z-index: 40;
+  position: sticky; top: 0; background: var(--bg); z-index:var(--z-header);
   transition: box-shadow .25s cubic-bezier(.4,0,.2,1);
 }
 .header-zone-left { display: flex; flex-direction: column; line-height: 1.1; min-width: 0; }
@@ -131,7 +156,7 @@ header.scrolled { box-shadow: var(--shadow-md); }
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
   padding: 0;
-  z-index: 9990;
+  z-index:var(--z-streak);
   width: 80px;
   height: 28px;
   box-shadow: var(--shadow-lg);
@@ -143,7 +168,7 @@ header.scrolled { box-shadow: var(--shadow-md); }
 #streak-popup-overlay {
   position: fixed;
   inset: 0;
-  z-index: 9989;
+  z-index:var(--z-streak-scrim);
   display: none;
 }
 #streak-popup-overlay.open { display: block; }
@@ -167,7 +192,7 @@ header.scrolled { box-shadow: var(--shadow-md); }
   border-bottom: 1px solid var(--border);
   overflow-x: auto; scrollbar-width: none;
   /* --header-h выставляется из JS по реальной высоте шапки (см. П30) */
-  position: sticky; top: var(--header-h, 57px); background: var(--bg); z-index: 39;
+  position: sticky; top: var(--header-h, 57px); background: var(--bg); z-index:var(--z-tabs);
 }
 .tabs::-webkit-scrollbar { display: none; }
 .tabs.scrolled { box-shadow: var(--shadow-sm); }
@@ -250,7 +275,7 @@ header.scrolled { box-shadow: var(--shadow-md); }
   font-size: 12px; line-height: 1.5; padding: 7px 11px;
   border-radius: 8px; border: 1px solid #2e3350;
   white-space: pre-line; max-width: 240px; width: max-content;
-  z-index: 8888; pointer-events: none; opacity: 0; transition: opacity .15s;
+  z-index:var(--z-tip); pointer-events: none; opacity: 0; transition: opacity .15s;
   box-shadow: var(--shadow-md);
 }
 #gtip.show { opacity: 1; }
@@ -489,7 +514,7 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
 #float-bar {
   position: fixed; bottom: 0; left: 0; right: 0;
   background: var(--surface); border-top: 1px solid var(--border);
-  z-index: 50; touch-action: none;
+  z-index:var(--z-float-bar); touch-action: none;
   transition: transform .35s cubic-bezier(.32,1,.6,1);
 }
 .float-bar-handle {
@@ -533,7 +558,7 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
 /* Month picker dropdown */
 #month-picker {
   position: absolute; background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius-md); padding: 6px; z-index: 100; box-shadow: var(--shadow-md);
+  border-radius: var(--radius-md); padding: 6px; z-index:var(--z-picker); box-shadow: var(--shadow-md);
   display: none; min-width: 160px;
 }
 #month-picker.show { display: block; }
@@ -732,7 +757,7 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
 /* ============================================================
    OVERLAYS / MODALS
    ============================================================ */
-.overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 500; align-items: center; justify-content: center; }
+.overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index:var(--z-modal); align-items: center; justify-content: center; }
 .overlay.open { display: flex; }
 .modal { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; max-width: 340px; width: 90%; text-align: center; }
 .modal h3 { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 16px; }
@@ -751,7 +776,7 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
 
 
 /* Presentation */
-#pres-overlay { display: none; position: fixed; inset: 0; background: #060a14; z-index: 700; flex-direction: column; align-items: center; justify-content: center; gap: 20px; padding: 48px; }
+#pres-overlay { display: none; position: fixed; inset: 0; background: #060a14; z-index:var(--z-pres); flex-direction: column; align-items: center; justify-content: center; gap: 20px; padding: 48px; }
 #pres-overlay.open { display: flex; }
 .pres-close { position: absolute; top: 20px; right: 20px; background: transparent; border: 1px solid #2e3350; color: #64748b; border-radius: 6px; padding: 7px 14px; cursor: pointer; font-size: 13px; font-family: inherit; }
 .pres-month { font-size: 16px; color: #475569; text-transform: uppercase; letter-spacing: 3px; }
@@ -773,7 +798,7 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
   transform: translateX(-50%);
   transform-origin: top center;
   background: #111; border-radius: 40px;
-  z-index: 99999;
+  z-index:var(--z-ach);
   display: flex; align-items: center; gap: 0;
   overflow: hidden;
   width: 126px; height: 37px;
@@ -848,14 +873,14 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
 
 /* TOASTY — только emoji, летит с края */
 #toasty {
-  position: fixed; z-index: 9998;
+  position: fixed; z-index:var(--z-toasty);
   pointer-events: auto; cursor: pointer;
   transition: none;
   will-change: transform, opacity;
 }
 
 /* CONFETTI */
-.confetti-bit { position: fixed; width: 8px; height: 8px; border-radius: 2px; pointer-events: none; z-index: 8000; animation: cffall linear forwards; }
+.confetti-bit { position: fixed; width: 8px; height: 8px; border-radius: 2px; pointer-events: none; z-index:var(--z-fx); animation: cffall linear forwards; }
 @keyframes cffall{0%{transform:translateY(-10px) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
 
 /* ============================================================
@@ -896,7 +921,7 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
    FAB — быстрый ввод
    ============================================================ */
 #fab {
-  position: fixed; bottom: 80px; right: 20px; z-index: 200;
+  position: fixed; bottom: 80px; right: 20px; z-index:var(--z-fab);
   width: 56px; height: 56px; border-radius: var(--radius-full);
   background: var(--accent); color: #fff; font-size: 22px;
   border: none; cursor: pointer; box-shadow: 0 4px 20px rgba(0,0,0,.4);
@@ -934,7 +959,7 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
 
 /* Экранный фонарик оверлей */
 #screen-torch {
-  position: fixed; inset: 0; z-index: 9999;
+  position: fixed; inset: 0; z-index:var(--z-top);
   background: #fff; opacity: 0; pointer-events: none;
   transition: opacity .3s;
 }
@@ -945,14 +970,14 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
    ============================================================ */
 #sheet-backdrop {
   position: fixed; inset: 0; background: rgba(0,0,0,.5);
-  z-index: 300; opacity: 0; pointer-events: none;
+  z-index:var(--z-sheet-scrim); opacity: 0; pointer-events: none;
   transition: opacity .3s cubic-bezier(.4,0,.2,1);
   -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
 }
 #sheet-backdrop.show { opacity: 1; pointer-events: auto; }
 #bottom-sheet {
   position: fixed; left: 0; right: 0; bottom: 0;
-  z-index: 301; background: var(--surface);
+  z-index:var(--z-sheet); background: var(--surface);
   border-radius: var(--radius-xl) var(--radius-xl) 0 0;
   border-top: 1px solid var(--border);
   transform: translateY(100%);
@@ -1023,7 +1048,7 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
    ============================================================ */
 #ptr-indicator {
   position: fixed; top: -60px; left: 50%; transform: translateX(-50%);
-  z-index: 999; background: var(--surface); border: 1px solid var(--border);
+  z-index:var(--z-ptr); background: var(--surface); border: 1px solid var(--border);
   border-radius: 50px; padding: 8px 18px; font-size: 13px; color: var(--muted);
   display: flex; align-items: center; gap: 8px;
   transition: top .25s cubic-bezier(.4,0,.2,1), opacity .2s;
@@ -1054,7 +1079,7 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
 }
 .copyable:active { opacity: .7; }
 .copy-flash {
-  position: fixed; z-index: 9999;
+  position: fixed; z-index:var(--z-top);
   background: var(--surface); border: 1px solid var(--green);
   color: var(--green); font-size: 12px; font-weight: 600;
   padding: 6px 14px; border-radius: var(--radius-xl);
@@ -1076,7 +1101,7 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
 #pwa-toast {
   position: fixed; bottom: 80px; left: 16px; right: 16px;
   background: var(--surface); border: 1px solid var(--border);
-  border-radius: 14px; padding: 16px; z-index: 9000;
+  border-radius: 14px; padding: 16px; z-index:var(--z-toast);
   box-shadow: 0 8px 32px rgba(0,0,0,.4);
   transform: translateY(120%); transition: transform .4s cubic-bezier(.34,1.56,.64,1);
   display: none;
@@ -1113,7 +1138,7 @@ input.meter-locked:focus { border-color: var(--border) !important; }
    SECTION OVERLAY (Достижения / Настройки)
    ============================================================ */
 #section-overlay {
-  position: fixed; inset: 0; z-index: 400;
+  position: fixed; inset: 0; z-index:var(--z-section);
   background: var(--bg);
   transform: translateX(100%);
   transition: transform .3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -1128,7 +1153,7 @@ input.meter-locked:focus { border-color: var(--border) !important; }
   display: flex; align-items: center; gap: 12px;
   padding: 18px 20px 14px;
   border-bottom: 1px solid var(--border);
-  position: sticky; top: 0; background: var(--bg); z-index: 1;
+  position: sticky; top: 0; background: var(--bg); z-index:var(--z-inner);
 }
 #section-overlay-title {
   font-size: 17px; font-weight: 700; color: var(--text);
@@ -1646,11 +1671,11 @@ html.dev-mode #settings-btn{
 <button id="fab" onclick="openFabPopup()" title="Быстрый ввод показаний">⚡</button>
 
 <!-- FAB Quick Input Popup -->
-<div id="fab-popup" style="display:none;position:fixed;left:50%;transform:translateX(-50%);z-index:250;background:var(--surface);border:1px solid var(--border);border-radius:16px;width:min(360px,calc(100vw-24px));box-shadow:0 8px 40px rgba(0,0,0,.5);flex-direction:column;max-height:80vh">
+<div id="fab-popup" style="display:none;position:fixed;left:50%;transform:translateX(-50%);z-index:var(--z-popup);background:var(--surface);border:1px solid var(--border);border-radius:16px;width:min(360px,calc(100vw-24px));box-shadow:0 8px 40px rgba(0,0,0,.5);flex-direction:column;max-height:80vh">
 </div>
 <style>
 @keyframes fabPopupIn{from{opacity:0;transform:translateX(-50%) translateY(24px) scale(.93)}to{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}}
-#fab-popup-backdrop{position:fixed;inset:0;z-index:249;background:transparent;}
+#fab-popup-backdrop{position:fixed;inset:0;z-index:var(--z-popup-scrim);background:transparent;}
 </style>
 <div id="fab-popup-backdrop" style="display:none" onclick="closeFabPopup()"></div>
 
@@ -3009,7 +3034,7 @@ function resetStreak(){
   fbSave();updateStreak();updatePaidBtn();renderPayHistory();
   const f=document.createElement('div');
   f.className='copy-flash';f.textContent='✓ Стрик сброшен';
-  f.style.cssText='position:fixed;bottom:120px;left:50%;transform:translateX(-50%);z-index:9999;white-space:nowrap';
+  f.style.cssText='position:fixed;bottom:120px;left:50%;transform:translateX(-50%);z-index:var(--z-top);white-space:nowrap';
   document.body.appendChild(f);setTimeout(()=>f.remove(),BADGE_DURATION);
 }
 
@@ -3933,7 +3958,7 @@ function checkEaster(){
 }
 function showEgg(title,text){
   const el=document.createElement('div');
-  el.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--surface);border:2px solid var(--yellow);border-radius:16px;padding:32px;z-index:9000;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.5);max-width:300px;';
+  el.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--surface);border:2px solid var(--yellow);border-radius:16px;padding:32px;z-index:var(--z-toast);text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.5);max-width:300px;';
   el.innerHTML=`<div style="font-size:44px;margin-bottom:10px">${title.split(' ')[0]}</div><div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:7px">${title}</div><div style="font-size:13px;color:var(--muted);margin-bottom:16px">${text}</div><button class="btn" onclick="this.parentElement.remove()">Отлично!</button>`;
   document.body.appendChild(el);
 }
@@ -4216,7 +4241,7 @@ function resetAchs(){
   haptic([30,20,30]);
   const f=document.createElement('div');
   f.className='copy-flash';f.textContent='✓ Достижения сброшены';
-  f.style.cssText='position:fixed;bottom:120px;left:50%;transform:translateX(-50%);z-index:9999;white-space:nowrap';
+  f.style.cssText='position:fixed;bottom:120px;left:50%;transform:translateX(-50%);z-index:var(--z-top);white-space:nowrap';
   document.body.appendChild(f);setTimeout(()=>f.remove(),BADGE_DURATION);
 }
 
@@ -4231,7 +4256,7 @@ function resetXP(){
   haptic([30,20,30]);
   const f=document.createElement('div');
   f.className='copy-flash';f.textContent='✓ XP сброшен';
-  f.style.cssText='position:fixed;bottom:120px;left:50%;transform:translateX(-50%);z-index:9999;white-space:nowrap';
+  f.style.cssText='position:fixed;bottom:120px;left:50%;transform:translateX(-50%);z-index:var(--z-top);white-space:nowrap';
   document.body.appendChild(f);setTimeout(()=>f.remove(),BADGE_DURATION);
 }
 
@@ -4423,7 +4448,7 @@ function openXPPopup(){
 
   const overlay=document.createElement('div');
   overlay.id='xp-popup-overlay';
-  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;display:flex;align-items:center;justify-content:center';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:var(--z-modal);display:flex;align-items:center;justify-content:center';
   overlay.innerHTML=`
     <div id="xp-popup-modal" style="background:var(--surface);border:1px solid var(--border);border-radius:20px;width:min(340px,calc(100vw-32px));max-height:80vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.4)">
       <div style="padding:20px 20px 0;flex-shrink:0">
@@ -4488,7 +4513,7 @@ function openXPPopup(){
 function showXPFloat(text){
   const el=document.createElement('div');
   el.textContent=text;
-  el.style.cssText=`position:fixed;bottom:90px;right:80px;z-index:9999;
+  el.style.cssText=`position:fixed;bottom:90px;right:80px;z-index:var(--z-top);
     background:var(--yellow);color:#000;font-size:12px;font-weight:700;
     padding:4px 10px;border-radius:20px;pointer-events:none;
     animation:xpFloat .9s cubic-bezier(.4,0,.2,1) forwards`;
@@ -4625,7 +4650,7 @@ function showBtnToast(btn, msg){
   f.className='copy-flash';
   f.textContent=msg;
   // Сначала добавляем невидимо чтобы измерить размер
-  f.style.cssText='position:fixed;left:-9999px;top:-9999px;z-index:9999;white-space:nowrap;pointer-events:none';
+  f.style.cssText='position:fixed;left:-9999px;top:-9999px;z-index:var(--z-top);white-space:nowrap;pointer-events:none';
   document.body.appendChild(f);
   const fw=f.offsetWidth;
   const fh=f.offsetHeight;
@@ -5741,7 +5766,7 @@ function makeCopyable(sel){
         const f=document.createElement('div');f.className='copy-flash';
         f.textContent='✓ Скопировано';
         const r=el.getBoundingClientRect();
-        f.style.cssText='position:fixed;left:50%;transform:translateX(-50%);top:'+(r.top-44)+'px;z-index:9999';
+        f.style.cssText='position:fixed;left:50%;transform:translateX(-50%);top:'+(r.top-44)+'px;z-index:var(--z-top)';
         document.body.appendChild(f);setTimeout(()=>f.remove(),1200);
       },600);
     };
@@ -5903,7 +5928,7 @@ function showFabToast(msg){
   const f=document.createElement('div');
   f.className='copy-flash';
   f.textContent=msg;
-  f.style.cssText='position:fixed;bottom:'+(window.innerHeight-fbTop+12)+'px;left:50%;transform:translateX(-50%);z-index:9999;white-space:nowrap';
+  f.style.cssText='position:fixed;bottom:'+(window.innerHeight-fbTop+12)+'px;left:50%;transform:translateX(-50%);z-index:var(--z-top);white-space:nowrap';
   document.body.appendChild(f);
   setTimeout(()=>f.remove(),1800);
 }
@@ -6436,7 +6461,7 @@ function openArtifact(){
 
   const overlay=document.createElement('div');
   overlay.id='artifact-overlay';
-  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9000;display:flex;align-items:flex-end;justify-content:center';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:var(--z-toast);display:flex;align-items:flex-end;justify-content:center';
   overlay.innerHTML=`
     <div style="background:var(--surface);border-radius:var(--radius-xl) var(--radius-xl) 0 0;width:100%;max-height:85vh;display:flex;flex-direction:column;overflow:hidden">
       <div style="padding:16px 16px 0;flex-shrink:0">
