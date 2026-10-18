@@ -166,7 +166,8 @@ header.scrolled { box-shadow: var(--shadow-md); }
   display: flex; gap: 2px; padding: 8px 24px 0;
   border-bottom: 1px solid var(--border);
   overflow-x: auto; scrollbar-width: none;
-  position: sticky; top: 57px; background: var(--bg); z-index: 39;
+  /* --header-h выставляется из JS по реальной высоте шапки (см. П30) */
+  position: sticky; top: var(--header-h, 57px); background: var(--bg); z-index: 39;
 }
 .tabs::-webkit-scrollbar { display: none; }
 .tabs.scrolled { box-shadow: var(--shadow-sm); }
@@ -875,7 +876,7 @@ input.changed { border-color: var(--yellow)!important; background: rgba(251,191,
    ============================================================ */
 @media (max-width: 640px) {
   header, .tabs, .page { padding-left: 16px; padding-right: 16px; }
-  .tabs { top: 53px; }
+  .tabs { top: var(--header-h, 53px); }
   .meter-grid { grid-template-columns: 1fr 1fr; }
   .meter-cell { border-bottom: 1px solid var(--border); }
   .meter-cell:nth-child(2n) { border-right: none; }
@@ -5102,10 +5103,21 @@ function fabLoading(on){
   else{fab.classList.remove('loading');fab.textContent='⚡';}
 }
 
-/* П30: тень под хедером при скролле */
-window.addEventListener('scroll',()=>{
+/* П30: тень при скролле — под панелью вкладок, а не под хедером: хедер стоит
+   прямо над вкладками, и его тень затемняла их. Липкий top вкладок берём из
+   реальной высоты хедера — жёсткие 53/57px не совпадали с ней (66px), и при
+   scrollY>0 вкладки заезжали под хедер на 13px. */
+(function syncHeaderHeight(){
   const h=document.querySelector('header');
-  if(h)h.classList.toggle('scrolled',window.scrollY>4);
+  if(!h)return;
+  const set=()=>document.documentElement.style.setProperty('--header-h',h.offsetHeight+'px');
+  set();
+  if(window.ResizeObserver)new ResizeObserver(set).observe(h);
+  else window.addEventListener('resize',set);
+})();
+window.addEventListener('scroll',()=>{
+  const t=document.getElementById('main-tabs');
+  if(t)t.classList.toggle('scrolled',window.scrollY>4);
 },{ passive:true });
 
 /* П25: числа "тикают" при изменении — анимируем .td-sum и .ft-val */
